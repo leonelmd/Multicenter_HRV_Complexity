@@ -8,5 +8,7 @@ presentation_output.log
 pipeline_output.log
 old
 Exploratory
+archive
 generate_presentation.py
-.pptx
+*.pptx
+*.png
