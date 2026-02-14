@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+.idea/
+*.log
+presentation_output.log
+pipeline_output.log
+old
+Exploratory
+generate_presentation.py
+.pptx
