@@ -162,8 +162,9 @@ def generate_figure3():
     
     out_dir = os.path.join(FIGURES_DIR, "Figure3")
     os.makedirs(out_dir, exist_ok=True)
-    plt.savefig(os.path.join(out_dir, 'Figure3.png')
-    plt.savefig(out_path.replace('.png', '.svg'), format='svg', bbox_inches='tight'), dpi=300, bbox_inches='tight')
+    out_path = os.path.join(out_dir, 'Figure3.png')
+    plt.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.savefig(out_path.replace('.png', '.svg'), format='svg', bbox_inches='tight')
     print(f"Figure 3 reshaped and saved to {out_dir}")
 
 if __name__ == "__main__":

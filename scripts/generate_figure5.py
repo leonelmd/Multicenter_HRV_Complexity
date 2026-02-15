@@ -138,8 +138,10 @@ def generate_figure5():
 
     plt.suptitle("Figure 5: Multi-center Diagnostic Performance and Biomarker Independence", fontsize=28, fontweight='bold', y=0.98)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig(os.path.join(FIGURES_DIR, "Figure5", "Figure5.png")
-    plt.savefig(out_path.replace('.png', '.svg'), format='svg', bbox_inches='tight'), dpi=300)
+    
+    out_path = os.path.join(FIGURES_DIR, "Figure5", "Figure5.png")
+    plt.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.savefig(out_path.replace('.png', '.svg'), format='svg', bbox_inches='tight')
     print("Figure 5 finalized.")
 
 if __name__ == "__main__":
