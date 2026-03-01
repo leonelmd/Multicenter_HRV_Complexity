@@ -73,8 +73,8 @@ def generate_figure5():
     def parse_t(s): 
         try: parts = str(s).split(':'); return int(parts[0]) + int(parts[1])/60.0 + int(parts[2])/3600.0
         except: return np.nan
-    start_map = dict(zip(df_j_meta['Subject'], df_j_meta['Start_Time'].apply(parse_t)))
-    df_j_evo['Clock_T'] = (df_j_evo['Subject'].map(start_map) + df_j_evo['Time_h']) % 24
+    # Japan evolution data is already pre-aligned to clock time.
+    df_j_evo['Clock_T'] = df_j_evo['Time_h'] % 24
 
     for win_name, (start_h, end_h), mse_file in [
         ('Nagoya (7-11 AM)', (7, 11), 'japan_morning_mse.csv'),
@@ -103,8 +103,26 @@ def generate_figure5():
         sorted_idx = np.argsort(aucs)[::-1]
         sorted_aucs = [aucs[idx] for idx in sorted_idx]
         sorted_labels = [metric_labels[idx] for idx in sorted_idx]
-        colors = ['#D62828' if 'Complexity' in l else '#457B9D' for l in sorted_labels]
+        
+        # Color Logic: Complexity=Purple, Nonlinear=Blue, Linear=Green
+        variable_colors = {
+            'Complexity (HR-Norm)': '#8E44AD', # Purple
+            'DFA Alpha 1': '#2980B9',          # Dark Blue
+            'SampEn (S1)': '#5DADE2',          # Light Blue
+            'SDNN': '#27AE60',                 # Dark Green
+            'RMSSD': '#58D68D'                 # Light Green
+        }
+        colors = [variable_colors.get(l, '#95A5A6') for l in sorted_labels]
+        
         sns.barplot(x=sorted_aucs, y=sorted_labels, palette=colors, ax=ax)
+        
+        # Emphasize "Complexity" label
+        for label in ax.get_yticklabels():
+            if 'Complexity' in label.get_text():
+                label.set_fontweight('bold')
+                label.set_fontsize(15)
+                label.set_color('#8E44AD')
+        
         ax.set_title(f"{ds_key}", fontsize=18, fontweight='bold')
         ax.set_xlim(0.4, 1.0); ax.axvline(0.5, color='black', ls='--', alpha=0.5)
         ax.set_xlabel("AUC")

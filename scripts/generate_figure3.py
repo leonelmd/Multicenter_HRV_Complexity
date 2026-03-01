@@ -56,8 +56,9 @@ def generate_figure3():
         if 'Subject_ID' in df_meta.columns: df_meta = df_meta.rename(columns={'Subject_ID': 'Subject'})
     
     start_map = dict(zip(df_meta['Subject'], df_meta['Start_Time']))
-    df_ev['Start_Hour'] = df_ev['Subject'].map(start_map).apply(parse_time)
-    df_ev['Clock_Time'] = (df_ev['Start_Hour'] + df_ev['Time_h']) % 24
+    # Japan evolution data is already pre-aligned to clock time. 
+    # Use 'Time_h' directly as the clock time to avoid a double-offset.
+    df_ev['Clock_Time'] = df_ev['Time_h'] % 24
     df_ev['Plot_Time'] = (df_ev['Clock_Time'] - 12) % 24  # Center Noon=0, Midnight=12
     
     # === STAGE 1: Evolution Curves (Top 2 Rows) ===
@@ -127,13 +128,16 @@ def generate_figure3():
     ax_heat.set_ylabel('Comparison Window (Start Hour)')
 
     # === STAGE 3: Best Delta Boxplot (Bottom Right) ===
-    # Using 07:00-11:00 vs 13:00-17:00 (High-p result from sweep)
-    # Actually, let's use the one found: 07:00 vs 13:00 (4h windows)
-    w1_start, w2_start = 7, 13
-    df_w1 = win_data[f"{w1_start:02d}"]
-    df_w2 = win_data[f"{w2_start:02d}"]
-    df_final = pd.merge(df_w1, df_w2, on=['Subject', 'Group'], suffixes=('_Morning', '_Afternoon'))
-    df_final['Delta'] = df_final['Complexity_Morning'] - df_final['Complexity_Afternoon']
+    # Dynamically find the best window pair from the exhaustive sweep results
+    df_h_results = pd.DataFrame(all_pairs)
+    best_row = df_h_results.loc[df_h_results['LogP'].idxmax()]
+    label1, label2 = best_row['W1'], best_row['W2']
+    w1_h, w2_h = int(label1), int(label2)
+    
+    df_w1 = win_data[label1]
+    df_w2 = win_data[label2]
+    df_final = pd.merge(df_w1, df_w2, on=['Subject', 'Group'], suffixes=('_1', '_2'))
+    df_final['Delta'] = df_final['Complexity_1'] - df_final['Complexity_2']
     
     ax_box = fig.add_subplot(gs[2, 1])
     add_panel_label(ax_box, 'F')
@@ -150,8 +154,8 @@ def generate_figure3():
     dist = y_max - y_min
     add_stat_annotation(ax_box, 0, 1, y_max + dist*0.05, dist*0.05, f'p = {pval:.4f} {get_sig_chars(pval)}')
     
-    ax_box.set_title('Best Biomarker: Morning vs. Afternoon Delta', fontsize=18, fontweight='bold')
-    ax_box.set_ylabel('$\Delta$ Complexity (07-11 vs. 13-17)', fontsize=14)
+    ax_box.set_title(f'Best Biomarker: {w1_h:02d}:00 vs. {w2_h:02d}:00 Delta', fontsize=18, fontweight='bold')
+    ax_box.set_ylabel(f'$\\Delta$ Complexity ({w1_h:02d}-{ (w1_h+4)%24:02d} vs. {w2_h:02d}-{ (w2_h+4)%24:02d})', fontsize=14)
     ax_box.set_xlabel('')
     ax_box.set_ylim(y_min - dist*0.1, y_max + dist*0.25)
     ax_box.axhline(0, color='black', linestyle='--', alpha=0.3)

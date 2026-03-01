@@ -141,7 +141,7 @@ def generate_figure1():
     # Count dynamically
     c_counts = c_hrv['Group'].value_counts()
     s_counts = cr_hrv['Group'].replace({'Other': 'Control'}).value_counts()
-    j_counts = n_meta['Group'].str.capitalize().value_counts()
+    j_counts = n_meta['Group'].str.upper().replace({'CONTROL': 'Control'}).value_counts()
     
     group_data = {
         'Chile': [c_counts.get('Control', 0), c_counts.get('PD', 0)],
@@ -179,7 +179,7 @@ def generate_figure1():
         df_s_age = pd.DataFrame({'Age': np.random.normal(67, 9, len(cr_hrv)), 'Group': cr_hrv['Group'].replace({'Other':'Control'}), 'Site': 'Spain'})
 
     df_all_age = pd.concat([df_c_age, df_j_age, df_s_age], ignore_index=True)
-    df_all_age['Group'] = df_all_age['Group'].str.capitalize()
+    df_all_age['Group'] = df_all_age['Group'].str.upper().replace({'CONTROL': 'Control'})
     
     sns.boxplot(data=df_all_age, x='Site', y='Age', hue='Group', palette=colors, ax=ax_age, showfliers=False, width=0.6)
     sns.stripplot(data=df_all_age, x='Site', y='Age', hue='Group', palette=colors, ax=ax_age, dodge=True, alpha=0.4, size=7, edgecolor='k', linewidth=0.5)

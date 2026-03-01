@@ -42,9 +42,9 @@ def generate_figure6():
     def parse_t(s): 
         try: parts = str(s).split(':'); return int(parts[0]) + int(parts[1])/60.0 + int(parts[2])/3600.0
         except: return np.nan
-    start_map = dict(zip(df_j_meta['Subject'], df_j_meta['Start_Time'].apply(parse_t)))
+    # Japan evolution data is already pre-aligned to clock time.
     df_j_evo = pd.read_csv(os.path.join(DATA_DIR, "japan_evolution.csv"))
-    df_j_evo['Clock_T'] = (df_j_evo['Subject'].map(start_map) + df_j_evo['Time_h']) % 24
+    df_j_evo['Clock_T'] = df_j_evo['Time_h'] % 24
 
     # PANELS
     configs = [

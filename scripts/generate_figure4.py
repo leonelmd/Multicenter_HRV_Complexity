@@ -65,8 +65,8 @@ def generate_figure4():
             return int(parts[0]) + int(parts[1])/60.0 + int(parts[2])/3600.0
         except: return np.nan
         
-    start_map = dict(zip(df_meta_j['Subject'], df_meta_j['Start_Time'].apply(parse_t)))
-    df_evo['Clock_T'] = (df_evo['Subject'].map(start_map) + df_evo['Time_h']) % 24
+    # Japan evolution data is already pre-aligned to clock time.
+    df_evo['Clock_T'] = df_evo['Time_h'] % 24
     
     hr_j_m = df_evo[(df_evo['Clock_T'] >= 7) & (df_evo['Clock_T'] < 11)].groupby('Subject')['HR'].mean().reset_index()
     hr_j_a = df_evo[(df_evo['Clock_T'] >= 13) & (df_evo['Clock_T'] < 17)].groupby('Subject')['HR'].mean().reset_index()
