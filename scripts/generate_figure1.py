@@ -204,7 +204,7 @@ def generate_figure1():
 
     plt.suptitle("Figure 1: Global Integrated Multicenter Study Design", fontsize=38, fontweight='bold', y=0.97)
     
-    out_path = os.path.join(FIGURES_DIR, "Figure1", "Figure1.png")
+    out_path = os.path.join(FIGURES_DIR, "Figure1", "Figure1_alt.png")
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     print(f"Figure 1 saved to {out_path}")
 
