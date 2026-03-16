@@ -3,16 +3,15 @@
 Multicenter Cardiac Autonomic Complexity Study
 Figure Generation Pipeline
 
-Regenerates all manuscript figures (1–9) from the pre-computed data in data/
-and the statistical results in results/.
+Regenerates all manuscript figures (1–8) from data in data/ and figures/Figure8/.
+Figure 8 requires statistical pre-processing; this pipeline runs those steps
+automatically (steps 1–5) before generating the figure.
 
 Usage (from the public_release/ root):
     python scripts/run_pipeline.py
 
 What this does NOT do:
     - Compute MSE/HRV features from raw RRI signals (raw signals are not shared).
-    - Re-run statistical analyses. To regenerate results/ CSVs, run the
-      scripts in analysis/ (see README.md for details and ordering).
 """
 
 import os
@@ -42,6 +41,7 @@ def main():
     print("=" * 70)
 
     steps = [
+        # ── Figures 1–7: read directly from data/ ─────────────────────────────
         ("python scripts/generate_figure1.py",
          "Figure 1 — Study design & cohort demographics"),
         ("python scripts/generate_figure2.py",
@@ -58,6 +58,20 @@ def main():
         ("python scripts/generate_figure7.py",
          "Figure 7 — ML validation: handcrafted features vs deep learning  "
          "[NOTE: runs LOCO cross-validation, takes ~1 min]"),
+
+        # ── Figure 8 pre-processing: statistical analyses → figures/Figure8/ ──
+        ("python scripts/traditional_hrv_metrics.py",
+         "Figure 8 pre-step 1/5 — Consolidate HRV metrics across centers"),
+        ("python scripts/multiscale_decomposition.py",
+         "Figure 8 pre-step 2/5 — Scale-metric correlations & MSE curves"),
+        ("python scripts/complexity_correlation_analysis.py",
+         "Figure 8 pre-step 3/5 — Spearman correlations + bootstrap CIs"),
+        ("python scripts/incremental_value_analysis.py",
+         "Figure 8 pre-step 4/5 — Hierarchical regression & variance decomposition"),
+        ("python scripts/cross_dataset_consistency.py",
+         "Figure 8 pre-step 5/5 — Cross-dataset consistency & physiological interpretation"),
+
+        # ── Figure 8: composite autonomic physiology figure ────────────────────
         ("python scripts/generate_figure8.py",
          "Figure 8 — Autonomic physiology of cardiac complexity (composite)"),
     ]

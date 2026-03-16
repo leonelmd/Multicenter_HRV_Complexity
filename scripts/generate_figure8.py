@@ -29,8 +29,8 @@ import seaborn as sns
 from scipy.stats import spearmanr
 
 BASE     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RESULTS  = os.path.join(BASE, 'results')
 FIG8_DIR = os.path.join(BASE, 'figures', 'Figure8')
+RESULTS  = FIG8_DIR  # intermediate CSVs live alongside the figure outputs
 OUT_DIR  = FIG8_DIR
 
 # ── shared style helpers ───────────────────────────────────────────────────────
