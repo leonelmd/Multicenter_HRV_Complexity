@@ -1,81 +1,81 @@
 #!/usr/bin/env python3
 """
-Multicenter Study - Main Pipeline Script
-Orchestrates the complete analysis workflow for the multicenter study.
+Multicenter Cardiac Autonomic Complexity Study
+Figure Generation Pipeline
+
+Regenerates all manuscript figures (1–9) from the pre-computed data in data/
+and the statistical results in results/.
+
+Usage (from the public_release/ root):
+    python scripts/run_pipeline.py
+
+What this does NOT do:
+    - Compute MSE/HRV features from raw RRI signals (raw signals are not shared).
+    - Re-run statistical analyses. To regenerate results/ CSVs, run the
+      scripts in analysis/ (see README.md for details and ordering).
 """
 
 import os
 import subprocess
 import sys
 
-# Get paths
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(SCRIPT_DIR) # public_release/
+SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)   # public_release/
 
-def run_command(command, description):
+
+def run(command, description):
     print(f"\n>>> {description}...")
     try:
-        # Run command from public_release/ root
         subprocess.check_call(command, shell=True, cwd=PROJECT_ROOT)
-        print(f">>> {description} completed successfully.")
+        print(f"    OK")
     except subprocess.CalledProcessError as e:
-        print(f"\n!!! Error during {description}: {e}")
+        print(f"\n!!! FAILED: {description}\n    {e}")
         sys.exit(1)
 
+
 def main():
-    print("="*70)
-    print("  MULTICENTER CARDIAC AUTONOMIC COMPLEXITY STUDY - PIPELINE")
-    print("="*70)
-    print("\nThis pipeline will:")
-    print("  1. Generate all manuscript figures (1-8) from processed data")
-    print("  2. Verify consistency of results")
-    print("\n" + "="*70)
-    
-    # Step 1: Generate Figure 1 (Study Overview)
-    run_command("python scripts/generate_figure1.py", 
-                "Step 1: Generating Figure 1 (Study Overview)")
-    
-    # Step 2: Generate Figure 2 (Signal Archetypes)
-    run_command("python scripts/generate_figure2.py", 
-                "Step 2: Generating Figure 2 (Signal Archetypes)")
-    
-    # Step 3: Generate Figure 3 (Circadian Dynamics)
-    run_command("python scripts/generate_figure3.py", 
-                "Step 3: Generating Figure 3 (Circadian Dynamics)")
-    
-    # Step 4: Generate Figure 4 (MSE & Complexity)
-    run_command("python scripts/generate_figure4.py", 
-                "Step 4: Generating Figure 4 (Multiscale Entropy)")
-    
-    # Step 5: Generate Figure 5 (Diagnostic Performance)
-    run_command("python scripts/generate_figure5.py", 
-                "Step 5: Generating Figure 5 (Diagnostic Performance)")
-    
-    # Step 6: Generate Figure 6 (Age Correlations)
-    run_command("python scripts/generate_figure6.py", 
-                "Step 6: Generating Figure 6 (Age Independency)")
-    
-    # Step 7: Generate Figure 7 (DL Benchmarking)
-    run_command("python scripts/generate_figure7.py", 
-                "Step 7: Generating Figure 7 (Deep Learning Benchmarks)")
-    
-    # Step 8: Generate Figure 8 (Clinical Insights)
-    run_command("python scripts/generate_figure8.py", 
-                "Step 8: Generating Figure 8 (Biomarker Utility & Clinical Validation)")
-    
-    print("\n" + "="*70)
+    print("=" * 70)
+    print("  MULTICENTER CARDIAC AUTONOMIC COMPLEXITY — FIGURE PIPELINE")
+    print("=" * 70)
+    print(f"\n  Working directory : {PROJECT_ROOT}")
+    print(f"  Figures will be saved to: {os.path.join(PROJECT_ROOT, 'figures')}\n")
+    print("=" * 70)
+
+    steps = [
+        ("python scripts/generate_figure1.py",
+         "Figure 1 — Study design & cohort demographics"),
+        ("python scripts/generate_figure2.py",
+         "Figure 2 — Signal archetypes & HR/age distributions  "
+         "[NOTE: RRi trace panels require raw data — see README]"),
+        ("python scripts/generate_figure3.py",
+         "Figure 3 — Circadian dynamics of cardiac complexity (Nagoya)"),
+        ("python scripts/generate_figure4.py",
+         "Figure 4 — Multiscale entropy comparison across centers"),
+        ("python scripts/generate_figure5.py",
+         "Figure 5 — Diagnostic performance & biomarker independence"),
+        ("python scripts/generate_figure6.py",
+         "Figure 6 — Age-independency validation"),
+        ("python scripts/generate_figure7.py",
+         "Figure 7 — ML validation: handcrafted features vs deep learning  "
+         "[NOTE: runs LOCO cross-validation, takes ~1 min]"),
+        ("python scripts/generate_figure8.py",
+         "Figure 8 — Autonomic physiology of cardiac complexity (composite)"),
+    ]
+
+    for cmd, desc in steps:
+        run(cmd, desc)
+
+    print("\n" + "=" * 70)
     print("  PIPELINE COMPLETED SUCCESSFULLY")
-    print("="*70)
-    print("\n📊 Generated figures (available in figures/):")
-    print("  ✓ Figure 1 (Study Overview)")
-    print("  ✓ Figure 2 (Signal Archetypes)")
-    print("  ✓ Figure 3 (Circadian Dynamics)")
-    print("  ✓ Figure 4 (MSE & Complexity)")
-    print("  ✓ Figure 5 (Diagnostic Performance)")
-    print("  ✓ Figure 6 (Age Correlations)")
-    print("  ✓ Figure 7 (DL Benchmarking)")
-    print("  ✓ Figure 8 (Biomarker Utility)")
-    print("\n" + "="*70)
+    print("=" * 70)
+    print("\nGenerated figures:")
+    for i in range(1, 10):
+        figdir = os.path.join(PROJECT_ROOT, "figures", f"Figure{i}")
+        if os.path.isdir(figdir):
+            pngs = [f for f in os.listdir(figdir) if f.endswith(".png")]
+            print(f"  Figure {i}: {', '.join(sorted(pngs))}")
+    print()
+
 
 if __name__ == "__main__":
     main()

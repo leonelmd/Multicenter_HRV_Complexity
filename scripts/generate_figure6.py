@@ -42,16 +42,15 @@ def generate_figure6():
     def parse_t(s): 
         try: parts = str(s).split(':'); return int(parts[0]) + int(parts[1])/60.0 + int(parts[2])/3600.0
         except: return np.nan
-    # Japan evolution data is already pre-aligned to clock time.
+    # New evolution file uses Window_start_h (4h windows, proper nAUC)
     df_j_evo = pd.read_csv(os.path.join(DATA_DIR, "japan_evolution.csv"))
-    df_j_evo['Clock_T'] = df_j_evo['Time_h'] % 24
 
     # PANELS
     configs = [
-        ('A', 'CETRAM (Chile)', 'chile_mse.csv', 'chile_demographics.csv', 'chile_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'CHILE'),
-        ('B', 'Cruces (Spain)', 'spain_mse.csv', 'spain_demographics.csv', 'spain_metrics.csv', range(1, 6), '15m Slice (MSE 1-5)', 'SPAIN'),
-        ('C', 'Nagoya (Morning)', 'japan_morning_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_M'),
-        ('D', 'Nagoya (Afternoon)', 'japan_afternoon_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_A')
+        ('A', 'CETRAM', 'chile_mse.csv', 'chile_demographics.csv', 'chile_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'CHILE'),
+        ('B', 'Cruces', 'spain_mse.csv', 'spain_demographics.csv', 'spain_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'SPAIN'),
+        ('C', 'Nagoya (07-11h)', 'japan_morning_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_M'),
+        ('D', 'Nagoya (16-20h)', 'japan_afternoon_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_A')
     ]
 
     for i, (label, name, mse_file, dem_file, met_file, scale_range, scale_desc, ds_type) in enumerate(configs):
@@ -78,8 +77,8 @@ def generate_figure6():
             df['Group'] = df['Group'].str.upper().replace({'CONTROL':'Control', 'PD':'PD', 'OTHER':'Control'})
 
         elif 'JAPAN' in ds_type:
-            start_h, end_h = (7, 11) if 'M' in ds_type else (13, 17)
-            hr_j = df_j_evo[(df_j_evo['Clock_T'] >= start_h) & (df_j_evo['Clock_T'] < end_h)].groupby('Subject')['HR'].mean().reset_index()
+            win_h = 7 if 'M' in ds_type else 16
+            hr_j = df_j_evo[df_j_evo['Window_start_h'] == win_h][['Subject','HR']].copy()
             df_mse = pd.read_csv(os.path.join(DATA_DIR, mse_file))
             comp = df_mse[df_mse.Scales.isin(scale_range)].groupby('Subject').MSE.mean().reset_index()
             df = pd.merge(pd.merge(comp, df_j_meta[['Subject','Group','Age']], on='Subject'), hr_j, on='Subject')

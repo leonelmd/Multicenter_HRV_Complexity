@@ -25,7 +25,6 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(SCRIPT_DIR)))  # 
 CHILE_METRICS = os.path.join(DATA_DIR, "chile_metrics.csv")
 CHILE_MSE = os.path.join(DATA_DIR, "chile_mse.csv")
 SPAIN_METRICS = os.path.join(DATA_DIR, "spain_metrics.csv")
-JAPAN_DAY_METRICS = os.path.join(DATA_DIR, "japan_day_metrics.csv")
 JAPAN_EVOLUTION = os.path.join(DATA_DIR, "japan_evolution.csv")
 JAPAN_META = os.path.join(DATA_DIR, "japan_metadata.csv")
 

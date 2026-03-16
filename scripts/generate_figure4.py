@@ -47,10 +47,10 @@ def generate_figure4():
     
     # Configuration for each column
     configs = [
-        ('CETRAM (Chile)', CHILE_MSE, 'CHILE_METRICS', range(1, 6), '15m Rest'),
-        ('Cruces (Spain)', SPAIN_MSE, 'SPAIN_METRICS', range(1, 6), '15m Slice'),
-        ('Nagoya (Morning)', JAPAN_MORNING_MSE, 'JAPAN_EVO_MORNING', range(1, 21), '4h Block'),
-        ('Nagoya (Afternoon)', JAPAN_AFTERNOON_MSE, 'JAPAN_EVO_AFTERNOON', range(1, 21), '4h Block')
+        ('CETRAM', CHILE_MSE, 'CHILE_METRICS', range(1, 6), '15m Rest'),
+        ('Cruces', SPAIN_MSE, 'SPAIN_METRICS', range(1, 6), '15m Slice'),
+        ('Nagoya (07-11h)', JAPAN_MORNING_MSE, 'JAPAN_EVO_MORNING', range(1, 21), '4h Block'),
+        ('Nagoya (16-20h)', JAPAN_AFTERNOON_MSE, 'JAPAN_EVO_AFTERNOON', range(1, 21), '4h Block')
     ]
 
     # Pre-calculate Japan HR per window
@@ -65,11 +65,9 @@ def generate_figure4():
             return int(parts[0]) + int(parts[1])/60.0 + int(parts[2])/3600.0
         except: return np.nan
         
-    # Japan evolution data is already pre-aligned to clock time.
-    df_evo['Clock_T'] = df_evo['Time_h'] % 24
-    
-    hr_j_m = df_evo[(df_evo['Clock_T'] >= 7) & (df_evo['Clock_T'] < 11)].groupby('Subject')['HR'].mean().reset_index()
-    hr_j_a = df_evo[(df_evo['Clock_T'] >= 13) & (df_evo['Clock_T'] < 17)].groupby('Subject')['HR'].mean().reset_index()
+    # New evolution file uses Window_start_h (4h windows at 1h steps, proper nAUC)
+    hr_j_m = df_evo[df_evo['Window_start_h'] == 7][['Subject','HR']].copy()
+    hr_j_a = df_evo[df_evo['Window_start_h'] == 16][['Subject','HR']].copy()
 
     for col_idx, (name, mse_file, met_type, index_range, length_desc) in enumerate(configs):
         if not os.path.exists(mse_file):

@@ -1,302 +1,360 @@
 #!/usr/bin/env python3
 """
-Figure 8: Biomarker Discovery and Handcrafted vs DL Comparison
-A) Global Feature Importance (RF)
-B) Models Comparison (LogReg, RF, SVM) - LOCO AUC
-C) Handcrafted (best) vs DL (ResNet) Comparison
-D) Center-wise Performance Variability (LOCO AUC per site)
-E) ROC Curves (Best Handcrafted Model)
-F) Statistical Significance of Top Metric (Boxplot with p-values)
+Figure 8: Cardiac Complexity as an Autonomic Biomarker
+Merged composite of 8 panels (A–H).
 
-Updated Strategy:
-- Using Recalculated Japan Data (No Imputation)
-- Strict Z-Score Normalization per Center
+Panel A – Spearman ρ correlation heatmap (rcMSE-AUC vs HRV, per center × group)
+Panel B – Cross-dataset consistency forest plot
+Panel C – Scale physiology heatmap: CETRAM | Cruces | Nagoya (16–20h)   [regenerated]
+Panel D – McFadden R² variance decomposition
+Panel E – Annotated MSE curves
+Panel F – Age/sex confound correction lollipop                           [regenerated]
+Panel G – Autonomic synthesis (raw ρ | partial ρ | unique variance)      [regenerated]
+Panel H – Scale anatomy: Nagoya (16–20h) & CETRAM                        [regenerated]
+
+Panels A, B, D, E loaded from pre-computed PNGs.
+Panels C, F, G, H re-drawn inline for label consistency.
 """
 
 import os
-import pandas as pd
+import sys
 import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import matplotlib.gridspec as gridspec
 import seaborn as sns
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.model_selection import LeaveOneGroupOut
-from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score
-from scipy.stats import ttest_ind
+from scipy.stats import spearmanr
 
-# PATHS
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "data")
-FIGURES_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "figures")
-FIGURE8_DIR = os.path.join(FIGURES_DIR, "Figure8")
-os.makedirs(FIGURE8_DIR, exist_ok=True)
+BASE     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RESULTS  = os.path.join(BASE, 'results')
+FIG8_DIR = os.path.join(BASE, 'figures', 'Figure8')
+OUT_DIR  = FIG8_DIR
 
-def add_panel_label(ax, label):
-    ax.text(-0.1, 1.1, label, transform=ax.transAxes, fontsize=28, fontweight='bold', va='bottom', ha='right')
+# ── shared style helpers ───────────────────────────────────────────────────────
+groups_physio = {
+    'Vagal':          ['pNN50', 'RMSSD', 'SD1', 'HF_power', 'HF_norm'],
+    'Sympathovagal':  ['SDNN', 'SD2', 'Total_power'],
+    'Sym. balance':   ['LF_norm', 'LF_power', 'LF_HF'],
+    'Slow/circadian': ['VLF_power', 'SDANN'],
+    'Fractal':        ['DFA_alpha1', 'DFA_alpha2'],
+}
+group_colors = {
+    'Vagal':          '#3b82f6',
+    'Sympathovagal':  '#7c3aed',
+    'Sym. balance':   '#f59e0b',
+    'Slow/circadian': '#16a34a',
+    'Fractal':        '#7f4f2a',
+}
 
-def load_multicenter_data():
-    # --- CHILE ---
-    df_c_mse = pd.read_csv(os.path.join(DATA_DIR, "chile_mse.csv"))
-    df_c_met = pd.read_csv(os.path.join(DATA_DIR, "chile_metrics.csv"))
-    # Normalize Group names
-    df_c_mse['Group'] = df_c_mse['Group'].str.lower().replace({'pd':'PD','control':'Control','parkinson':'PD'})
-    df_c_met['Group'] = df_c_met['Group'].str.lower().replace({'pd':'PD','control':'Control','parkinson':'PD'})
-    
-    comp_c = df_c_mse[df_c_mse.Scales.isin(range(1,6))].groupby('Subject').MSE.mean().reset_index()
-    comp_c.rename(columns={'MSE':'MSE_val'}, inplace=True)
-    
-    # Calculate HR
-    if 'HRV_MeanNN' in df_c_met.columns:
-        hr_c = 60000.0 / df_c_met.set_index('Subject')['HRV_MeanNN']
-    else: 
-        # Fallback or assume column exist
-        hr_c = df_c_met.set_index('Subject')['HR'] 
-        
-    df_c = pd.merge(comp_c, df_c_met[['Subject','Group','HRV_SDNN','HRV_RMSSD','HRV_pNN50','HRV_DFA_alpha1']], on='Subject')
-    df_c['HR'] = df_c['Subject'].map(hr_c)
-    df_c['Complexity'] = df_c['MSE_val'] / df_c['HR']
-    df_c['Site'] = 'Chile'
+def _ordered_metrics(index):
+    out, spans = [], []
+    for grp, mets in groups_physio.items():
+        start = len(out)
+        for m in mets:
+            if m in index:
+                out.append(m)
+        end = len(out)
+        spans.append((start, end, (start + end - 1) / 2.0, grp))
+    return out, spans
 
-    # --- SPAIN ---
-    df_s_mse = pd.read_csv(os.path.join(DATA_DIR, "spain_mse.csv"))
-    df_s_met = pd.read_csv(os.path.join(DATA_DIR, "spain_metrics.csv"))
-    df_s_mse['Group'] = df_s_mse['Group'].str.lower().replace({'pd':'PD','control':'Control','parkinson':'PD','other':'Control'})
-    df_s_met['Group'] = df_s_met['Group'].str.lower().replace({'pd':'PD','control':'Control','parkinson':'PD','other':'Control'})
-    
-    comp_s = df_s_mse[df_s_mse.Scales.isin(range(1,6))].groupby('Subject').MSE.mean().reset_index()
-    comp_s.rename(columns={'MSE':'MSE_val'}, inplace=True)
-    
-    hr_s = 60000.0 / df_s_met.set_index('Subject')['HRV_MeanNN']
-    df_s = pd.merge(comp_s, df_s_met[['Subject','Group','HRV_SDNN','HRV_RMSSD','HRV_pNN50','HRV_DFA_alpha1']], on='Subject')
-    df_s['HR'] = df_s['Subject'].map(hr_s)
-    df_s['Complexity'] = df_s['MSE_val'] / df_s['HR']
-    df_s['Site'] = 'Spain'
+def add_panel_label(ax, label, fontsize=20):
+    ax.text(-0.06, 1.08, label, transform=ax.transAxes,
+            fontsize=fontsize, fontweight='bold', va='bottom', ha='right')
 
-    # --- JAPAN (Recalculated) ---
-    # Metrics
-    df_j_recalc = pd.read_csv(os.path.join(DATA_DIR, "japan_recalc_metrics.csv"))
-    df_j_recalc.rename(columns={'DFA_alpha1': 'HRV_DFA_alpha1'}, inplace=True)
-    df_j_recalc['HR'] = 60000.0 / df_j_recalc['HRV_MeanNN']
-    
-    # Complexity (Daytime MSE)
-    df_j_mse = pd.read_csv(os.path.join(DATA_DIR, "japan_day_mse.csv"))
-    comp_j = df_j_mse[df_j_mse.Scales.isin(range(1,6))].groupby('Subject').MSE.mean().reset_index()
-    comp_j.rename(columns={'MSE':'MSE_val'}, inplace=True)
-    
-    # Merge
-    # Recalc file has Group, but comp_j only Subject.
-    df_j = pd.merge(comp_j, df_j_recalc[['Subject', 'Group', 'HR', 'HRV_SDNN', 'HRV_RMSSD', 'HRV_pNN50', 'HRV_DFA_alpha1']], on='Subject')
-    
-    df_j['Complexity'] = df_j['MSE_val'] / df_j['HR']
-    df_j['Site'] = 'Japan'
-    df_j['Group'] = df_j['Group'].astype(str).str.lower().replace({'pd':'PD', 'control':'Control', 'parkinson':'PD'})
+def show_png(ax, path):
+    """Display a PNG in an axis, removing ticks."""
+    if os.path.exists(path):
+        img = mpimg.imread(path)
+        ax.imshow(img, aspect='auto', interpolation='lanczos')
+    else:
+        ax.text(0.5, 0.5, f'Missing:\n{os.path.basename(path)}',
+                ha='center', va='center', transform=ax.transAxes, color='red')
+    ax.axis('off')
 
-    # --- MERGE ALL ---
-    common_cols = ['Complexity', 'HRV_SDNN', 'HRV_RMSSD', 'HR', 'HRV_pNN50', 'HRV_DFA_alpha1']
-    
-    # Add Demographics (Age)
-    df_c_dem = pd.read_csv(os.path.join(DATA_DIR, "chile_demographics.csv")) 
-    # Chile uses Anon_ID
-    df_c = pd.merge(df_c, df_c_dem[['Anon_ID','Age']], left_on='Subject', right_on='Anon_ID', how='left')
-    
-    df_s_dem = pd.read_csv(os.path.join(DATA_DIR, "spain_demographics.csv"))
-    df_s = pd.merge(df_s, df_s_dem[['Subject','Age']], on='Subject', how='left')
-    
-    df_j_dem = pd.read_csv(os.path.join(DATA_DIR, "japan_metadata.csv"))
-    # Japan uses Subject_ID
-    df_j = pd.merge(df_j, df_j_dem[['Subject_ID','Age']], left_on='Subject', right_on='Subject_ID', how='left')
-    
-    all_df = pd.concat([df_c, df_s, df_j], ignore_index=True)
-    
-    # Dropna strictly on features
-    len_orig = len(all_df)
-    all_df = all_df.dropna(subset=common_cols + ['Group', 'Age'])
-    print(f"Loaded {len(all_df)} subjects (Dropped {len_orig - len(all_df)}).")
-    
-    all_df['Label'] = (all_df['Group'] == 'PD').astype(int)
-    
-    return all_df, common_cols + ['Age']
 
+# ── Panel C : Scale physiology heatmap (3 columns) ───────────────────────────
+def draw_panel_C(axes_row):
+    """axes_row: list of 3 Axes."""
+    sc = pd.read_csv(os.path.join(RESULTS, 'scale_metric_correlations.csv'))
+
+    hrv_order = ['RMSSD', 'pNN50', 'SD1', 'HF_power', 'HF_norm',
+                 'SDNN', 'SD2', 'Total_power',
+                 'LF_norm', 'LF_power', 'LF_HF',
+                 'VLF_power', 'SDANN',
+                 'DFA_alpha1', 'DFA_alpha2']
+    zone_fills = [(1, 5,  '#cce0ff', 'Vagal (1–5)'),
+                  (6, 15, '#ccf0e0', 'Baroreflex (6–15)'),
+                  (16, 20,'#fff3cc', 'Slow (16–20)')]
+
+    configs = [
+        ('Chile',          'CETRAM\n(15-min rest)', 5),
+        ('Spain',          'Cruces\n(15-min rest)', 5),
+        ('Japan-afternoon','Nagoya (16–20h)\n(4-hour block)', 20),
+    ]
+
+    for ax, (ds_key, title, max_rel) in zip(axes_row, configs):
+        sub = sc[sc['Dataset'] == ds_key]
+        scales  = sorted(sub['Scale'].unique())
+        metrics = [m for m in hrv_order if m in sub['Metric'].unique()]
+
+        mat = pd.DataFrame(np.nan, index=metrics, columns=scales)
+        for _, row in sub.iterrows():
+            if row['Metric'] in metrics and row['Scale'] in scales:
+                mat.loc[row['Metric'], row['Scale']] = row['rho']
+
+        # grey-out unreliable scales
+        reliable_mat = mat.copy()
+        unreliable_mat = mat.copy()
+        reliable_mat.iloc[:, [i for i, s in enumerate(scales) if s > max_rel]] = np.nan
+        unreliable_mat.iloc[:, [i for i, s in enumerate(scales) if s <= max_rel]] = np.nan
+
+        sns.heatmap(reliable_mat,   ax=ax, cmap='RdBu_r', center=0, vmin=-1, vmax=1,
+                    cbar=False, linewidths=0.3, linecolor='#dddddd',
+                    xticklabels=2, yticklabels=True)
+        if unreliable_mat.notna().any().any():
+            sns.heatmap(unreliable_mat, ax=ax, cmap='Greys', center=0, vmin=-1, vmax=1,
+                        cbar=False, linewidths=0.3, linecolor='#dddddd',
+                        xticklabels=2, yticklabels=False, alpha=0.35)
+
+        # zone bands at top
+        for lo, hi, fc, lbl in zone_fills:
+            if lo > max_rel: continue
+            hi_eff = min(hi, max_rel)
+            ax.axvspan(lo - 0.5, hi_eff + 0.5, ymin=0.97, ymax=1.0,
+                       facecolor=fc, alpha=0.85, transform=ax.get_xaxis_transform(),
+                       clip_on=False)
+            ax.text((lo + hi_eff) / 2, len(metrics) + 0.3, lbl,
+                    ha='center', va='bottom', fontsize=7, color='#444')
+
+        ax.set_title(title, fontsize=12, fontweight='bold', pad=18)
+        ax.set_xlabel('MSE Scale', fontsize=10)
+        ax.set_ylabel('')
+        ax.tick_params(axis='y', labelsize=8)
+        ax.tick_params(axis='x', labelsize=8)
+
+    # shared colorbar
+    sm = plt.cm.ScalarMappable(cmap='RdBu_r', norm=plt.Normalize(-1, 1))
+    sm.set_array([])
+    cbar = axes_row[-1].figure.colorbar(sm, ax=axes_row, shrink=0.85,
+                                         fraction=0.015, pad=0.02)
+    cbar.set_label('Spearman ρ', fontsize=9)
+
+
+# ── Panel F (old G) : Confound correction lollipop ────────────────────────────
+def draw_panel_F(ax):
+    adj    = pd.read_csv(os.path.join(RESULTS, 'age_sex_adjusted_correlations.csv'))
+    pooled = adj[adj['Dataset'] == 'Pooled'].set_index('Metric')
+    metrics, spans = _ordered_metrics(pooled.index)
+    n   = len(metrics)
+    ys  = np.arange(n)
+    raw = [pooled.loc[m, 'rho_unadj'] for m in metrics]
+    adj_r = [pooled.loc[m, 'rho_adj'] for m in metrics]
+
+    for i, (m, r, a) in enumerate(zip(metrics, raw, adj_r)):
+        grp = next(g for g, mets in groups_physio.items() if m in mets)
+        c   = group_colors[grp]
+        if not (pd.isna(r) or pd.isna(a)):
+            ax.plot([r, a], [i, i], color=c, linewidth=1.4, alpha=0.6, zorder=2)
+        if not pd.isna(r):
+            ax.plot(r, i, 'o', ms=9, mec=c, mfc='white', mew=2, zorder=3)
+        if not pd.isna(a):
+            ax.plot(a, i, 'o', ms=8, color=c, zorder=4)
+
+    for start, end, mid, grp in spans:
+        ax.text(0.72, mid, grp, transform=ax.get_yaxis_transform(),
+                color=group_colors[grp], fontsize=8, fontstyle='italic',
+                va='center', ha='left')
+        if start > 0:
+            ax.axhline(start - 0.5, color='#cccccc', lw=0.7, ls='--', zorder=1)
+
+    ax.axvline(0, color='#444', lw=1, ls='--', zorder=1)
+    ax.set_yticks(ys); ax.set_yticklabels(metrics, fontsize=9)
+    ax.set_xlabel('Spearman ρ  (rcMSE-AUC vs HRV,  Pooled n=152)', fontsize=9)
+    ax.set_title('Confound Correction\n(Age & Sex Adjustment)', fontsize=11, fontweight='bold')
+    h1 = plt.Line2D([0],[0], marker='o', color='gray', mfc='white', mew=2, ms=8, ls='')
+    h2 = plt.Line2D([0],[0], marker='o', color='gray', mfc='gray',  ms=8, ls='')
+    ax.legend([h1, h2], ['Raw ρ', 'Partial ρ (adj.)'],
+              loc='lower right', fontsize=8, framealpha=0.9)
+    ax.set_xlim(-0.55, 0.75); ax.invert_yaxis()
+    ax.grid(axis='x', alpha=0.3)
+
+
+# ── Panel G (old H) : Autonomic synthesis 3-panel ────────────────────────────
+def draw_panel_G(axes_3):
+    phys     = pd.read_csv(os.path.join(RESULTS, 'physiological_interpretation.csv')).set_index('metric')
+    metrics, spans = _ordered_metrics(phys.index)
+    n        = len(metrics)
+    ys       = np.arange(n)
+    raw_rho  = [phys.loc[m, 'rho_with_complexity_pooled'] for m in metrics]
+    part_rho = [phys.loc[m, 'partial_r_after_age_sex']    for m in metrics]
+    uvar     = [phys.loc[m, 'unique_variance_%']           for m in metrics]
+    bar_cols = [group_colors[next(g for g, mets in groups_physio.items() if m in mets)]
+                for m in metrics]
+
+    for ax, vals, xlabel, title in [
+        (axes_3[0], raw_rho,  'Raw Spearman ρ\n(pooled n=152)', 'Raw correlation'),
+        (axes_3[1], part_rho, 'Partial ρ\n(age + sex adj.)',    'Age/sex-adjusted'),
+    ]:
+        for i, (v, c) in enumerate(zip(vals, bar_cols)):
+            ax.barh(i, v, color=c, alpha=0.75, height=0.65)
+            ax.text(v + (0.015 if v >= 0 else -0.015), i, f'{v:+.2f}',
+                    va='center', ha='left' if v >= 0 else 'right', fontsize=7)
+        ax.axvline(0, color='black', lw=0.8)
+        ax.set_yticks(ys); ax.set_xlabel(xlabel, fontsize=8)
+        ax.set_xlim(-0.6, 0.7); ax.grid(axis='x', alpha=0.3)
+        ax.set_title(title, fontsize=9)
+
+    axes_3[0].set_yticklabels(metrics, fontsize=9)
+    axes_3[1].set_yticklabels([])
+
+    ax = axes_3[2]
+    for i, (u, c) in enumerate(zip(uvar, bar_cols)):
+        ax.plot([0, u], [i, i], color=c, lw=1.2, alpha=0.6)
+        ax.plot(u, i, 'o', color=c, ms=7, zorder=3)
+        ax.text(u + 0.2, i, f'{u:.1f}%', va='center', fontsize=7)
+    ax.set_yticks(ys); ax.set_yticklabels([])
+    ax.set_xlabel('Unique variance %\n(indep. of pNN50)', fontsize=8)
+    ax.set_xlim(-0.5, 16); ax.grid(axis='x', alpha=0.3)
+    ax.set_title('Unique information', fontsize=9)
+
+    for start, end, mid, grp in spans:
+        for a in axes_3:
+            if start > 0:
+                a.axhline(start - 0.5, color='#cccccc', lw=0.7, ls='--', zorder=1)
+        axes_3[2].text(15.5, mid, grp, color=group_colors[grp], fontsize=8,
+                       fontstyle='italic', va='center', ha='left')
+    for a in axes_3:
+        a.invert_yaxis(); a.set_ylim(n - 0.5, -0.5)
+
+
+# ── Panel H (old I) : Scale anatomy line plots ────────────────────────────────
+def draw_panel_H(axes_2):
+    sc = pd.read_csv(os.path.join(RESULTS, 'scale_metric_correlations.csv'))
+    key_metrics = ['pNN50', 'RMSSD', 'LF_norm', 'SDNN', 'DFA_alpha1']
+    labels = {'pNN50': 'pNN50 (vagal beat-to-beat)',
+              'RMSSD': 'RMSSD (vagal short-term)',
+              'LF_norm': 'LF norm (sympathovagal)',
+              'SDNN':  'SDNN (total HRV)',
+              'DFA_alpha1': 'DFA α₁ (short-range fractal)'}
+    colors = {'pNN50':'#e03030','RMSSD':'#e07030','LF_norm':'#208060',
+              'SDNN':'#303090','DFA_alpha1':'#606060'}
+    ls_map = {'pNN50':'-','RMSSD':'--','LF_norm':'-.','SDNN':':'
+              ,'DFA_alpha1':(0,(3,1,1,1))}
+    zone_fills = [(1, 5, '#cce0ff', 'Vagal (1–5)'),
+                  (6, 15,'#ccf0e0','Baroreflex (6–15)'),
+                  (16,20,'#fff3cc','Slow (16–20)')]
+
+    datasets = [('Japan-afternoon', 'Nagoya (16–20h)  n=38 — all scales reliable', None),
+                ('Chile',           'CETRAM  n=71 — reliable up to scale 5',       5)]
+
+    for ax, (ds, title, max_rel) in zip(axes_2, datasets):
+        sub = sc[sc['Dataset'] == ds]
+        for lo, hi, fc, _ in zone_fills:
+            ax.axvspan(lo - 0.5, hi + 0.5, facecolor=fc, alpha=0.35, zorder=0)
+        if max_rel is not None:
+            ax.axvspan(max_rel + 0.5, 20.5, facecolor='#dddddd', alpha=0.5,
+                       zorder=0, label='Unreliable (short recording)')
+        for m in key_metrics:
+            d   = sub[sub['Metric'] == m].sort_values('Scale')
+            if d.empty: continue
+            sig = d['q_BH'].apply(
+                lambda x: (str(x) != 'nan' and float(x) < 0.05) if pd.notna(x) else False)
+            ax.plot(d['Scale'], d['rho'], color=colors[m], linestyle=ls_map[m],
+                    lw=1.8, label=labels[m], zorder=3)
+            if sig.any():
+                ax.scatter(d.loc[sig,'Scale'], d.loc[sig,'rho'],
+                           marker='D', s=35, color=colors[m], zorder=4)
+        ax.axhline(0, color='black', lw=0.8)
+        ax.set_xlim(0.5, 20.5); ax.set_xticks(range(1, 21, 2))
+        ax.set_xlabel('MSE Scale (timescale)', fontsize=10)
+        ax.set_title(title, fontsize=9)
+        ax.grid(alpha=0.25)
+        for lo, hi, _, lbl in zone_fills:
+            if ds == 'Chile' and lo > 5: continue
+            ax.text((lo + hi) / 2, 0.88, lbl, transform=ax.get_xaxis_transform(),
+                    ha='center', fontsize=7.5, color='#555')
+
+    axes_2[0].set_ylabel('Spearman ρ\n(entropy at scale vs HRV)', fontsize=10)
+    axes_2[0].set_ylim(-1.0, 1.0)
+    axes_2[0].text(1.5, 0.85, '◆ Significant (FDR q<0.05)', fontsize=8, color='#555')
+    handles, lbls = axes_2[0].get_legend_handles_labels()
+    axes_2[1].legend(handles, lbls, loc='upper right', fontsize=8, framealpha=0.9)
+
+
+# ── Compose ───────────────────────────────────────────────────────────────────
 def generate_figure8():
-    sns.set_style("ticks")
-    fig = plt.figure(figsize=(26, 24))
-    gs = fig.add_gridspec(3, 2, hspace=0.4, wspace=0.3)
-    
-    df, features = load_multicenter_data()
-    print("Features Used:", features)
-    
-    # Z-score normalization per site
-    df_norm = df.copy()
-    for site in df['Site'].unique():
-        mask = df['Site'] == site
-        df_norm.loc[mask, features] = StandardScaler().fit_transform(df.loc[mask, features])
-        
-    X = df_norm[features]
-    y = df_norm['Label']
-    groups = df_norm['Site']
-    
-    # --- PANEL A: FEATURE IMPORTANCE (RF) ---
-    ax_a = fig.add_subplot(gs[0, 0])
-    add_panel_label(ax_a, 'A')
-    
-    rf = RandomForestClassifier(n_estimators=100, random_state=42)
-    rf.fit(X, y)
-    importances = pd.Series(rf.feature_importances_, index=features).sort_values(ascending=False)
-    
-    sns.barplot(x=importances.values, y=importances.index, palette='magma', ax=ax_a)
-    ax_a.set_title("Global Feature Importance (RF)", fontsize=22, fontweight='bold')
-    ax_a.set_xlabel("Mean Decrease Gini")
+    fig = plt.figure(figsize=(26, 36))
+    sns.set_style('ticks')
 
-    # --- PANEL B: MODEL COMPARISON (LOCO AUC) ---
-    ax_b = fig.add_subplot(gs[0, 1])
-    add_panel_label(ax_b, 'B')
-    
-    models = {
-        'LogReg': LogisticRegression(max_iter=2000, class_weight='balanced'),
-        'RF': RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42),
-        'SVM': SVC(probability=True, class_weight='balanced', random_state=42)
-    }
-    
-    res_b = []
-    logo = LeaveOneGroupOut()
-    
-    site_aucs_all = [] # For analysis
-    
-    for name, clf in models.items():
-        aucs = []
-        for train, test in logo.split(X, y, groups):
-            clf.fit(X.iloc[train], y.iloc[train])
-            probs = clf.predict_proba(X.iloc[test])[:, 1]
-            auc = roc_auc_score(y.iloc[test], probs)
-            aucs.append(auc)
-            site_name = groups.iloc[test].unique()[0]
-            site_aucs_all.append({'Model': name, 'Site': site_name, 'AUC': auc})
-            
-        res_b.append({'Model': name, 'Mean LOCO AUC': np.mean(aucs), 'Std': np.std(aucs)})
-        
-    df_res_b = pd.DataFrame(res_b)
-    sns.barplot(data=df_res_b, x='Model', y='Mean LOCO AUC', palette='viridis', ax=ax_b)
-    ax_b.set_ylim(0.5, 1.0)
-    ax_b.set_title("Handcrafted Biomarker Models (LOCO AUC)", fontsize=22, fontweight='bold')
-    for p in ax_b.patches:
-        ax_b.annotate(f"{p.get_height():.2f}", (p.get_x() + p.get_width()/2., p.get_height()), 
-                     ha='center', va='bottom', fontsize=16, fontweight='bold')
+    # GridSpec: 4 rows, 3 cols
+    # Row 0: A (1 col) + B (2 cols)
+    # Row 1: C (3 cols, 3 sub-axes)
+    # Row 2: D (1 col) + E (1 col) + F (1 col)
+    # Row 3: G (2 cols, 3 sub-axes) + H (1 col, wait 2 sub-axes)
+    # We need the last row to accommodate G (3 sub-panels) + H (2 sub-panels).
+    # Use a nested gridspec for rows 3.
 
-    best_hc_model_name = df_res_b.loc[df_res_b['Mean LOCO AUC'].idxmax(), 'Model']
-    best_hc_auc = df_res_b['Mean LOCO AUC'].max()
+    outer = gridspec.GridSpec(5, 3, figure=fig,
+                              hspace=0.52, wspace=0.32,
+                              height_ratios=[4, 3.5, 3.5, 3.5, 4])
 
-    # --- PANEL C: HANDCRAFTED vs DL ---
-    ax_c = fig.add_subplot(gs[1, 0])
-    add_panel_label(ax_c, 'C')
-    
-    # Placeholder DL AUC from Figure 7 (Using conservative estimate or finding actual)
-    # Fig 7 usually shows ~0.65-0.70.
-    # Let's use 0.63 as a conservative DL benchmark from previous context.
-    dl_auc = 0.63 
-    
-    comp_data = pd.DataFrame({
-        'Approach': ['Handcrafted (Best)', 'Deep Learning (RRi)'],
-        'Mean LOCO AUC': [best_hc_auc, dl_auc]
-    })
-    
-    sns.barplot(data=comp_data, x='Approach', y='Mean LOCO AUC', palette=['#2E86AB', '#D62828'], ax=ax_c)
-    ax_c.set_ylim(0.5, 1.0)
-    ax_c.set_title("Comparison: Handcrafted vs End-to-End DL", fontsize=22, fontweight='bold')
-    for p in ax_c.patches:
-        ax_c.annotate(f"{p.get_height():.2f}", (p.get_x() + p.get_width()/2., p.get_height()), 
-                     ha='center', va='bottom', fontsize=16, fontweight='bold')
+    # Row 0: A (col 0) | B (cols 1-2)
+    ax_A = fig.add_subplot(outer[0, 0])
+    ax_B = fig.add_subplot(outer[0, 1:])
+    show_png(ax_A, os.path.join(FIG8_DIR, 'Fig8_A_correlation_heatmap.png'))
+    show_png(ax_B, os.path.join(FIG8_DIR, 'Fig8_B_cross_dataset_consistency.png'))
+    add_panel_label(ax_A, 'A')
+    add_panel_label(ax_B, 'B')
 
-    # --- PANEL D: CENTER-WISE VARIABILITY (Variability of Best Handcrafted) ---
-    ax_d = fig.add_subplot(gs[1, 1])
-    add_panel_label(ax_d, 'D')
-    
-    best_clf = models[best_hc_model_name]
-    site_aucs = []
-    
-    # Store site-specific fit for ROC usage
-    site_fpr_tpr = {}
-    
-    for train, test in logo.split(X, y, groups):
-        site = groups.iloc[test].unique()[0]
-        # Re-fit is safer
-        best_clf.fit(X.iloc[train], y.iloc[train])
-        probs = best_clf.predict_proba(X.iloc[test])[:, 1]
-        auc = roc_auc_score(y.iloc[test], probs)
-        site_aucs.append({'Site': site, 'AUC': auc})
-        fpr, tpr, _ = roc_curve(y.iloc[test], probs)
-        site_fpr_tpr[site] = (fpr, tpr, auc)
-        
-    df_site_aucs = pd.DataFrame(site_aucs)
-    sns.barplot(data=df_site_aucs, x='Site', y='AUC', palette='magma', ax=ax_d)
-    ax_d.set_ylim(0, 1.0)
-    ax_d.axhline(0.5, ls='--', color='gray')
-    ax_d.set_title(f"Generalization by Center ({best_hc_model_name})", fontsize=22, fontweight='bold')
-    for p in ax_d.patches:
-        ax_d.annotate(f"{p.get_height():.2f}", (p.get_x() + p.get_width()/2., p.get_height()), 
-                     ha='center', va='bottom', fontsize=16, fontweight='bold')
+    # Row 1: C — 3 sub-axes side by side
+    c_axes = [fig.add_subplot(outer[1, j]) for j in range(3)]
+    draw_panel_C(c_axes)
+    add_panel_label(c_axes[0], 'C')
 
-    # --- PANEL E: ROC CURVES (Best Handcrafted Model) ---
-    ax_e = fig.add_subplot(gs[2, 0])
-    add_panel_label(ax_e, 'E')
-    
-    colors = sns.color_palette('bright', 3)
-    for i, site in enumerate(sorted(site_fpr_tpr.keys())):
-        fpr, tpr, auc = site_fpr_tpr[site]
-        ax_e.plot(fpr, tpr, label=f"{site} (AUC={auc:.2f})", lw=3, color=colors[i])
-        
-    ax_e.plot([0, 1], [0, 1], 'k--', alpha=0.5)
-    ax_e.set_xlabel("False Positive Rate")
-    ax_e.set_ylabel("True Positive Rate")
-    ax_e.legend(loc='lower right')
-    ax_e.set_title(f"ROC Curves ({best_hc_model_name})", fontsize=22, fontweight='bold')
+    # Row 2: D | E | F(=lollipop)
+    ax_D = fig.add_subplot(outer[2, 0])
+    ax_E = fig.add_subplot(outer[2, 1])
+    ax_F = fig.add_subplot(outer[2, 2])
+    show_png(ax_D, os.path.join(FIG8_DIR, 'Fig8_D_variance_decomposition.png'))
+    show_png(ax_E, os.path.join(FIG8_DIR, 'Fig8_E_mse_curves_annotated.png'))
+    draw_panel_F(ax_F)
+    add_panel_label(ax_D, 'D')
+    add_panel_label(ax_E, 'E')
+    add_panel_label(ax_F, 'F')
 
-    # --- PANEL F: STATISTICAL SIGNIFICANCE (Best Metric) ---
-    ax_f = fig.add_subplot(gs[2, 1])
-    add_panel_label(ax_f, 'F')
-    
-    # For boxplot, use NORMALIZED data (Z-score) to show alignment?
-    # Or Raw?
-    # Usually visualized Raw is more intuitive, but since we normalize, showing Normalized confirms harmonization.
-    # Let's show Normalized Z-Scores.
-    top_feat = importances.index[0]
-    
-    plot_df = df_norm.copy()
-    plot_df['Group'] = plot_df['Group'].str.lower().replace({'control':'Control', 'pd':'PD'})
-    
-    sns.boxplot(data=plot_df, x='Site', y=top_feat, hue='Group', 
-                palette={'Control': '#2E86AB', 'PD': '#D62828'},
-                hue_order=['Control', 'PD'],
-                ax=ax_f)
-    
-    for i, site in enumerate(plot_df['Site'].unique()):
-        sub = plot_df[plot_df['Site'] == site]
-        c = sub[sub['Group'] == 'Control'][top_feat].dropna()
-        p = sub[sub['Group'] == 'PD'][top_feat].dropna()
-        if len(c) > 1 and len(p) > 1:
-            t, p_val = ttest_ind(c, p)
-            sig = "***" if p_val < 0.001 else "**" if p_val < 0.01 else "*" if p_val < 0.05 else "n.s."
-            y_curr = sub[top_feat].max()
-            ax_f.text(i, y_curr + 0.2, f"{sig}\n(p={p_val:.3f})", ha='center', fontsize=12, fontweight='bold')
-            
-    ax_f.set_title(f"Best Global Biomarker: {top_feat} (Z-Score)", fontsize=22, fontweight='bold')
-    ax_f.legend(title='Group')
-    ax_f.set_ylabel(f"{top_feat} (Standardized)")
+    # Row 3: G (old H, 3 sub-panels, spans cols 0-1)
+    g_inner = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=outer[3, :2],
+                                               wspace=0.05)
+    g_axes = [fig.add_subplot(g_inner[0, j]) for j in range(3)]
+    draw_panel_G(g_axes)
+    add_panel_label(g_axes[0], 'G')
 
-    # --- ACLARATORY NOTE ---
-    plt.figtext(0.5, 0.02, 
-                "* Note: Features were Z-score normalized per center to correct for protocol differences (15-min Clinical vs 24-h Ambulatory).", 
-                ha='center', fontsize=20, fontstyle='italic', 
-                bbox=dict(facecolor='#f0f0f0', edgecolor='gray', boxstyle='round,pad=0.5'))
+    # Row 3 col 2: partial of H — just left sub-panel (Japan)
+    # Actually H has 2 sub-panels; put both in row 4
+    ax_stub = fig.add_subplot(outer[3, 2])
+    ax_stub.axis('off')
 
-    plt.suptitle("Figure 8: Biomarker Utility & Clinical Validation", fontsize=34, fontweight='bold', y=0.98)
-    plt.tight_layout(rect=[0, 0.05, 1, 0.95]) # Make space for footer
-    
-    out_path = os.path.join(FIGURE8_DIR, "Figure8.png")
-    plt.savefig(out_path, dpi=300, bbox_inches='tight')
+    # Row 4: H (old I, 2 sub-panels, full width)
+    h_inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[4, :],
+                                               wspace=0.08)
+    h_axes = [fig.add_subplot(h_inner[0, j]) for j in range(2)]
+    draw_panel_H(h_axes)
+    add_panel_label(h_axes[0], 'H')
+
+    plt.suptitle(
+        'Figure 8: Cardiac Complexity as a Novel Autonomic Biomarker\n'
+        'Pooled cohort: CETRAM + Cruces + Nagoya  ·  rcMSE nAUC(1–20) / HR',
+        fontsize=20, fontweight='bold', y=0.995)
+
+    os.makedirs(OUT_DIR, exist_ok=True)
+    out_path = os.path.join(OUT_DIR, 'Figure8.png')
+    plt.savefig(out_path, dpi=200, bbox_inches='tight')
     plt.savefig(out_path.replace('.png', '.svg'), format='svg', bbox_inches='tight')
-    print(f"Figure 8 updated with 6 panels to {out_path}")
+    print(f"Figure 8 (merged) saved to {out_path}")
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     generate_figure8()

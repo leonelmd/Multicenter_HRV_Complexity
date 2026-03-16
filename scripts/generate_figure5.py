@@ -24,8 +24,9 @@ def add_panel_label(ax, label):
 
 def get_auc(df, metric, group_col='Group', pos_label='PD'):
     try:
-        y_true = (df[group_col].str.lower() == pos_label.lower()).astype(int)
-        y_score = df[metric]
+        sub = df[[group_col, metric]].dropna()
+        y_true = (sub[group_col].str.lower() == pos_label.lower()).astype(int)
+        y_score = sub[metric]
         auc = roc_auc_score(y_true, y_score)
         if auc < 0.5: auc = 1 - auc
         return auc
@@ -51,7 +52,7 @@ def generate_figure5():
     df_c['HR'] = df_c['Subject'].map(hr_c)
     df_c['Complexity Index (HR-Norm)'] = df_c['MSE'] / df_c['HR']
     df_c['Sample Entropy (S1)'] = df_c['Subject'].map(df_c_mse[df_c_mse.Scales==1].set_index('Subject')['MSE'].to_dict())
-    datasets['Chile'] = df_c
+    datasets['CETRAM'] = df_c
 
     # --- SPAIN ---
     df_s_mse = pd.read_csv(os.path.join(DATA_DIR, "spain_mse.csv"))
@@ -64,45 +65,43 @@ def generate_figure5():
     df_s['HR'] = df_s['Subject'].map(hr_s)
     df_s['Complexity Index (HR-Norm)'] = df_s['MSE'] / df_s['HR']
     df_s['Sample Entropy (S1)'] = df_s['Subject'].map(df_s_mse[df_s_mse.Scales==1].groupby('Subject').MSE.mean().to_dict())
-    datasets['Spain'] = df_s
+    datasets['Cruces'] = df_s
 
     # --- JAPAN ---
     df_j_evo = pd.read_csv(os.path.join(DATA_DIR, "japan_evolution.csv"))
     df_j_meta = pd.read_csv(os.path.join(DATA_DIR, "japan_metadata.csv"))
     if 'Subject_ID' in df_j_meta.columns: df_j_meta = df_j_meta.rename(columns={'Subject_ID': 'Subject'})
-    def parse_t(s): 
-        try: parts = str(s).split(':'); return int(parts[0]) + int(parts[1])/60.0 + int(parts[2])/3600.0
-        except: return np.nan
-    # Japan evolution data is already pre-aligned to clock time.
-    df_j_evo['Clock_T'] = df_j_evo['Time_h'] % 24
-
-    for win_name, (start_h, end_h), mse_file in [
-        ('Nagoya (7-11 AM)', (7, 11), 'japan_morning_mse.csv'),
-        ('Nagoya (1-5 PM)', (13, 17), 'japan_afternoon_mse.csv')
+    # DFA_alpha1 from full 24h recording (per-subject, window-independent)
+    df_j_recalc = pd.read_csv(os.path.join(DATA_DIR, "japan_recalc_metrics.csv"))[['Subject','DFA_alpha1']]
+    # New evolution file uses Window_start_h (4h windows, proper nAUC)
+    for win_name, win_h, mse_file in [
+        ('Nagoya (07-11h)', 7,  'japan_morning_mse.csv'),
+        ('Nagoya (16-20h)', 16, 'japan_afternoon_mse.csv')
     ]:
         df_j_mse = pd.read_csv(os.path.join(DATA_DIR, mse_file))
-        mask = (df_j_evo['Clock_T'] >= start_h) & (df_j_evo['Clock_T'] < end_h)
-        df_j_met = df_j_evo[mask].groupby(['Subject','Group'])[['HR','SDNN','RMSSD','Alpha1']].mean().reset_index()
-        df_j_met['Group'] = df_j_met['Group'].str.lower().replace({'pd':'PD','control':'Control'})
+        df_j_met = df_j_evo[df_j_evo['Window_start_h'] == win_h][['Subject','Group','HR','SDNN','RMSSD']].copy()
         comp_j = df_j_mse[df_j_mse.Scales.isin(range(1,21))].groupby('Subject').MSE.mean().reset_index()
         df_j = pd.merge(comp_j, df_j_met, on='Subject')
+        df_j = pd.merge(df_j, df_j_recalc, on='Subject', how='left')
         df_j['Complexity Index (HR-Norm)'] = df_j['MSE'] / df_j['HR']
         df_j['Sample Entropy (S1)'] = df_j['Subject'].map(df_j_mse[df_j_mse.Scales==1].set_index('Subject')['MSE'].to_dict())
-        df_j = df_j.rename(columns={'SDNN':'HRV_SDNN', 'RMSSD':'HRV_RMSSD', 'Alpha1':'HRV_DFA_alpha1'})
+        df_j = df_j.rename(columns={'SDNN':'HRV_SDNN', 'RMSSD':'HRV_RMSSD', 'DFA_alpha1':'HRV_DFA_alpha1'})
         datasets[win_name] = df_j
 
     # 2. AUC BAR CHARTS (4 Panels)
     metrics_to_compare = ['Complexity Index (HR-Norm)', 'HRV_DFA_alpha1', 'Sample Entropy (S1)', 'HRV_SDNN', 'HRV_RMSSD']
     metric_labels = ['Complexity (HR-Norm)', 'DFA Alpha 1', 'SampEn (S1)', 'SDNN', 'RMSSD']
-    panel_order = ['Chile', 'Spain', 'Nagoya (7-11 AM)', 'Nagoya (1-5 PM)']
+    panel_order = ['CETRAM', 'Cruces', 'Nagoya (07-11h)', 'Nagoya (16-20h)']
     
     for i, ds_key in enumerate(panel_order):
         ax = fig.add_subplot(gs[0 if i < 3 else 1, i % 3])
         add_panel_label(ax, chr(65 + i))
         aucs = [get_auc(datasets[ds_key], m) for m in metrics_to_compare]
-        sorted_idx = np.argsort(aucs)[::-1]
-        sorted_aucs = [aucs[idx] for idx in sorted_idx]
-        sorted_labels = [metric_labels[idx] for idx in sorted_idx]
+        # Filter out NaN (metric not available for this dataset)
+        valid = [(a, metric_labels[j]) for j, a in enumerate(aucs) if not np.isnan(a)]
+        valid.sort(key=lambda x: x[0], reverse=True)
+        sorted_aucs = [v[0] for v in valid]
+        sorted_labels = [v[1] for v in valid]
         
         # Color Logic: Complexity=Purple, Nonlinear=Blue, Linear=Green
         variable_colors = {
@@ -148,11 +147,11 @@ def generate_figure5():
     # 4. CORRELATION HEATMAP (Panel F)
     ax_corr = fig.add_subplot(gs[1, 2])
     add_panel_label(ax_corr, 'F')
-    corr_df = datasets['Spain'][metrics_to_compare]
+    corr_df = datasets['Cruces'][metrics_to_compare]
     corr_df.columns = metric_labels
     corr_matrix = corr_df.corr(method='spearman')
     sns.heatmap(corr_matrix, annot=True, cmap='RdBu_r', center=0, ax=ax_corr, fmt='.2f')
-    ax_corr.set_title("Feature Orthogonality (Spain)", fontsize=18, fontweight='bold')
+    ax_corr.set_title("Feature Orthogonality (Cruces)", fontsize=18, fontweight='bold')
 
     plt.suptitle("Figure 5: Multi-center Diagnostic Performance and Biomarker Independence", fontsize=28, fontweight='bold', y=0.98)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
