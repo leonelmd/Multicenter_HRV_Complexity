@@ -238,7 +238,7 @@ def draw_panel_H(axes_2):
               'RMSSD': 'RMSSD (vagal short-term)',
               'LF_norm': 'LF norm (sympathovagal)',
               'SDNN':  'SDNN (total HRV)',
-              'DFA_alpha1': 'DFA α₁ (short-range fractal)'}
+              'DFA_alpha1': 'DFA alpha1 (short-range fractal)'}
     colors = {'pNN50':'#e03030','RMSSD':'#e07030','LF_norm':'#208060',
               'SDNN':'#303090','DFA_alpha1':'#606060'}
     ls_map = {'pNN50':'-','RMSSD':'--','LF_norm':'-.','SDNN':':'
@@ -279,7 +279,7 @@ def draw_panel_H(axes_2):
 
     axes_2[0].set_ylabel('Spearman ρ\n(entropy at scale vs HRV)', fontsize=10)
     axes_2[0].set_ylim(-1.0, 1.0)
-    axes_2[0].text(1.5, 0.85, '◆ Significant (FDR q<0.05)', fontsize=8, color='#555')
+    axes_2[0].text(1.5, 0.85, '* Significant (FDR q<0.05)', fontsize=8, color='#555')
     handles, lbls = axes_2[0].get_legend_handles_labels()
     axes_2[1].legend(handles, lbls, loc='upper right', fontsize=8, framealpha=0.9)
 

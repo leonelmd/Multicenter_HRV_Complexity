@@ -15,8 +15,8 @@ interpretable; scales 6–20 are computed but must be interpreted cautiously.
 For Nagoya 24h recordings: all 20 scales are meaningful.
 
 Analyses:
-  1. Scale-metric correlation heatmap → figures/Figure8/Fig8_A_correlation_heatmap.png (via complexity_correlation_analysis.py)
-                                      → figures/Figure8/scale_metric_correlations.csv
+  1. Scale-metric correlations → figures/Figure8/scale_metric_correlations.csv
+     (Heatmap is generated inline in generate_figure8.py Panel C)
   2. Annotated MSE curves (PD vs HC with Mann-Whitney per scale)
                                       → figures/Figure8/Fig8_E_mse_curves_annotated.png
 """
@@ -225,96 +225,6 @@ def scale_metric_correlations(data: dict) -> pd.DataFrame:
     return out
 
 
-def make_heatmap(corr_df: pd.DataFrame, mean_ibi: pd.Series):
-    """
-    One heatmap panel per dataset. Rows = metrics, columns = scales.
-    Secondary x-axis = approximate time resolution (s). Zone bands.
-    """
-    datasets = [
-        ("Chile",           mean_ibi.get("Chile", 837), True,  "CETRAM  ·  ECG ~15 min"),
-        ("Spain",           mean_ibi.get("Spain", 894), True,  "Cruces  ·  PPG 5–15 min"),
-        ("Japan-morning",   mean_ibi.get("Japan", 803), False, "Nagoya 07–11h  ·  ECG 4 h"),
-        ("Japan-afternoon", mean_ibi.get("Japan", 803), False, "Nagoya 16–20h  ·  ECG 4 h"),
-    ]
-    n_panels = len(datasets)
-    fig, axes = plt.subplots(1, n_panels, figsize=(22, 8),
-                             gridspec_kw={"wspace": 0.4})
-
-    # Shared colour scale
-    vmax = 0.7
-
-    for ax, (ds_name, ibi_ms, short, subtitle) in zip(axes, datasets):
-        sub = corr_df[corr_df["Dataset"] == ds_name]
-        if sub.empty:
-            ax.set_visible(False)
-            continue
-
-        # Build rho / annotation matrices
-        rho_mat = np.full((len(HEATMAP_METRICS), 20), np.nan)
-        ann_mat = [[""] * 20 for _ in HEATMAP_METRICS]
-        for _, row in sub.iterrows():
-            r = HEATMAP_METRICS.index(row["Metric"]) if row["Metric"] in HEATMAP_METRICS else None
-            c = int(row["Scale"]) - 1
-            if r is None:
-                continue
-            if not np.isnan(row["rho"]):
-                rho_mat[r, c] = row["rho"]
-                ann_mat[r][c] = row["sig"]
-
-        ylabels = [METRIC_LABELS.get(m, m) for m in HEATMAP_METRICS]
-        xlabels = [str(s) for s in range(1, 21)]
-
-        sns.heatmap(
-            rho_mat, ax=ax,
-            cmap="RdBu_r", center=0, vmin=-vmax, vmax=vmax,
-            linewidths=0.3, linecolor="#e0e0e0",
-            annot=np.array(ann_mat), fmt="s",
-            annot_kws={"size": 7, "weight": "bold"},
-            cbar_kws={"label": "Spearman ρ", "shrink": 0.7},
-            xticklabels=xlabels, yticklabels=ylabels,
-        )
-
-        # Zone bands (axvspan on heatmap — columns 0-based)
-        for _, style in ZONE_STYLE.items():
-            lo, hi = style["scales"]
-            ax.axvspan(lo - 1, hi, alpha=0.12, color=style["color"], zorder=0)
-            if short and lo >= SLOW_ZONE[0]:
-                ax.axvspan(lo - 1, hi, alpha=0.28, color="#bdbdbd", zorder=1,
-                           hatch="//", fill=False)
-
-        # Secondary x-axis: time resolution in seconds
-        ax2 = ax.twiny()
-        ax2.set_xlim(ax.get_xlim())
-        tick_scales = [1, 5, 10, 15, 20]
-        ax2.set_xticks([s - 0.5 for s in tick_scales])
-        ax2.set_xticklabels([f"{s * ibi_ms / 1000:.1f}s" for s in tick_scales], fontsize=7)
-        ax2.set_xlabel("Approx. time resolution", fontsize=8, labelpad=4)
-
-        ax.set_title(f"{ds_name}\n{subtitle}", fontsize=9, fontweight="bold", pad=24)
-        ax.set_xlabel("Scale", fontsize=8)
-        ax.tick_params(axis="x", labelsize=7)
-        ax.tick_params(axis="y", labelsize=7.5)
-
-    # Zone legend
-    handles = [
-        mpatches.Patch(color=s["color"], alpha=0.6, label=name.replace("\n", " "))
-        for name, s in ZONE_STYLE.items()
-    ] + [mpatches.Patch(color="#bdbdbd", alpha=0.5, hatch="//",
-                        label="Unreliable (short recording)")]
-    fig.legend(handles=handles, loc="lower center", ncol=4, fontsize=8,
-               bbox_to_anchor=(0.5, -0.04))
-
-    fig.suptitle(
-        "Spearman ρ: Entropy at Each MSE Scale vs Traditional HRV Metrics\n"
-        "(* q<0.05  ** q<0.01  *** q<0.001, BH-FDR across all scale×metric pairs)",
-        fontsize=11, y=1.01,
-    )
-
-    out = FIGURES / "Figure8" / "scale_physiology_heatmap_4panel.png"
-    out.parent.mkdir(exist_ok=True)
-    fig.savefig(out, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Scale heatmap (4-panel reference) → {out}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -483,14 +393,13 @@ def make_mse_curves(data: dict):
 
 if __name__ == "__main__":
     print("Loading data...")
-    data, hrv, mean_ibi = load_all_data()
+    data, hrv, _ = load_all_data()
     for ds, df in data.items():
         n_subj = df["Subject"].nunique()
         print(f"  {ds}: {n_subj} subjects × {df['Scale'].nunique()} scales")
 
     print("\n=== Analysis 1: Scale-metric correlation heatmap ===")
     corr_df = scale_metric_correlations(data)
-    make_heatmap(corr_df, mean_ibi)
 
     # Print top 5 (scale, metric) correlations per dataset
     print("\n=== Top scale-metric correlations (|ρ| > 0.4, q<0.05) ===")

@@ -112,8 +112,9 @@ def generate_figure5():
             'RMSSD': '#58D68D'                 # Light Green
         }
         colors = [variable_colors.get(l, '#95A5A6') for l in sorted_labels]
-        
-        sns.barplot(x=sorted_aucs, y=sorted_labels, palette=colors, ax=ax)
+        color_map = dict(zip(sorted_labels, colors))
+        sns.barplot(x=sorted_aucs, y=sorted_labels, hue=sorted_labels,
+                    palette=color_map, legend=False, ax=ax)
         
         # Emphasize "Complexity" label
         for label in ax.get_yticklabels():
@@ -154,7 +155,7 @@ def generate_figure5():
     ax_corr.set_title("Feature Orthogonality (Cruces)", fontsize=18, fontweight='bold')
 
     plt.suptitle("Figure 5: Multi-center Diagnostic Performance and Biomarker Independence", fontsize=28, fontweight='bold', y=0.98)
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.subplots_adjust(top=0.93, bottom=0.07, left=0.08, right=0.97, hspace=0.4, wspace=0.3)
     
     out_path = os.path.join(FIGURES_DIR, "Figure5", "Figure5.png")
     plt.savefig(out_path, dpi=300, bbox_inches='tight')

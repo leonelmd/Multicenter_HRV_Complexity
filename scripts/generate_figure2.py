@@ -8,12 +8,15 @@ Bottom Row: Poincaré plot examples
 """
 
 import os
+import warnings
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.patches import Ellipse
 from scipy.stats import ttest_ind
+
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='Mean of empty slice')
 
 # PORTABLE PATH RESOLUTION
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -222,7 +225,7 @@ def generate_figure2():
         add_panel_label(ax2, chr(68 + col_idx))
         
         if 'HR' in df_metrics.columns and df_metrics['HR'].notna().sum() > 0:
-            sns.violinplot(x='Group', y='HR', data=df_metrics, palette=colors,
+            sns.violinplot(x='Group', y='HR', data=df_metrics, palette=colors, hue='Group', legend=False,
                           order=['Control', 'PD'], inner='points', ax=ax2)
             
             c_v = df_metrics[df_metrics['Group'] == 'Control']['HR'].dropna()
@@ -268,7 +271,7 @@ def generate_figure2():
         except: pass
 
         if age_col in df_metrics.columns and df_metrics[age_col].notna().sum() > 0:
-            sns.violinplot(x='Group', y=age_col, data=df_metrics, palette=colors,
+            sns.violinplot(x='Group', y=age_col, data=df_metrics, palette=colors, hue='Group', legend=False,
                           order=['Control', 'PD'], inner='points', ax=ax3)
             
             c_v = df_metrics[df_metrics['Group'] == 'Control'][age_col].dropna()
@@ -332,7 +335,7 @@ def generate_figure2():
         sns.despine(ax=ax4)
     
     plt.suptitle('Figure 2: Multi-Center Signal Archetypes & Demographics', fontsize=26, fontweight='bold', y=0.99)
-    plt.tight_layout(rect=[0, 0, 1, 0.98])
+    fig.subplots_adjust(top=0.93, bottom=0.07, left=0.08, right=0.97, hspace=0.4, wspace=0.3)
     
     out_dir = os.path.join(FIGURES_DIR, "Figure2")
     os.makedirs(out_dir, exist_ok=True)

@@ -1,6 +1,6 @@
 """
-Cross-Dataset Consistency Check & Final Summary Report
-======================================================
+Cross-Dataset Consistency Check
+================================
 Synthesises all prior analyses into:
 
   1. Cross-dataset forest plot (6 key metric pairs × 4 datasets)
@@ -8,9 +8,6 @@ Synthesises all prior analyses into:
 
   2. Physiological interpretation table
      → figures/Figure8/physiological_interpretation.csv
-
-  3. Markdown analysis report
-     → figures/Figure8/analysis_report.md
 
 All numeric values are read from previously computed result files; no
 raw data is re-analysed here except for the unique-variance logistic
@@ -329,239 +326,6 @@ def build_interpretation_table(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# FINAL REPORT
-# ─────────────────────────────────────────────────────────────────────────────
-
-def generate_report(interp: pd.DataFrame):
-    spear  = pd.read_csv(RESULTS / "spearman_correlations.csv")
-    hier   = pd.read_csv(RESULTS / "hierarchical_regression.csv")
-    comm   = pd.read_csv(RESULTS / "commonality_analysis.csv")
-    sgd    = pd.read_csv(RESULTS / "scale_group_differences.csv")
-
-    # ── Top-3 metrics per dataset ──────────────────────────────────────────
-    excl = ["SampEn"]
-    top3 = {}
-    for ds in ["Chile", "Spain", "Japan", "Pooled"]:
-        sub = (spear[(spear["Dataset"] == ds) & (spear["Subset"] == "All")
-                     & (~spear["Metric"].isin(excl))]
-               .assign(abs_rho=lambda d: d["rho"].abs())
-               .sort_values("abs_rho", ascending=False)
-               .head(3))
-        top3[ds] = list(zip(sub["Metric"], sub["rho"].round(3), sub["sig"].fillna("ns")))
-
-    # ── Incremental value summary ──────────────────────────────────────────
-    b1 = hier[hier["Block"].str.startswith("Block1")].set_index("Dataset")
-    b2 = hier[hier["Block"].str.startswith("Block2")].set_index("Dataset")
-    b3 = hier[hier["Block"].str.startswith("Block3")].set_index("Dataset")
-
-    # ── Scale ranges with PD < HC (from scale_group_differences) ──────────
-    scale_summary = {}
-    for ds in ["Chile", "Spain", "Japan-morning", "Japan-afternoon"]:
-        sig = sgd[(sgd["Dataset"] == ds) & (sgd["q_BH"] < 0.05)]
-        if len(sig):
-            sc_list = sorted(sig["Scale"].astype(int).tolist())
-            # Directionality: PD < HC?
-            direction = sig.eval("PD_mean < HC_mean").all()
-            scale_summary[ds] = {
-                "scales": sc_list,
-                "pd_lower": direction,
-                "n_sig": len(sc_list),
-            }
-        else:
-            scale_summary[ds] = {"scales": [], "pd_lower": None, "n_sig": 0}
-
-    # ── Directional consistency counts ────────────────────────────────────
-    n_consistent = interp[interp["directionally_consistent_across_datasets"] == "yes"].shape[0]
-    n_total = interp[interp["directionally_consistent_across_datasets"].isin(["yes","no"])].shape[0]
-
-    # ── Key metric interp values ───────────────────────────────────────────
-    pnn50_row  = interp[interp["metric"] == "pNN50"].iloc[0]
-    rmssd_row  = interp[interp["metric"] == "RMSSD"].iloc[0]
-    dfa_row    = interp[interp["metric"] == "DFA_alpha1"].iloc[0]
-
-    # ── Commonality ───────────────────────────────────────────────────────
-    pool_comm = comm[comm["Dataset"] == "Pooled"].iloc[0]
-    japan_comm = comm[comm["Dataset"] == "Japan"].iloc[0]
-
-    # ── Compose report ────────────────────────────────────────────────────
-    def fmt_top3(ds):
-        return ", ".join(f"{m} (ρ={r:.3f} {s})" for m, r, s in top3[ds])
-
-    def fmt_scales(ds):
-        info = scale_summary.get(ds, {"scales": [], "n_sig": 0})
-        if not info["scales"]:
-            return "none"
-        sc = info["scales"]
-        if len(sc) > 5:
-            return f"1–{sc[-1]} (all {info['n_sig']} significant)"
-        return ", ".join(str(s) for s in sc)
-
-    def incr_row(ds):
-        if ds not in b3.index:
-            return "n/a"
-        d_r2 = b3.loc[ds, "Delta_R2"]
-        p    = b3.loc[ds, "LR_p"]
-        auc2 = b2.loc[ds, "CV_AUC"]
-        auc3 = b3.loc[ds, "CV_AUC"]
-        sig  = "p={:.4f}".format(p)
-        return f"ΔR²={d_r2:.4f}, {sig}, ΔAUC={auc3-auc2:+.3f}"
-
-    report = f"""# rcMSE-AUC vs Traditional HRV Metrics: Analysis Report
-
-*Generated from pre-computed results. All p-values are two-sided; FDR correction uses
-Benjamini-Hochberg unless noted.*
-
----
-
-## 1. Strongest traditional metric correlates of complexity (per dataset)
-
-| Dataset | Top 3 traditional HRV metrics (ρ, FDR significance) |
-|---------|------------------------------------------------------|
-| Chile (n=71, ECG ~15 min) | {fmt_top3("Chile")} |
-| Spain (n=58, PPG 5–15 min) | {fmt_top3("Spain")} |
-| Japan (n=37, ECG daytime 4 h) | {fmt_top3("Japan")} |
-| Pooled (n=166) | {fmt_top3("Pooled")} |
-
-**pNN50** (proportion of successive NN differences > 50 ms) is the most consistently
-significant correlate of rcMSE-AUC across all three datasets. It is available for all
-subjects without computation failures.
-
-Two metrics have been **excluded from featured comparisons**:
-- **SampEn** (RC-MSE toolbox, Scale=1): direct constituent of the rcMSE-AUC composite
-  (mean of scales 1–5 for Chile/Spain, 1–20 for Japan). Circular by construction (ρ≈0.85).
-- **TINN**: ~53% of Chile and ~33% of Spain values are zero due to histogram computation
-  failure on short recordings (~15 min and 5–15 min respectively). These zeros create a
-  spurious correlation (ρ=0.65 with zeros vs ρ=0.30 p=0.09 when zeros excluded for Chile).
-  TINN is appropriate only for Japan where 24 h data yields reliable histograms.
-
----
-
-## 2. Incremental predictive value of complexity after traditional metrics
-
-Hierarchical logistic regression (group ~ confounders → + pNN50 → + rcMSE-AUC):
-
-| Dataset | ΔAUC (Block2→3) | ΔR² | LR-test p | Significant? |
-|---------|----------------|-----|-----------|-------------|
-| Chile   | {b3.loc["Chile","CV_AUC"]-b2.loc["Chile","CV_AUC"]:+.3f} | {incr_row("Chile")} | {"Yes" if b3.loc["Chile","LR_p"]<0.05 else "No (p="+f"{b3.loc['Chile','LR_p']:.3f})"} |
-| Spain   | {b3.loc["Spain","CV_AUC"]-b2.loc["Spain","CV_AUC"]:+.3f} | {incr_row("Spain")} | {"Yes" if b3.loc["Spain","LR_p"]<0.05 else "No (p="+f"{b3.loc['Spain','LR_p']:.3f})"} |
-| Japan   | {b3.loc["Japan","CV_AUC"]-b2.loc["Japan","CV_AUC"]:+.3f} | {incr_row("Japan")} | {"Yes" if b3.loc["Japan","LR_p"]<0.05 else "No (p="+f"{b3.loc['Japan','LR_p']:.3f})"} |
-| Pooled  | {b3.loc["Pooled","CV_AUC"]-b2.loc["Pooled","CV_AUC"]:+.3f} | {incr_row("Pooled")} | {"Yes" if b3.loc["Pooled","LR_p"]<0.05 else "No (p="+f"{b3.loc['Pooled','LR_p']:.3f})"} |
-
-rcMSE-AUC adds **significant incremental predictive value** in the Japan cohort
-(LR p={b3.loc["Japan","LR_p"]:.4f}) and in the pooled analysis (LR p={b3.loc["Pooled","LR_p"]:.4f})
-after accounting for pNN50. The effect is numerically consistent across Chile and Spain but
-does not reach significance individually, likely due to smaller sample sizes and shorter
-recording lengths limiting the reliability of high-scale entropy estimates.
-
-Commonality analysis (McFadden R²) confirms the complementarity: in the pooled model,
-Complexity contributes {100*pool_comm.Unique_Complexity/pool_comm.R2_full:.0f}% of the
-full model's R² uniquely (not shared with pNN50 or confounders), while pNN50 contributes
-only {100*pool_comm.Unique_pNN50/pool_comm.R2_full:.0f}%. In Japan — where the 24 h recording
-allows all 20 scales — the shared component between pNN50 and Complexity reaches
-{100*japan_comm.Shared_pNN50_Compl/japan_comm.R2_full:.0f}% of full R², indicating that longer
-recordings allow more overlap between vagal tone and complexity.
-
----
-
-## 3. Scale ranges driving complexity differences in PD
-
-| Dataset | Significant scales (BH-FDR, PD < HC) |
-|---------|---------------------------------------|
-| CETRAM (~15 min) | {fmt_scales("Chile")} |
-| Cruces (5–15 min) | {fmt_scales("Spain")} |
-| Nagoya 07–11h | {fmt_scales("Japan-morning")} |
-| Nagoya 16–20h | {fmt_scales("Japan-afternoon")} |
-
-For **Chile and Spain** (short recordings of ~15 min and 5–15 min respectively),
-complexity loss in PD is confined to **scale 1** (i.e., SampEn at scale 1 from the
-RC-MSE toolbox), the only scale reaching significance after FDR correction. This reflects
-the limitation of short recordings: coarse-grained scales require longer time series to
-provide reliable entropy estimates.
-
-For the **Nagoya** 24 h cohort, group differences span all 20 scales in the optimal window
-(16–20h), with peak separation at the vagal zone (scales 1–5) and sustained through the
-baroreflex and slow zones (scales 6–20). The afternoon window (16–20h) provides the strongest
-PD discrimination; the morning window (07–11h) also shows significant separation. For the
-full circadian profile and window-by-window analysis, see Figure 3 (data/japan_evolution.csv).
-
----
-
-## 4. Cross-dataset consistency of complexity-metric relationships
-
-Of {n_total} tested metric correlations with complexity, **{n_consistent} are
-directionally consistent** across all three datasets (same sign of ρ in Chile, Spain, and Japan).
-
-Consistent metrics: **pNN50** (ρ > 0 in all three datasets) and **SD1** (ρ > 0 in all three).
-
-Most time-domain (RMSSD, SDNN) and frequency-domain (HF_power, LF/HF) metrics show
-**inconsistent directionality**: they are negatively correlated with complexity in Chile
-but positive or near-zero in Spain and Japan. This inconsistency likely reflects two
-interacting effects:
-1. **Recording modality and length**: Chile uses ECG; Spain uses PPG (subject to different
-   noise characteristics); Japan uses 24 h Holter. Entropy at short scales is particularly
-   sensitive to these differences.
-2. **Scale-normalisation**: The RC-MSE algorithm normalises the tolerance parameter by
-   σ per coarse-graining scale. When SDNN/RMSSD are large (high absolute variability),
-   the normalised tolerance becomes large, potentially reducing apparent entropy. This
-   creates a within-dataset negative correlation between time-domain HRV and complexity
-   that disappears across datasets where other sources of variance dominate.
-
-After partialling out age, sex, and centre, the partial correlations of RMSSD and SDNN
-with complexity collapse toward zero or reverse sign (RMSSD: ρ_adj = {rmssd_row.partial_r_after_age_sex:.3f}),
-confirming these are largely confounded. pNN50 remains the most consistent metric
-across centers (ρ_adj = {pnn50_row.partial_r_after_age_sex:.3f} after adjustment).
-
----
-
-## 5. Physiological interpretation
-
-**What is rcMSE-AUC measuring that traditional HRV metrics do and do not already capture?**
-
-rcMSE-AUC (HR-normalised refined composite multiscale sample entropy, integrated over
-scales 1–5 for short recordings or 1–20 for 24 h recordings) quantifies the *scale-resolved
-structural complexity* of cardiac rhythm — specifically, how much new information emerges
-as the cardiac time series is viewed at progressively coarser temporal resolutions. This is
-distinct from any single-scale metric of HRV.
-
-Traditional HRV metrics capture specific, physiologically well-defined aspects of autonomic
-function: RMSSD and HF power index *vagal efferent activity at respiratory frequencies*;
-SDNN summarises *total HRV magnitude*; DFA α1 characterises *short-range fractal scaling*
-of the IBI time series. Each of these is a projection of a single property of the RR
-time series onto one temporal scale or frequency band.
-
-rcMSE-AUC, by contrast, integrates across scales. The partial correlation analysis reveals
-that after controlling for age, sex, and recording site, DFA α1 drops from ρ = {dfa_row.rho_with_complexity_pooled:.3f}
-to ρ_adj = {dfa_row.partial_r_after_age_sex:.3f}, and RMSSD from ρ = {rmssd_row.rho_with_complexity_pooled:.3f}
-to ρ_adj = {rmssd_row.partial_r_after_age_sex:.3f} — both near zero — suggesting that the
-apparent associations of these metrics with complexity are largely driven by confounds. pNN50
-remains the most robust correlate after adjustment (ρ_adj = {pnn50_row.partial_r_after_age_sex:.3f}),
-reflecting its consistent positive association with complexity across all three cohorts.
-
-The complementarity between pNN50 and rcMSE-AUC is mechanistically informative: pNN50
-indexes *vagal beat-to-beat modulation* (the fraction of consecutive beats differing by
-> 50 ms), while rcMSE-AUC captures *multi-timescale structural complexity* of the full
-cardiac rhythm. In PD, both are reduced — the autonomic nervous system both loses its
-rapid beat-to-beat variability and the temporal unpredictability of transitions across
-time scales. These are related but not identical phenomena: cardiac variability at
-respiratory timescales (pNN50) and multi-scale complexity can dissociate, particularly
-in conditions affecting baroreflex or circadian autonomic regulation.
-
-The primary autonomic substrate of the rcMSE-AUC reduction in PD appears to be a **global
-depression of multi-timescale complexity** that is not driven by any single branch of the
-ANS. At the vagal zone (scales 1–5), complexity loss tracks SampEn and RMSSD loss; at the
-baroreflex zone (scales 6–15), it tracks LF_norm; and the 24 h cohort reveals additional
-loss at slow scales (16–20) associated with SDANN and circadian rhythm. This hierarchical
-structure — loss at every time scale — suggests a centrally-mediated reduction in autonomic
-flexibility rather than selective impairment of vagal or sympathetic tone alone, consistent
-with the known involvement of the dorsal vagal complex, basal ganglia-brainstem circuits,
-and insular cortex in PD-related autonomic dysfunction.
-"""
-
-    out = RESULTS / "analysis_report.md"
-    out.write_text(report)
-    print(f"Analysis report → figures/Figure8/analysis_report.md")
-    return report
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -586,10 +350,6 @@ if __name__ == "__main__":
          "directionally_consistent_across_datasets"]
     ].to_string(index=False))
 
-    print("\n=== Final report ===")
-    generate_report(interp)
-
     print("\n=== Done — all outputs written ===")
     print("  figures/Figure8/Fig8_B_cross_dataset_consistency.png")
     print("  figures/Figure8/physiological_interpretation.csv")
-    print("  figures/Figure8/analysis_report.md")

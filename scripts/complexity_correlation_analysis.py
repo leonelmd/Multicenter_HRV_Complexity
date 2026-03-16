@@ -1,7 +1,7 @@
 """
 Complexity vs Traditional HRV Metrics — Correlation Analysis
 =============================================================
-Three analyses:
+Two analyses:
   1. Spearman ρ between rcMSE-AUC (Complexity) and each traditional HRV metric,
      per dataset and pooled, for All / PD-only / HC-only subsets.
      Bootstrap 95% CI, BH-FDR correction. → figures/Figure8/spearman_correlations.csv
@@ -11,8 +11,6 @@ Three analyses:
      (a) Complexity ~ Group (PD=1/HC=0), controlling for each HRV metric
      (b) Complexity ~ each HRV metric, controlling for Age + Sex
      → figures/Figure8/partial_correlations.csv
-
-  3. Forest plot for 6 key metrics across datasets → figures/Figure8/Fig8_A2_forest_plot_correlations.png
 """
 
 import warnings
@@ -21,7 +19,6 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import seaborn as sns
 import pingouin as pg
 from pathlib import Path
@@ -52,11 +49,6 @@ METRIC_COLS = [
     # Correlating a component with its sum is circular and not scientifically informative.
 ]
 
-FOREST_METRICS = ["RMSSD", "SDNN", "HF_power", "LF_HF", "DFA_alpha1", "pNN50"]
-# TINN removed from forest plot: ~53% zeros in Chile, ~33% in Spain (histogram
-# computation failure on short recordings) produce a spurious ρ=0.65 (drops to
-# ρ=0.30, p=0.09 when zeros are excluded). pNN50 is the most consistently
-# significant metric across all three cohorts.
 CENTERS = ["Chile", "Spain", "Japan"]
 
 # ---------------------------------------------------------------------------
@@ -341,77 +333,6 @@ def run_partial(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-# ---------------------------------------------------------------------------
-# Analysis 3 — Forest plot
-# ---------------------------------------------------------------------------
-
-def make_forest(spear: pd.DataFrame):
-    subset = "All"
-    ds_colors = {"Chile": "#2196F3", "Spain": "#4CAF50", "Japan": "#FF5722"}
-    ds_offsets = {"Chile": 0.25, "Spain": 0.0, "Japan": -0.25}
-
-    fig, axes = plt.subplots(
-        1, len(FOREST_METRICS),
-        figsize=(16, 4),
-        sharey=False,
-        gridspec_kw={"wspace": 0.35},
-    )
-
-    for ax, metric in zip(axes, FOREST_METRICS):
-        for ds in CENTERS:
-            row = spear[
-                (spear["Dataset"] == ds)
-                & (spear["Subset"] == subset)
-                & (spear["Metric"] == metric)
-            ]
-            if row.empty or np.isnan(row["rho"].iloc[0]):
-                continue
-            rho = row["rho"].iloc[0]
-            ci_lo = row["CI_lo"].iloc[0]
-            ci_hi = row["CI_hi"].iloc[0]
-            sig = row["sig"].iloc[0]
-            y = ds_offsets[ds]
-            color = ds_colors[ds]
-
-            ax.errorbar(
-                rho, y,
-                xerr=[[rho - ci_lo], [ci_hi - rho]],
-                fmt="o", color=color, capsize=4, capthick=1.5,
-                markersize=6, linewidth=1.5,
-            )
-            # Significance annotation
-            if sig:
-                ax.text(ci_hi + 0.03, y, sig, va="center", fontsize=9,
-                        color=color, fontweight="bold")
-
-        ax.axvline(0, color="grey", lw=0.8, ls="--")
-        ax.set_xlim(-1.05, 1.05)
-        ax.set_yticks([ds_offsets[ds] for ds in CENTERS])
-        ax.set_yticklabels(CENTERS, fontsize=9)
-        ax.set_xlabel("Spearman ρ", fontsize=9)
-        ax.set_title(metric, fontsize=10, fontweight="bold")
-        ax.axvspan(-1.05, 0, alpha=0.03, color="red")
-        ax.axvspan(0, 1.05, alpha=0.03, color="blue")
-
-    # Legend
-    handles = [
-        mpatches.Patch(color=ds_colors[ds], label=ds) for ds in CENTERS
-    ]
-    fig.legend(
-        handles=handles, loc="lower center", ncol=3,
-        fontsize=9, bbox_to_anchor=(0.5, -0.08),
-    )
-    fig.suptitle(
-        "Spearman ρ: rcMSE-AUC vs HRV Metrics (All subjects)\n"
-        "Error bars = Bootstrap 95% CI; * q<0.05, ** q<0.01, *** q<0.001 (BH-FDR)",
-        fontsize=11, y=1.03,
-    )
-
-    out = FIGURES / "Figure8" / "Fig8_A2_forest_plot_correlations.png"
-    out.parent.mkdir(exist_ok=True)
-    fig.savefig(out, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Forest plot → {out}")
 
 
 # ---------------------------------------------------------------------------
@@ -429,9 +350,6 @@ if __name__ == "__main__":
 
     print("\n--- Analysis 2: Partial correlations ---")
     partial = run_partial(df)
-
-    print("\n--- Analysis 3: Forest plot ---")
-    make_forest(spear)
 
     # Quick summary of significant results
     print("\n=== Significant Spearman correlations (q<0.05, All subjects) ===")

@@ -123,14 +123,14 @@ def generate_figure4():
             
         df_final['Norm'] = df_final['MSE'] / df_final['HR']
         
-        sns.boxplot(x='Group', y='Norm', data=df_final, palette=colors, ax=ax2, order=['Control', 'PD'], showfliers=False, width=0.5)
-        sns.stripplot(x='Group', y='Norm', data=df_final, palette=colors, ax=ax2, order=['Control', 'PD'], alpha=0.6, color='black', edgecolor='white', linewidth=0.5)
+        sns.boxplot(x='Group', y='Norm', data=df_final, palette=colors, hue='Group', legend=False, ax=ax2, order=['Control', 'PD'], showfliers=False, width=0.5)
+        sns.stripplot(x='Group', y='Norm', data=df_final, palette=colors, hue='Group', legend=False, ax=ax2, order=['Control', 'PD'], alpha=0.6, color='black', edgecolor='white', linewidth=0.5)
         
         c_vals = df_final[df_final['Group'] == 'Control']['Norm'].dropna()
         p_vals = df_final[df_final['Group'] == 'PD']['Norm'].dropna()
         t, p = ttest_ind(c_vals, p_vals)
         
-        range_str = f"$\Sigma$MSE({min(index_range)}-{max(index_range)}) / HR"
+        range_str = rf"$\Sigma$MSE({min(index_range)}-{max(index_range)}) / HR"
         ax2.set_title(f"HR-Normalized Complexity\n{range_str}", fontsize=18, fontweight='bold')
         ax2.set_ylabel("Complexity Index (normalized)", fontsize=14)
         ax2.set_xlabel(f"({length_desc})", fontsize=12, style='italic')
@@ -144,7 +144,7 @@ def generate_figure4():
     fig.text(0.5, 0.02, rule_text, ha='center', fontsize=20, fontweight='bold', bbox=dict(facecolor='white', alpha=0.5, edgecolor='gray', boxstyle='round,pad=0.5'))
 
     plt.suptitle("Figure 4: Global Validation using Signal-Length Adjusted Complexity Metrics", fontsize=32, fontweight='bold', y=0.98)
-    plt.tight_layout(rect=[0, 0.05, 1, 0.94])
+    fig.subplots_adjust(top=0.94, bottom=0.05, left=0.08, right=0.97, hspace=0.45, wspace=0.35)
     
     out_path = os.path.join(FIGURES_DIR, "Figure4", "Figure4.png")
     plt.savefig(out_path, dpi=300)

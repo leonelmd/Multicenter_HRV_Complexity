@@ -116,7 +116,7 @@ def generate_figure3():
                    '(t-test, 4-hour windows, minimum 4 000 beats)',
                    fontsize=16, fontweight='bold')
     ax_e.set_xlabel('Window start (4-hour block)', fontsize=13)
-    ax_e.set_ylabel('−log₁₀(p)', fontsize=13)
+    ax_e.set_ylabel('−log10(p)', fontsize=13)
     ax_e.set_xticks(range(len(x_labels)))
     ax_e.set_xticklabels(x_labels, rotation=45, ha='right', fontsize=8)
     ax_e.legend(fontsize=10, loc='upper left')
@@ -132,7 +132,7 @@ def generate_figure3():
     # Choose 5 representative windows spanning the day
     key_windows = [0, 7, 11, 16, 20]
     key_labels  = ['00–04h\n(Night)', '07–11h\n(Morning)',
-                   '11–15h\n(Midday)', '16–20h\n(Afternoon★)',
+                   '11–15h\n(Midday)', '16–20h\n(Afternoon*)',
                    '20–00h\n(Evening)']
 
     plot_rows = []
@@ -175,7 +175,7 @@ def generate_figure3():
 
     # Highlight best window (16-20h) with subtle background
     ax_f.axvspan(2.55, 3.45, color='#FFF0AA', alpha=0.55, zorder=0)
-    ax_f.text(3, ax_f.get_ylim()[1] * 0.97, '★ best', ha='center',
+    ax_f.text(3, ax_f.get_ylim()[1] * 0.97, '* best', ha='center',
               fontsize=9, color='#B8860B', style='italic')
 
     handles, labels = ax_f.get_legend_handles_labels()
@@ -190,7 +190,7 @@ def generate_figure3():
         'Refined Composite MSE · Scales 1–20 · 4-hour clock-aligned windows · '
         'Minimum 4 000 heartbeats per window',
         fontsize=22, fontweight='bold', y=0.99)
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.subplots_adjust(top=0.93, bottom=0.07, left=0.08, right=0.97, hspace=0.42, wspace=0.28)
 
     out_dir  = os.path.join(FIGURES_DIR, "Figure3")
     os.makedirs(out_dir, exist_ok=True)
