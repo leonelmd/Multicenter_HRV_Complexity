@@ -143,8 +143,8 @@ def generate_figure4():
     rule_text = r"Rule: $N/\tau \geq 200$ for stable entropy estimation"
     fig.text(0.5, 0.02, rule_text, ha='center', fontsize=20, fontweight='bold', bbox=dict(facecolor='white', alpha=0.5, edgecolor='gray', boxstyle='round,pad=0.5'))
 
-    plt.suptitle("Figure 4: Global Validation using Signal-Length Adjusted Complexity Metrics", fontsize=32, fontweight='bold', y=0.98)
-    fig.subplots_adjust(top=0.94, bottom=0.05, left=0.08, right=0.97, hspace=0.45, wspace=0.35)
+    plt.suptitle("Figure 4: Global Validation using Signal-Length Adjusted Complexity Metrics", fontsize=32, fontweight='bold', y=1.0)
+    fig.subplots_adjust(top=0.90, bottom=0.05, left=0.08, right=0.97, hspace=0.45, wspace=0.35)
     
     out_path = os.path.join(FIGURES_DIR, "Figure4", "Figure4.png")
     plt.savefig(out_path, dpi=300)
