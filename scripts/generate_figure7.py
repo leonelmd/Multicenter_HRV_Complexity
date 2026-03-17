@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """
 Figure 7: Cardiac Complexity as an Autonomic Biomarker
-Merged composite of 8 panels (A–H).
+Merged composite of 7 panels (A–G).
 
 Panel A – Spearman ρ correlation heatmap (rcMSE-AUC vs HRV, per center × group)
 Panel B – Cross-dataset consistency forest plot
 Panel C – Scale physiology heatmap: CETRAM | Cruces | Nagoya (16–20h)   [regenerated]
 Panel D – McFadden R² variance decomposition
-Panel E – Annotated MSE curves
-Panel F – Age/sex confound correction lollipop                           [regenerated]
-Panel G – Autonomic synthesis (raw ρ | partial ρ | unique variance)      [regenerated]
-Panel H – Scale anatomy: Nagoya (16–20h) & CETRAM                        [regenerated]
+Panel E – Age/sex confound correction lollipop                           [regenerated]
+Panel F – Autonomic synthesis (raw ρ | partial ρ | unique variance)      [regenerated]
+Panel G – Scale anatomy: Nagoya (16–20h) & CETRAM                        [regenerated]
 
-Panels A, B, D, E loaded from pre-computed PNGs.
-Panels C, F, G, H re-drawn inline for label consistency.
+Panels A, B, D loaded from pre-computed PNGs.
+Panels C, E, F, G re-drawn inline for label consistency.
 """
 
 import os
@@ -85,9 +84,6 @@ def draw_panel_C(axes_row):
                  'LF_norm', 'LF_power', 'LF_HF',
                  'VLF_power', 'SDANN',
                  'DFA_alpha1', 'DFA_alpha2']
-    zone_fills = [(1, 5,  '#cce0ff', 'Vagal (1–5)'),
-                  (6, 15, '#ccf0e0', 'Baroreflex (6–15)'),
-                  (16, 20,'#fff3cc', 'Slow (16–20)')]
 
     configs = [
         ('Chile',          'CETRAM\n(15-min rest)', 5),
@@ -105,10 +101,10 @@ def draw_panel_C(axes_row):
             if row['Metric'] in metrics and row['Scale'] in scales:
                 mat.loc[row['Metric'], row['Scale']] = row['rho']
 
-        # grey-out unreliable scales
-        reliable_mat = mat.copy()
+        # grey-out unreliable scales (short recordings)
+        reliable_mat   = mat.copy()
         unreliable_mat = mat.copy()
-        reliable_mat.iloc[:, [i for i, s in enumerate(scales) if s > max_rel]] = np.nan
+        reliable_mat.iloc[:, [i for i, s in enumerate(scales) if s > max_rel]]   = np.nan
         unreliable_mat.iloc[:, [i for i, s in enumerate(scales) if s <= max_rel]] = np.nan
 
         sns.heatmap(reliable_mat,   ax=ax, cmap='RdBu_r', center=0, vmin=-1, vmax=1,
@@ -119,17 +115,7 @@ def draw_panel_C(axes_row):
                         cbar=False, linewidths=0.3, linecolor='#dddddd',
                         xticklabels=2, yticklabels=False, alpha=0.35)
 
-        # zone bands at top
-        for lo, hi, fc, lbl in zone_fills:
-            if lo > max_rel: continue
-            hi_eff = min(hi, max_rel)
-            ax.axvspan(lo - 0.5, hi_eff + 0.5, ymin=0.97, ymax=1.0,
-                       facecolor=fc, alpha=0.85, transform=ax.get_xaxis_transform(),
-                       clip_on=False)
-            ax.text((lo + hi_eff) / 2, len(metrics) + 0.3, lbl,
-                    ha='center', va='bottom', fontsize=7, color='#444')
-
-        ax.set_title(title, fontsize=12, fontweight='bold', pad=18)
+        ax.set_title(title, fontsize=12, fontweight='bold', pad=5)
         ax.set_xlabel('MSE Scale', fontsize=10)
         ax.set_ylabel('')
         ax.tick_params(axis='y', labelsize=8)
@@ -143,8 +129,8 @@ def draw_panel_C(axes_row):
     cbar.set_label('Spearman ρ', fontsize=9)
 
 
-# ── Panel F (old G) : Confound correction lollipop ────────────────────────────
-def draw_panel_F(ax):
+# ── Panel E : Confound correction lollipop ────────────────────────────────────
+def draw_panel_E(ax):
     adj    = pd.read_csv(os.path.join(RESULTS, 'age_sex_adjusted_correlations.csv'))
     pooled = adj[adj['Dataset'] == 'Pooled'].set_index('Metric')
     metrics, spans = _ordered_metrics(pooled.index)
@@ -182,8 +168,8 @@ def draw_panel_F(ax):
     ax.grid(axis='x', alpha=0.3)
 
 
-# ── Panel G (old H) : Autonomic synthesis 3-panel ────────────────────────────
-def draw_panel_G(axes_3):
+# ── Panel F : Autonomic synthesis 3-panel ─────────────────────────────────────
+def draw_panel_F(axes_3):
     phys     = pd.read_csv(os.path.join(RESULTS, 'physiological_interpretation.csv')).set_index('metric')
     metrics, spans = _ordered_metrics(phys.index)
     n        = len(metrics)
@@ -230,30 +216,25 @@ def draw_panel_G(axes_3):
         a.invert_yaxis(); a.set_ylim(n - 0.5, -0.5)
 
 
-# ── Panel H (old I) : Scale anatomy line plots ────────────────────────────────
-def draw_panel_H(axes_2):
+# ── Panel G : Scale anatomy line plots ────────────────────────────────────────
+def draw_panel_G(axes_2):
     sc = pd.read_csv(os.path.join(RESULTS, 'scale_metric_correlations.csv'))
     key_metrics = ['pNN50', 'RMSSD', 'LF_norm', 'SDNN', 'DFA_alpha1']
-    labels = {'pNN50': 'pNN50 (vagal beat-to-beat)',
-              'RMSSD': 'RMSSD (vagal short-term)',
-              'LF_norm': 'LF norm (sympathovagal)',
-              'SDNN':  'SDNN (total HRV)',
-              'DFA_alpha1': 'DFA alpha1 (short-range fractal)'}
+    labels = {'pNN50': 'pNN50',
+              'RMSSD': 'RMSSD',
+              'LF_norm': 'LF norm',
+              'SDNN':  'SDNN',
+              'DFA_alpha1': 'DFA alpha1'}
     colors = {'pNN50':'#e03030','RMSSD':'#e07030','LF_norm':'#208060',
               'SDNN':'#303090','DFA_alpha1':'#606060'}
     ls_map = {'pNN50':'-','RMSSD':'--','LF_norm':'-.','SDNN':':'
               ,'DFA_alpha1':(0,(3,1,1,1))}
-    zone_fills = [(1, 5, '#cce0ff', 'Vagal (1–5)'),
-                  (6, 15,'#ccf0e0','Baroreflex (6–15)'),
-                  (16,20,'#fff3cc','Slow (16–20)')]
 
     datasets = [('Japan-afternoon', 'Nagoya (16–20h)  n=38 — all scales reliable', None),
                 ('Chile',           'CETRAM  n=71 — reliable up to scale 5',       5)]
 
     for ax, (ds, title, max_rel) in zip(axes_2, datasets):
         sub = sc[sc['Dataset'] == ds]
-        for lo, hi, fc, _ in zone_fills:
-            ax.axvspan(lo - 0.5, hi + 0.5, facecolor=fc, alpha=0.35, zorder=0)
         if max_rel is not None:
             ax.axvspan(max_rel + 0.5, 20.5, facecolor='#dddddd', alpha=0.5,
                        zorder=0, label='Unreliable (short recording)')
@@ -269,13 +250,9 @@ def draw_panel_H(axes_2):
                            marker='D', s=35, color=colors[m], zorder=4)
         ax.axhline(0, color='black', lw=0.8)
         ax.set_xlim(0.5, 20.5); ax.set_xticks(range(1, 21, 2))
-        ax.set_xlabel('MSE Scale (timescale)', fontsize=10)
+        ax.set_xlabel('MSE Scale', fontsize=10)
         ax.set_title(title, fontsize=9)
         ax.grid(alpha=0.25)
-        for lo, hi, _, lbl in zone_fills:
-            if ds == 'Chile' and lo > 5: continue
-            ax.text((lo + hi) / 2, 0.88, lbl, transform=ax.get_xaxis_transform(),
-                    ha='center', fontsize=7.5, color='#555')
 
     axes_2[0].set_ylabel('Spearman ρ\n(entropy at scale vs HRV)', fontsize=10)
     axes_2[0].set_ylim(-1.0, 1.0)
@@ -286,16 +263,15 @@ def draw_panel_H(axes_2):
 
 # ── Compose ───────────────────────────────────────────────────────────────────
 def generate_figure7():
-    fig = plt.figure(figsize=(26, 36))
+    fig = plt.figure(figsize=(26, 32))
     sns.set_style('ticks')
 
-    # GridSpec: 4 rows, 3 cols
-    # Row 0: A (1 col) + B (2 cols)
-    # Row 1: C (3 cols, 3 sub-axes)
-    # Row 2: D (1 col) + E (1 col) + F (1 col)
-    # Row 3: G (2 cols, 3 sub-axes) + H (1 col, wait 2 sub-axes)
-    # We need the last row to accommodate G (3 sub-panels) + H (2 sub-panels).
-    # Use a nested gridspec for rows 3.
+    # Layout (7 panels, A–G):
+    # Row 0: A (col 0)      | B (cols 1–2)
+    # Row 1: C (3 sub-axes, all cols)
+    # Row 2: D (cols 0–1)   | E / lollipop (col 2)
+    # Row 3: F / synthesis  (3 sub-panels, all cols) + stub col
+    # Row 4: G / anatomy    (2 sub-panels, all cols)
 
     outer = gridspec.GridSpec(5, 3, figure=fig,
                               hspace=0.52, wspace=0.32,
@@ -314,35 +290,29 @@ def generate_figure7():
     draw_panel_C(c_axes)
     add_panel_label(c_axes[0], 'C')
 
-    # Row 2: D | E | F(=lollipop)
-    ax_D = fig.add_subplot(outer[2, 0])
-    ax_E = fig.add_subplot(outer[2, 1])
-    ax_F = fig.add_subplot(outer[2, 2])
+    # Row 2: D (cols 0-1, wider) | E lollipop (col 2)
+    ax_D = fig.add_subplot(outer[2, :2])
+    ax_E = fig.add_subplot(outer[2, 2])
     show_png(ax_D, os.path.join(FIG8_DIR, 'Fig7_D_variance_decomposition.png'))
-    show_png(ax_E, os.path.join(FIG8_DIR, 'Fig7_E_mse_curves_annotated.png'))
-    draw_panel_F(ax_F)
+    draw_panel_E(ax_E)
     add_panel_label(ax_D, 'D')
     add_panel_label(ax_E, 'E')
-    add_panel_label(ax_F, 'F')
 
-    # Row 3: G (old H, 3 sub-panels, spans cols 0-1)
-    g_inner = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=outer[3, :2],
+    # Row 3: F — synthesis (3 sub-panels, cols 0-1) + stub
+    f_inner = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=outer[3, :2],
                                                wspace=0.05)
-    g_axes = [fig.add_subplot(g_inner[0, j]) for j in range(3)]
-    draw_panel_G(g_axes)
-    add_panel_label(g_axes[0], 'G')
-
-    # Row 3 col 2: partial of H — just left sub-panel (Japan)
-    # Actually H has 2 sub-panels; put both in row 4
+    f_axes = [fig.add_subplot(f_inner[0, j]) for j in range(3)]
+    draw_panel_F(f_axes)
+    add_panel_label(f_axes[0], 'F')
     ax_stub = fig.add_subplot(outer[3, 2])
     ax_stub.axis('off')
 
-    # Row 4: H (old I, 2 sub-panels, full width)
-    h_inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[4, :],
+    # Row 4: G — scale anatomy (2 sub-panels, full width)
+    g_inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[4, :],
                                                wspace=0.08)
-    h_axes = [fig.add_subplot(h_inner[0, j]) for j in range(2)]
-    draw_panel_H(h_axes)
-    add_panel_label(h_axes[0], 'H')
+    g_axes = [fig.add_subplot(g_inner[0, j]) for j in range(2)]
+    draw_panel_G(g_axes)
+    add_panel_label(g_axes[0], 'G')
 
     plt.suptitle(
         'Figure 7: Cardiac Complexity as a Novel Autonomic Biomarker\n'
