@@ -35,8 +35,8 @@ def get_auc(df, metric, group_col='Group', pos_label='PD'):
 
 def generate_figure5():
     sns.set_style("ticks")
-    fig = plt.figure(figsize=(24, 18))
-    gs = fig.add_gridspec(2, 3, hspace=0.4, wspace=0.3)
+    fig = plt.figure(figsize=(24, 26))
+    gs = fig.add_gridspec(3, 3, hspace=0.45, wspace=0.3)
     
     datasets = {}
     
@@ -127,8 +127,8 @@ def generate_figure5():
         ax.set_xlim(0.4, 1.0); ax.axvline(0.5, color='black', ls='--', alpha=0.5)
         ax.set_xlabel("AUC")
 
-    # 3. CONSOLIDATED ROC CURVES (Panel E)
-    ax_roc = fig.add_subplot(gs[1, 1])
+    # 3. CONSOLIDATED ROC CURVES (Panel E) — spans cols 1–2 in row 1
+    ax_roc = fig.add_subplot(gs[1, 1:])
     add_panel_label(ax_roc, 'E')
     roc_colors = ['#2E86AB', '#A23B72', '#F18F01', '#C77DFF']
     for ds_key, color in zip(panel_order, roc_colors):
@@ -145,17 +145,25 @@ def generate_figure5():
     ax_roc.set_xlabel("FPR"); ax_roc.set_ylabel("TPR")
     ax_roc.legend(loc='lower right', fontsize=10)
 
-    # 4. CORRELATION HEATMAP (Panel F)
-    ax_corr = fig.add_subplot(gs[1, 2])
-    add_panel_label(ax_corr, 'F')
-    corr_df = datasets['Cruces'][metrics_to_compare]
-    corr_df.columns = metric_labels
-    corr_matrix = corr_df.corr(method='spearman')
-    sns.heatmap(corr_matrix, annot=True, cmap='RdBu_r', center=0, ax=ax_corr, fmt='.2f')
-    ax_corr.set_title("Feature Orthogonality (Cruces)", fontsize=18, fontweight='bold')
+    # 4. CORRELATION HEATMAPS (Panels F–H) — one per center, row 2
+    heatmap_centers = ['CETRAM', 'Cruces', 'Nagoya (16-20h)']
+    panel_letters = ['F', 'G', 'H']
+    for col, (center, letter) in enumerate(zip(heatmap_centers, panel_letters)):
+        ax_corr = fig.add_subplot(gs[2, col])
+        add_panel_label(ax_corr, letter)
+        corr_df = datasets[center][metrics_to_compare].copy()
+        corr_df.columns = metric_labels
+        corr_matrix = corr_df.corr(method='spearman')
+        show_cbar = (col == 2)
+        sns.heatmap(corr_matrix, annot=True, cmap='RdBu_r', center=0,
+                    vmin=-1, vmax=1, ax=ax_corr, fmt='.2f',
+                    cbar=show_cbar, annot_kws={'size': 9})
+        ax_corr.set_title(f"Feature Orthogonality ({center})", fontsize=16, fontweight='bold')
+        if col > 0:
+            ax_corr.set_yticklabels([])
 
-    plt.suptitle("Figure 5: Multi-center Diagnostic Performance and Biomarker Independence", fontsize=28, fontweight='bold', y=0.98)
-    fig.subplots_adjust(top=0.93, bottom=0.07, left=0.08, right=0.97, hspace=0.4, wspace=0.3)
+    plt.suptitle("Figure 5: Multi-center Diagnostic Performance and Biomarker Independence", fontsize=28, fontweight='bold', y=1.0)
+    fig.subplots_adjust(top=0.93, bottom=0.05, left=0.08, right=0.97, hspace=0.45, wspace=0.3)
     
     out_path = os.path.join(FIGURES_DIR, "Figure5", "Figure5.png")
     plt.savefig(out_path, dpi=300, bbox_inches='tight')

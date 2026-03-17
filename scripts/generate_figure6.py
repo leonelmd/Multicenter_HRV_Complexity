@@ -108,8 +108,8 @@ def generate_figure6():
         ax.legend(loc='lower left', fontsize=12)
         sns.despine(ax=ax)
 
-    plt.suptitle("Figure 6: Multi-Center Validation of Age-Independency", fontsize=36, fontweight='bold', y=0.98)
-    fig.subplots_adjust(top=0.93, bottom=0.07, left=0.08, right=0.97, hspace=0.4, wspace=0.3)
+    plt.suptitle("Figure 6: Multi-Center Validation of Age-Independency", fontsize=36, fontweight='bold', y=1.0)
+    fig.subplots_adjust(top=0.90, bottom=0.07, left=0.08, right=0.97, hspace=0.4, wspace=0.3)
     
     out_path = os.path.join(FIGURES_DIR, "Figure6", "Figure6.png")
     plt.savefig(out_path, dpi=300)
