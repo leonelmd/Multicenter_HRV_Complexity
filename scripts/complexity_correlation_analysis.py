@@ -4,13 +4,13 @@ Complexity vs Traditional HRV Metrics — Correlation Analysis
 Two analyses:
   1. Spearman ρ between rcMSE-AUC (Complexity) and each traditional HRV metric,
      per dataset and pooled, for All / PD-only / HC-only subsets.
-     Bootstrap 95% CI, BH-FDR correction. → figures/Figure8/spearman_correlations.csv
-     Correlation heatmap → figures/Figure8/Fig8_A_correlation_heatmap.png
+     Bootstrap 95% CI, BH-FDR correction. → figures/Figure7/spearman_correlations.csv
+     Correlation heatmap → figures/Figure7/Fig7_A_correlation_heatmap.png
 
   2. Partial correlations:
      (a) Complexity ~ Group (PD=1/HC=0), controlling for each HRV metric
      (b) Complexity ~ each HRV metric, controlling for Age + Sex
-     → figures/Figure8/partial_correlations.csv
+     → figures/Figure7/partial_correlations.csv
 """
 
 import warnings
@@ -28,7 +28,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 ROOT = Path(__file__).parent.parent
 DATA = ROOT / "data"
-RESULTS = ROOT / "figures" / "Figure8"
+RESULTS = ROOT / "figures" / "Figure7"
 FIGURES = ROOT / "figures"
 
 RNG = np.random.default_rng(42)
@@ -194,7 +194,7 @@ def run_spearman(df: pd.DataFrame) -> pd.DataFrame:
 
     out = pd.DataFrame(rows)
     out.to_csv(RESULTS / "spearman_correlations.csv", index=False)
-    print(f"\nSpearman results: {len(out)} rows → figures/Figure8/spearman_correlations.csv")
+    print(f"\nSpearman results: {len(out)} rows → figures/Figure7/spearman_correlations.csv")
     return out
 
 
@@ -250,7 +250,7 @@ def make_heatmap(spear: pd.DataFrame):
         ax.axvline(i * len(subset_order), color="black", lw=1.5)
 
     plt.tight_layout()
-    out = FIGURES / "Figure8" / "Fig8_A_correlation_heatmap.png"
+    out = FIGURES / "Figure7" / "Fig7_A_correlation_heatmap.png"
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -329,7 +329,7 @@ def run_partial(df: pd.DataFrame) -> pd.DataFrame:
         out[q_col] = qs
 
     out.to_csv(RESULTS / "partial_correlations.csv", index=False)
-    print(f"Partial correlations: {len(out)} rows → figures/Figure8/partial_correlations.csv")
+    print(f"Partial correlations: {len(out)} rows → figures/Figure7/partial_correlations.csv")
     return out
 
 

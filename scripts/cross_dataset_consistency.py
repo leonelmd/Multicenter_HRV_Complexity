@@ -4,10 +4,10 @@ Cross-Dataset Consistency Check
 Synthesises all prior analyses into:
 
   1. Cross-dataset forest plot (6 key metric pairs × 4 datasets)
-     → figures/Figure8/Fig8_B_cross_dataset_consistency.png
+     → figures/Figure7/Fig7_B_cross_dataset_consistency.png
 
   2. Physiological interpretation table
-     → figures/Figure8/physiological_interpretation.csv
+     → figures/Figure7/physiological_interpretation.csv
 
 All numeric values are read from previously computed result files; no
 raw data is re-analysed here except for the unique-variance logistic
@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore")
 
 ROOT    = Path(__file__).parent.parent
 DATA    = ROOT / "data"
-RESULTS = ROOT / "figures" / "Figure8"
+RESULTS = ROOT / "figures" / "Figure7"
 FIGURES = ROOT / "figures"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ def make_forest_plot():
         fontsize=11, y=1.06,
     )
 
-    out = FIGURES / "Figure8" / "Fig8_B_cross_dataset_consistency.png"
+    out = FIGURES / "Figure7" / "Fig7_B_cross_dataset_consistency.png"
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -322,7 +322,7 @@ def build_interpretation_table(df: pd.DataFrame) -> pd.DataFrame:
 
     out = pd.DataFrame(rows)
     out.to_csv(RESULTS / "physiological_interpretation.csv", index=False)
-    print(f"Interpretation table → figures/Figure8/physiological_interpretation.csv")
+    print(f"Interpretation table → figures/Figure7/physiological_interpretation.csv")
     return out
 
 
@@ -351,5 +351,5 @@ if __name__ == "__main__":
     ].to_string(index=False))
 
     print("\n=== Done — all outputs written ===")
-    print("  figures/Figure8/Fig8_B_cross_dataset_consistency.png")
-    print("  figures/Figure8/physiological_interpretation.csv")
+    print("  figures/Figure7/Fig7_B_cross_dataset_consistency.png")
+    print("  figures/Figure7/physiological_interpretation.csv")

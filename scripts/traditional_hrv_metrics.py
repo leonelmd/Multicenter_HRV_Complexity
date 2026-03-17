@@ -22,7 +22,7 @@ SampEn is extracted as MSE at Scale=1 from the RC-MSE toolbox outputs (*_mse.csv
 which used m=2, r=0.2×σ_per_scale.
 
 Outputs:
-  figures/Figure8/traditional_hrv_metrics.csv  — one row per subject
+  figures/Figure7/traditional_hrv_metrics.csv  — one row per subject
   Printed summary table with Mann-Whitney U p-values (BH FDR-corrected)
 """
 
@@ -33,7 +33,7 @@ from scipy import stats
 
 ROOT = Path(__file__).parent.parent
 DATA = ROOT / "data"
-RESULTS = ROOT / "figures" / "Figure8"
+RESULTS = ROOT / "figures" / "Figure7"
 
 # ---------------------------------------------------------------------------
 # Column mapping: source column → unified output column

@@ -15,10 +15,10 @@ interpretable; scales 6–20 are computed but must be interpreted cautiously.
 For Nagoya 24h recordings: all 20 scales are meaningful.
 
 Analyses:
-  1. Scale-metric correlations → figures/Figure8/scale_metric_correlations.csv
-     (Heatmap is generated inline in generate_figure8.py Panel C)
+  1. Scale-metric correlations → figures/Figure7/scale_metric_correlations.csv
+     (Heatmap is generated inline in generate_figure7.py Panel C)
   2. Annotated MSE curves (PD vs HC with Mann-Whitney per scale)
-                                      → figures/Figure8/Fig8_E_mse_curves_annotated.png
+                                      → figures/Figure7/Fig7_E_mse_curves_annotated.png
 """
 
 import warnings
@@ -37,7 +37,7 @@ warnings.filterwarnings("ignore")
 
 ROOT = Path(__file__).parent.parent
 DATA = ROOT / "data"
-RESULTS = ROOT / "figures" / "Figure8"
+RESULTS = ROOT / "figures" / "Figure7"
 FIGURES = ROOT / "figures"
 
 # Physiological zone boundaries (scale numbers, inclusive)
@@ -221,7 +221,7 @@ def scale_metric_correlations(data: dict) -> pd.DataFrame:
 
     out = pd.DataFrame(rows)
     out.to_csv(RESULTS / "scale_metric_correlations.csv", index=False)
-    print(f"Scale-metric correlations: {len(out)} rows → figures/Figure8/scale_metric_correlations.csv")
+    print(f"Scale-metric correlations: {len(out)} rows → figures/Figure7/scale_metric_correlations.csv")
     return out
 
 
@@ -370,7 +370,7 @@ def make_mse_curves(data: dict):
     )
     plt.tight_layout()
 
-    out = FIGURES / "Figure8" / "Fig8_E_mse_curves_annotated.png"
+    out = FIGURES / "Figure7" / "Fig7_E_mse_curves_annotated.png"
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -379,7 +379,7 @@ def make_mse_curves(data: dict):
     # Save per-scale group stats
     stats_df = pd.DataFrame(scale_group_stats)
     stats_df.to_csv(RESULTS / "scale_group_differences.csv", index=False)
-    print(f"Scale group differences → figures/Figure8/scale_group_differences.csv")
+    print(f"Scale group differences → figures/Figure7/scale_group_differences.csv")
     return stats_df
 
 

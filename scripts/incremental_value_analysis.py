@@ -12,20 +12,20 @@ Three analyses:
        Block 3: Block 2 + rcMSE-AUC (Complexity)
        Metrics: CV-AUC (5-fold stratified), Nagelkerke pseudo-R²,
                 log-likelihood, ΔR², LR-test p
-     → figures/Figure8/hierarchical_regression.csv
+     → figures/Figure7/hierarchical_regression.csv
 
   2. Commonality analysis
        Partition Nagelkerke R² (full 4-predictor model) into:
          Unique to rcMSE-AUC | Unique to pNN50 | Shared pNN50∩Complexity |
          Unique to confounders | remaining shared terms
        Fit all 2^k − 1 submodels (k = 3 predictor groups) per dataset.
-     → figures/Figure8/commonality_analysis.csv
-     → figures/Figure8/Fig8_D_variance_decomposition.png
+     → figures/Figure7/commonality_analysis.csv
+     → figures/Figure7/Fig7_D_variance_decomposition.png
 
   3. Age/sex-adjusted Spearman correlations
        Regress Age + Sex out of both Complexity and each metric (OLS residuals),
        then re-compute Spearman ρ. Flag |Δρ| > 0.1.
-     → figures/Figure8/age_sex_adjusted_correlations.csv
+     → figures/Figure7/age_sex_adjusted_correlations.csv
 
 Notes on data availability:
   - Chile  : Age (62/71 available), Sex M/F (68/71 available)
@@ -54,7 +54,7 @@ warnings.filterwarnings("ignore")
 
 ROOT = Path(__file__).parent.parent
 DATA = ROOT / "data"
-RESULTS = ROOT / "figures" / "Figure8"
+RESULTS = ROOT / "figures" / "Figure7"
 FIGURES = ROOT / "figures"
 
 BEST_TRAD = "pNN50"     # most consistent metric across all 3 cohorts (TINN excluded:
@@ -258,7 +258,7 @@ def hierarchical_regression(df: pd.DataFrame) -> pd.DataFrame:
 
     out = pd.DataFrame(rows)
     out.to_csv(RESULTS / "hierarchical_regression.csv", index=False)
-    print(f"\nHierarchical regression → figures/Figure8/hierarchical_regression.csv")
+    print(f"\nHierarchical regression → figures/Figure7/hierarchical_regression.csv")
     return out
 
 
@@ -379,7 +379,7 @@ def commonality_analysis(df: pd.DataFrame) -> pd.DataFrame:
 
     out = pd.DataFrame(rows)
     out.to_csv(RESULTS / "commonality_analysis.csv", index=False)
-    print(f"Commonality analysis → figures/Figure8/commonality_analysis.csv")
+    print(f"Commonality analysis → figures/Figure7/commonality_analysis.csv")
     return out
 
 
@@ -444,7 +444,7 @@ def make_variance_decomp_plot(comm: pd.DataFrame):
         fontsize=11, y=1.02,
     )
     plt.tight_layout()
-    out = FIGURES / "Figure8" / "Fig8_D_variance_decomposition.png"
+    out = FIGURES / "Figure7" / "Fig7_D_variance_decomposition.png"
     out.parent.mkdir(exist_ok=True)
     fig.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -539,7 +539,7 @@ def adjusted_spearman(df: pd.DataFrame) -> pd.DataFrame:
     out["flag"] = out["delta_rho"].abs().gt(0.1).map({True: "FLAG", False: ""})
 
     out.to_csv(RESULTS / "age_sex_adjusted_correlations.csv", index=False)
-    print(f"Age/sex-adjusted correlations → figures/Figure8/age_sex_adjusted_correlations.csv")
+    print(f"Age/sex-adjusted correlations → figures/Figure7/age_sex_adjusted_correlations.csv")
 
     # Print flagged
     flagged = out[out["flag"] == "FLAG"].sort_values("delta_rho")

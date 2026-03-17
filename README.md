@@ -54,11 +54,10 @@ public_release/
 │   ├── generate_figure4.py        # Figure 4: MSE comparison across centers
 │   ├── generate_figure5.py        # Figure 5: diagnostic performance & AUC comparison
 │   ├── generate_figure6.py        # Figure 6: age-independency validation
-│   ├── generate_figure7.py        # Figure 7: ML validation (HC features vs DL, LOCO)
-│   ├── generate_figure8.py        # Figure 8: autonomic physiology composite
-│   ├── generate_presentation.py   # Compile figures into PowerPoint
+│   ├── generate_figure7.py        # Figure 7: autonomic physiology composite
+│   ├── generate_appendix.py       # Appendix: cross-center generalization matrix
 │   │
-│   │   # Statistical pre-processing for Figure 8 (run automatically by run_pipeline.py)
+│   │   # Statistical pre-processing for Figure 7 (run automatically by run_pipeline.py)
 │   ├── traditional_hrv_metrics.py         # Step 1: consolidate HRV across centers
 │   ├── multiscale_decomposition.py        # Step 2: scale-metric correlations, MSE curves
 │   ├── complexity_correlation_analysis.py # Step 3: Spearman ρ + bootstrap CIs
@@ -66,8 +65,9 @@ public_release/
 │   └── cross_dataset_consistency.py       # Step 5: physiological interpretation, report
 │
 ├── figures/                       # Output directory for all figures
-│   ├── Figure1/ … Figure7/        # PNG + SVG per manuscript figure
-│   └── Figure8/                   # Figure 8 PNG/SVG + all statistical intermediate CSVs
+│   ├── Figure1/ … Figure6/        # PNG + SVG per manuscript figure
+│   ├── Figure7/                   # Figure 7 PNG/SVG + all statistical intermediate CSVs
+│   └── Appendix/                  # Appendix: generalization matrix PNG/SVG
 │
 └── requirements.txt               # Python dependencies
 ```
@@ -78,34 +78,34 @@ public_release/
 
 ### Can be run (no raw data needed)
 
-**Figures 1–8** can all be regenerated with one command:
+**Figures 1–7** can all be regenerated with one command:
 
 ```bash
 cd /path/to/public_release
-python scripts/run_pipeline.py        # regenerates all figures 1–8
+python scripts/run_pipeline.py        # regenerates all figures 1–7 + appendix
 ```
 
-Figures 1–7 read only from `data/*.csv`. Figure 8 requires statistical
+Figures 1–6 read only from `data/*.csv`. Figure 7 requires statistical
 pre-processing (5 steps); `run_pipeline.py` runs these automatically before
-generating Figure 8.
+generating Figure 7.
 
 To run individual figures:
 ```bash
-python scripts/generate_figure3.py   # any of figures 1–7 directly
-python scripts/generate_figure8.py   # requires pre-processing steps first (see below)
+python scripts/generate_figure3.py   # any of figures 1–6 directly
+python scripts/generate_figure7.py   # requires pre-processing steps first (see below)
 ```
 
-To run the Figure 8 statistical pre-processing steps individually:
+To run the Figure 7 statistical pre-processing steps individually:
 ```bash
 # Run in order — each step depends on the previous:
-python scripts/traditional_hrv_metrics.py          # → figures/Figure8/traditional_hrv_metrics.csv
-python scripts/multiscale_decomposition.py         # → figures/Figure8/scale_metric_correlations.csv
-python scripts/complexity_correlation_analysis.py  # → figures/Figure8/spearman_correlations.csv
-python scripts/incremental_value_analysis.py       # → figures/Figure8/hierarchical_regression.csv
-python scripts/cross_dataset_consistency.py        # → figures/Figure8/physiological_interpretation.csv
+python scripts/traditional_hrv_metrics.py          # → figures/Figure7/traditional_hrv_metrics.csv
+python scripts/multiscale_decomposition.py         # → figures/Figure7/scale_metric_correlations.csv
+python scripts/complexity_correlation_analysis.py  # → figures/Figure7/spearman_correlations.csv
+python scripts/incremental_value_analysis.py       # → figures/Figure7/hierarchical_regression.csv
+python scripts/cross_dataset_consistency.py        # → figures/Figure7/physiological_interpretation.csv
 ```
 
-> **Note:** All statistical outputs are pre-computed in `figures/Figure8/*.csv`. You only
+> **Note:** All statistical outputs are pre-computed in `figures/Figure7/*.csv`. You only
 > need to re-run the analysis scripts if you want to verify or modify the analysis.
 
 ### Cannot be run (raw data not shared)
@@ -175,21 +175,23 @@ the Julia `rcmse` toolbox. For each subject and time window:
 | 4 | `figures/Figure4/Figure4.png` | MSE curves + nAUC comparison across centers |
 | 5 | `figures/Figure5/Figure5.png` | AUC benchmarking + multi-center ROC + feature orthogonality |
 | 6 | `figures/Figure6/Figure6.png` | Age-independence: scatter, partial ρ, LOCO |
-| 7 | `figures/Figure7/Figure7.png` | ML validation: RF importance, LOCO per center × model, HC vs DL, generalization matrix, ROC, biomarker boxplot |
-| 8 | `figures/Figure8/Figure8.png` | Composite: autonomic correlates, confound correction, scale anatomy |
+| 5 | `figures/Figure5/Figure5.png` | Diagnostic performance, ML validation & feature independence (11 panels) |
+| 6 | `figures/Figure6/Figure6.png` | Age-independence: scatter + partial ρ across centers |
+| 7 | `figures/Figure7/Figure7.png` | Composite: autonomic correlates, confound correction, scale anatomy |
+| — | `figures/Appendix/FigureAppendix.png` | Appendix: cross-center generalization matrix (RF, LOCO) |
 
-### Figure 8 panel guide
+### Figure 7 panel guide
 
 | Panel | Description | Source |
 |-------|-------------|--------|
 | A | Spearman ρ heatmap: complexity vs traditional HRV × center × group | `scripts/complexity_correlation_analysis.py` |
 | B | Forest plot: cross-dataset consistency of key correlates | `scripts/cross_dataset_consistency.py` |
-| C | Scale physiology heatmap: ρ per scale × metric (CETRAM / Cruces / Nagoya 16–20h) | `generate_figure8.py` inline |
+| C | Scale physiology heatmap: ρ per scale × metric (CETRAM / Cruces / Nagoya 16–20h) | `generate_figure7.py` inline |
 | D | McFadden R² variance decomposition (incremental value) | `scripts/incremental_value_analysis.py` |
 | E | Annotated MSE curves: PD vs HC + Mann-Whitney per scale | `scripts/multiscale_decomposition.py` |
-| F | Confound correction: raw vs age/sex-adjusted ρ (Pooled n=152) | `generate_figure8.py` inline |
-| G | Autonomic synthesis: raw ρ / partial ρ / unique variance per metric | `generate_figure8.py` inline |
-| H | Scale anatomy: ρ vs timescale for key HRV metrics (Nagoya 16–20h & CETRAM) | `generate_figure8.py` inline |
+| F | Confound correction: raw vs age/sex-adjusted ρ (Pooled n=152) | `generate_figure7.py` inline |
+| G | Autonomic synthesis: raw ρ / partial ρ / unique variance per metric | `generate_figure7.py` inline |
+| H | Scale anatomy: ρ vs timescale for key HRV metrics (Nagoya 16–20h & CETRAM) | `generate_figure7.py` inline |
 
 ---
 
@@ -219,7 +221,7 @@ Per-subject, per-4h-window summary for the full Nagoya 24h recording.
 | `SDNN` | SDNN (s) |
 | `RMSSD` | RMSSD (s) |
 
-### `results/traditional_hrv_metrics.csv`
+### `figures/Figure7/traditional_hrv_metrics.csv`
 
 Pooled HRV table (166 subjects: CETRAM 71 + Cruces 58 + Nagoya 37 with full HRV).
 
