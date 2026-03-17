@@ -63,11 +63,14 @@ public_release/
 │   ├── complexity_correlation_analysis.py # Step 3: Spearman ρ + bootstrap CIs
 │   ├── incremental_value_analysis.py      # Step 4: hierarchical regression, variance decomp
 │   └── cross_dataset_consistency.py       # Step 5: physiological interpretation, report
+│   ├── generate_figure8.py        # Figure 8: clinical correlations (CETRAM PD cohort)
+│   ├── generate_appendix.py       # Appendix 1: cross-center generalization matrix
+│   └── generate_appendix2.py      # Appendix 2: per-scale AUC, ECG vs PPG modality
 │
 ├── figures/                       # Output directory for all figures
 │   ├── Figure1/ … Figure6/        # PNG + SVG per manuscript figure
 │   ├── Figure7/                   # Figure 7 PNG/SVG + all statistical intermediate CSVs
-│   └── Appendix/                  # Appendix: generalization matrix PNG/SVG
+│   └── Appendix/                  # Appendix 1 (generalization matrix) + Appendix 2 (per-scale AUC)
 │
 └── requirements.txt               # Python dependencies
 ```
@@ -173,12 +176,12 @@ the Julia `rcmse` toolbox. For each subject and time window:
 | 2 | `figures/Figure2/Figure2.png` | RRi traces, HR & age distributions, Poincaré plots |
 | 3 | `figures/Figure3/Figure3.png` | Nagoya 24h circadian profile of complexity (Panels A–F) |
 | 4 | `figures/Figure4/Figure4.png` | MSE curves + nAUC comparison across centers |
-| 5 | `figures/Figure5/Figure5.png` | AUC benchmarking + multi-center ROC + feature orthogonality |
-| 6 | `figures/Figure6/Figure6.png` | Age-independence: scatter, partial ρ, LOCO |
 | 5 | `figures/Figure5/Figure5.png` | Diagnostic performance, ML validation & feature independence (11 panels) |
 | 6 | `figures/Figure6/Figure6.png` | Age-independence: scatter + partial ρ across centers |
 | 7 | `figures/Figure7/Figure7.png` | Composite: autonomic correlates, confound correction, scale anatomy |
-| — | `figures/Appendix/FigureAppendix.png` | Appendix: cross-center generalization matrix (RF, LOCO) |
+| 8 | `figures/Figure8/Figure8.png` | Clinical correlations: complexity vs CISI-PD, H&Y, disease duration, non-motor symptoms (CETRAM PD cohort, n=22; LEDD pending) |
+| App. 1 | `figures/Appendix/FigureAppendix.png` | Cross-center generalization matrix (RF, LOCO) |
+| App. 2 | `figures/Appendix/FigureAppendix2.png` | Per-scale AUC across recording modalities (ECG vs PPG) |
 
 ### Figure 7 panel guide
 

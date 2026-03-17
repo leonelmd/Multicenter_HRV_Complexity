@@ -73,9 +73,17 @@ def main():
         ("python scripts/generate_figure7.py",
          "Figure 7 — Autonomic physiology of cardiac complexity (composite)"),
 
+        # ── Figure 8: clinical correlation (CETRAM PD cohort) ─────────────────
+        ("python scripts/generate_figure8.py",
+         "Figure 8 — Clinical correlation: complexity vs CISI-PD, H&Y, non-motor symptoms"),
+
         # ── Appendix: cross-center generalization matrix ───────────────────────
         ("python scripts/generate_appendix.py",
-         "Appendix — Cross-center generalization matrix (RF, LOCO)"),
+         "Appendix 1 — Cross-center generalization matrix (RF, LOCO)"),
+
+        # ── Appendix 2: per-scale AUC, ECG vs PPG modality ───────────────────
+        ("python scripts/generate_appendix2.py",
+         "Appendix 2 — Per-scale AUC across modalities (ECG vs PPG)"),
     ]
 
     for cmd, desc in steps:
@@ -85,7 +93,7 @@ def main():
     print("  PIPELINE COMPLETED SUCCESSFULLY")
     print("=" * 70)
     print("\nGenerated figures:")
-    for i in range(1, 8):
+    for i in range(1, 9):
         figdir = os.path.join(PROJECT_ROOT, "figures", f"Figure{i}")
         if os.path.isdir(figdir):
             pngs = [f for f in os.listdir(figdir) if f.endswith(".png")]
