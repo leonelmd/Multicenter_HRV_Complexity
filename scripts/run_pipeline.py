@@ -8,12 +8,14 @@ Figure 7 requires statistical pre-processing; this pipeline runs those steps
 automatically (steps 1–5) before generating the figure.
 
 Usage (from the public_release/ root):
-    python scripts/run_pipeline.py
+    python scripts/run_pipeline.py           # sync data then regenerate all figures
+    python scripts/run_pipeline.py --no-sync # skip sync (use existing data/ as-is)
 
 What this does NOT do:
     - Compute MSE/HRV features from raw RRI signals (raw signals are not shared).
 """
 
+import argparse
 import os
 import subprocess
 import sys
@@ -33,12 +35,31 @@ def run(command, description):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--no-sync", action="store_true",
+                        help="Skip data sync (use existing data/ as-is)")
+    args = parser.parse_args()
+
     print("=" * 70)
     print("  MULTICENTER CARDIAC AUTONOMIC COMPLEXITY — FIGURE PIPELINE")
     print("=" * 70)
     print(f"\n  Working directory : {PROJECT_ROOT}")
     print(f"  Figures will be saved to: {os.path.join(PROJECT_ROOT, 'figures')}\n")
     print("=" * 70)
+
+    if not args.no_sync:
+        print("\n>>> Syncing data from center pipelines...")
+        try:
+            subprocess.check_call(
+                f"{sys.executable} scripts/sync_center_data.py --apply",
+                shell=True, cwd=PROJECT_ROOT
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"\n!!! Sync failed: {e}")
+            print("    Run with --no-sync to skip sync and use existing data/.")
+            sys.exit(1)
+    else:
+        print("\n  [--no-sync] Skipping data sync, using existing data/ files.")
 
     steps = [
         # ── Figures 1–7: read directly from data/ ─────────────────────────────

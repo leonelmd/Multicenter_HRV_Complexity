@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import ttest_ind
+from scipy.stats import mannwhitneyu
 
 # PORTABLE PATH RESOLUTION
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -122,13 +122,14 @@ def generate_figure4():
             df_final = pd.merge(sub_index, hr_j_a, on='Subject')
             
         df_final['Norm'] = df_final['MSE'] / df_final['HR']
-        
-        sns.boxplot(x='Group', y='Norm', data=df_final, palette=colors, hue='Group', legend=False, ax=ax2, order=['Control', 'PD'], showfliers=False, width=0.5)
-        sns.stripplot(x='Group', y='Norm', data=df_final, palette=colors, hue='Group', legend=False, ax=ax2, order=['Control', 'PD'], alpha=0.6, color='black', edgecolor='white', linewidth=0.5)
+        df_plot = df_final[df_final['Group'].isin(['Control', 'PD'])]
+
+        sns.boxplot(x='Group', y='Norm', data=df_plot, palette=colors, hue='Group', legend=False, ax=ax2, order=['Control', 'PD'], showfliers=False, width=0.5)
+        sns.stripplot(x='Group', y='Norm', data=df_plot, palette=colors, hue='Group', legend=False, ax=ax2, order=['Control', 'PD'], alpha=0.6, color='black', edgecolor='white', linewidth=0.5)
         
         c_vals = df_final[df_final['Group'] == 'Control']['Norm'].dropna()
         p_vals = df_final[df_final['Group'] == 'PD']['Norm'].dropna()
-        t, p = ttest_ind(c_vals, p_vals)
+        _, p = mannwhitneyu(c_vals, p_vals, alternative='two-sided')
         
         range_str = rf"$\Sigma$MSE({min(index_range)}-{max(index_range)}) / HR"
         ax2.set_title(f"HR-Normalized Complexity\n{range_str}", fontsize=18, fontweight='bold')

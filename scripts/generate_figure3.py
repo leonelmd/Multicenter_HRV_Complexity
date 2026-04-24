@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
-from scipy.stats import ttest_ind
+from scipy.stats import mannwhitneyu
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR    = os.path.join(os.path.dirname(SCRIPT_DIR), "data")
@@ -41,8 +41,19 @@ def generate_figure3():
     df['Group'] = df['Group'].str.strip().str.lower().replace(
         {'control': 'Control', 'pd': 'PD'})
     df = df[df['Group'].isin(['Control', 'PD'])]
-    # Window centre for plotting (mid-point of 4h block)
     df['Win_centre'] = df['Window_start_h'] + 2.0
+
+    # Coverage: N subjects per window (both groups combined)
+    n_total    = df['Subject'].nunique()
+    n_per_win  = (df.groupby('Window_start_h')['Subject']
+                  .nunique().reset_index()
+                  .rename(columns={'Subject': 'N'}))
+    SPARSE_THR = 0.80   # flag windows below 80 % full-cohort coverage
+
+    # Sparse zone boundaries for shading (window centres, inclusive)
+    sparse_wins = n_per_win[n_per_win['N'] / n_total < SPARSE_THR]['Window_start_h']
+    sparse_x_lo = float(sparse_wins.min()) + 2.0 if len(sparse_wins) else None
+    sparse_x_hi = float(sparse_wins.max()) + 6.0 if len(sparse_wins) else None
 
     fig = plt.figure(figsize=(24, 20))
     gs  = fig.add_gridspec(3, 2, hspace=0.42, wspace=0.28)
@@ -58,7 +69,6 @@ def generate_figure3():
         ax = fig.add_subplot(gs[idx // 2, idx % 2])
         add_panel_label(ax, chr(65 + idx))
 
-        # subject-level mean per window, then group mean ± SEM
         subj_mean = (df.groupby(['Group', 'Subject', 'Win_centre'])[metric]
                      .mean().reset_index())
         summary   = (subj_mean.groupby(['Group', 'Win_centre'])[metric]
@@ -66,12 +76,43 @@ def generate_figure3():
 
         for grp in ['Control', 'PD']:
             d = summary[summary['Group'] == grp].sort_values('Win_centre')
-            # light smoothing over 3 points
             ym = d['mean'].rolling(3, center=True, min_periods=1).mean()
             ys = d['sem'].rolling(3,  center=True, min_periods=1).mean()
             ax.plot(d['Win_centre'], ym, color=COLORS[grp], linewidth=3, label=grp)
             ax.fill_between(d['Win_centre'], ym - ys, ym + ys,
                             color=COLORS[grp], alpha=0.15)
+
+        # Per-window shading: shade each 4-hour block with opacity proportional
+        # to missing subjects, but only for windows meaningfully below full coverage
+        # (<75%). This shows the gradient within the sparse zone without cluttering
+        # windows that are nearly complete.
+        SHADE_THR = 0.75
+        for _, wrow in n_per_win.iterrows():
+            coverage = wrow['N'] / n_total
+            if coverage < SHADE_THR:
+                # Scale opacity: 0 at threshold, max ~0.40 at worst coverage
+                alpha = (SHADE_THR - coverage) / SHADE_THR * 0.55
+                ax.axvspan(wrow['Window_start_h'] + 2.0,    # centre = start + 2
+                           wrow['Window_start_h'] + 6.0,    # end of 4-h block
+                           color='#888888', alpha=alpha, zorder=0,
+                           label='_nolegend_')
+
+        # N-per-window annotation as secondary x-axis ticks
+        ax2 = ax.twiny()
+        ax2.set_xlim(ax.get_xlim())
+        tick_wins  = sorted(n_per_win['Window_start_h'].unique())
+        tick_ctrs  = [w + 2.0 for w in tick_wins]
+        tick_ns    = [n_per_win[n_per_win['Window_start_h'] == w]['N'].values[0]
+                      for w in tick_wins]
+        # Show N only every 4 windows to avoid crowding
+        sparse_mask = [i % 4 == 0 or (n_total - n) >= 4 for i, n in enumerate(tick_ns)]
+        ax2.set_xticks([c for c, m in zip(tick_ctrs, sparse_mask) if m])
+        ax2.set_xticklabels([f'n={n}' for n, m in zip(tick_ns, sparse_mask) if m],
+                            fontsize=6.5, color='#666666', rotation=45)
+        ax2.tick_params(axis='x', length=3, pad=1)
+        if idx == 0:
+            ax2.set_xlabel('N subjects per window', fontsize=9, color='#666666',
+                           labelpad=2)
 
         ax.set_title(title, fontsize=18, fontweight='bold')
         ax.set_xlabel('Time of day', fontsize=13)
@@ -97,7 +138,7 @@ def generate_figure3():
         c   = sub[sub['Group'] == 'Control']['nAUC_1_20'].dropna()
         p   = sub[sub['Group'] == 'PD']['nAUC_1_20'].dropna()
         if len(c) > 5 and len(p) > 5:
-            _, pv = ttest_ind(c, p)
+            _, pv = mannwhitneyu(c, p, alternative='two-sided')
             lp = -np.log10(pv)
         else:
             lp = 0.0
@@ -105,24 +146,42 @@ def generate_figure3():
         logps.append(lp)
         sig_flags.append(pv < 0.05)
 
+    n_at_win   = {w: n_per_win[n_per_win['Window_start_h'] == w]['N'].values[0]
+                  for w in wins}
     bar_colors = ['#D62828' if s else '#AAAAAA' for s in sig_flags]
     x_labels   = [f'{int(w):02d}h' for w in wins]
-    ax_e.bar(x_labels, logps, color=bar_colors, edgecolor='white', linewidth=0.4)
+    bars = ax_e.bar(x_labels, logps, color=bar_colors, edgecolor='white', linewidth=0.4)
+
+    # Shade sparse bars
+    for bar, w in zip(bars, wins):
+        if n_at_win[w] / n_total < SPARSE_THR:
+            bar.set_hatch('///')
+            bar.set_edgecolor('#999999')
+
+    # N label above each bar
+    for bar, w in zip(bars, wins):
+        ax_e.text(bar.get_x() + bar.get_width() / 2,
+                  bar.get_height() + 0.05,
+                  f'n={n_at_win[w]}', ha='center', va='bottom',
+                  fontsize=6, color='#444444', rotation=90)
+
     ax_e.axhline(-np.log10(0.05),  color='black', ls='--', alpha=0.5, lw=1.2,
                  label='p = 0.05')
     ax_e.axhline(-np.log10(0.001), color='black', ls=':',  alpha=0.5, lw=1.2,
                  label='p = 0.001')
     ax_e.set_title('PD vs Control: nAUC(1–20) Discrimination Per Window\n'
-                   '(t-test, 4-hour windows, minimum 4 000 beats)',
+                   '(Mann-Whitney, 4-hour windows, minimum 4 000 beats)',
                    fontsize=16, fontweight='bold')
     ax_e.set_xlabel('Window start (4-hour block)', fontsize=13)
     ax_e.set_ylabel('−log10(p)', fontsize=13)
     ax_e.set_xticks(range(len(x_labels)))
     ax_e.set_xticklabels(x_labels, rotation=45, ha='right', fontsize=8)
-    ax_e.legend(fontsize=10, loc='upper left')
-    red_patch  = mpatches.Patch(color='#D62828', label='Significant (p<0.05)')
-    gray_patch = mpatches.Patch(color='#AAAAAA', label='n.s.')
-    ax_e.legend(handles=[red_patch, gray_patch], fontsize=10, loc='upper left')
+    red_patch    = mpatches.Patch(color='#D62828', label='Significant (p<0.05)')
+    gray_patch   = mpatches.Patch(color='#AAAAAA', label='n.s.')
+    sparse_patch = mpatches.Patch(facecolor='#CCCCCC', hatch='///',
+                                  edgecolor='#999999', label=f'<{int(SPARSE_THR*100)}% coverage')
+    ax_e.legend(handles=[red_patch, gray_patch, sparse_patch],
+                fontsize=9, loc='upper left')
     sns.despine(ax=ax_e)
 
     # ── Panel F : Multi-window circadian boxplot (5 key windows) ─────────────
@@ -131,9 +190,17 @@ def generate_figure3():
 
     # Choose 5 representative windows spanning the day
     key_windows = [0, 7, 11, 16, 20]
-    key_labels  = ['00–04h\n(Night)', '07–11h\n(Morning)',
-                   '11–15h\n(Midday)', '16–20h\n(Afternoon*)',
-                   '20–00h\n(Evening)']
+    key_labels  = []
+    for w, lbl in zip(key_windows,
+                      ['00–04h\n(Night)', '07–11h\n(Morning)',
+                       '11–15h\n(Midday)', '16–20h\n(Afternoon*)',
+                       '20–00h\n(Evening)']):
+        n = n_at_win.get(w, n_per_win[n_per_win['Window_start_h'] == w]['N'].values[0])
+        pct = int(round(n / n_total * 100))
+        suffix = f'\nn={n} ({pct}%)'
+        if pct < int(SPARSE_THR * 100):
+            suffix += ' (!)'
+        key_labels.append(lbl + suffix)
 
     plot_rows = []
     for w, lbl in zip(key_windows, key_labels):
@@ -161,7 +228,7 @@ def generate_figure3():
         cval = sub[sub['Group'] == 'Control']['nAUC_1_20'].dropna()
         pval = sub[sub['Group'] == 'PD']['nAUC_1_20'].dropna()
         if len(cval) > 3 and len(pval) > 3:
-            _, pv = ttest_ind(cval, pval)
+            _, pv = mannwhitneyu(cval, pval, alternative='two-sided')
             sig   = get_sig(pv)
             color = '#D62828' if pv < 0.05 else '#888888'
             ax_f.text(xi, y_top + h * 0.5, sig, ha='center', va='bottom',
