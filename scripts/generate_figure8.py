@@ -3,7 +3,7 @@
 Figure 8: Clinical Correlation Analysis — CETRAM Cohort
 =========================================================
 Correlates the rcMSE cardiac complexity index (nAUC 1–5 / HR) with
-clinical characteristics of 34 PD patients from the CETRAM cohort.
+clinical characteristics of 29 PD patients from the CETRAM cohort.
 
 Clinical data source: data/deidentified_clinical_consolidated.xlsx
 MSE data source:      data/chile_mse.csv
@@ -170,7 +170,7 @@ def load_data():
     # nAUC over scales 1–5 (reliable range for ~15-min recordings)
     scale_cols = [f'S{i}' for i in range(1, 6)]
     mse_wide['nAUC_1_5'] = mse_wide[scale_cols].apply(
-        lambda r: np.trapezoid(r.values, x=list(range(1, 6))), axis=1)
+        lambda r: np.trapz(r.values, x=list(range(1, 6))), axis=1)
 
     # HR from chile_metrics (HRV_MeanNN → HR)
     if 'Subject' in metr.columns and 'HRV_MeanNN' in metr.columns:

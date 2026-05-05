@@ -72,20 +72,35 @@ CRUCES     = HRV_ROOT / "Cruces"  / "public_release"
 NAGOYA     = HRV_ROOT / "Nagoya"  / "public_release"
 
 # ── CETRAM pipeline selection ──────────────────────────────────────────────────
-# "sqi"  — original pipeline (SQI template-match, Pan-Tompkins peaks)
-# "bsqi" — Eduardo Berríos consensus criterion (Ho et al. 2025) — under evaluation
-CETRAM_PIPELINE = "bsqi"
+# "bsqi_kubios" — CURRENT: subjects selected by bsqi recording criterion
+#                 (Ho et al. 2025; 29 PD, 43 Control), then beat sequences
+#                 corrected by Lipponen & Tarvainen (2019) via nk.signal_fixpeaks
+#                 (Kubios method). This is the bsqi cohort with proper RRI cleaning.
+#                 Results written to the standard pipeline paths:
+#                   results/entropy/sample/MSE_curves_sample.csv
+#                   results/metrics/HRV_metrics_cleaned.csv
+#
+# "sqi"         — original pipeline, no bsqi, no Kubios. Kept for reference only.
+#
+# "bsqi"        — RETIRED: bsqi subject selection without Kubios beat correction.
+#                 Source files (entropy_bsqi/, HRV_metrics_bsqi.csv) no longer
+#                 exist on disk after pipeline update.
+CETRAM_PIPELINE = "bsqi_kubios"
 
 # ---------------------------------------------------------------------------
 # Copy rules — built at import time from CETRAM_PIPELINE
 # ---------------------------------------------------------------------------
 
 _CETRAM_SOURCES = {
-    "sqi": {
+    "bsqi_kubios": {          # bsqi subjects + Kubios beat correction (current)
         "mse":     CETRAM / "results/entropy/sample/MSE_curves_sample.csv",
         "metrics": CETRAM / "results/metrics/HRV_metrics_cleaned.csv",
     },
-    "bsqi": {
+    "sqi": {                  # original pipeline without bsqi or Kubios
+        "mse":     CETRAM / "results/entropy/sample/MSE_curves_sample.csv",
+        "metrics": CETRAM / "results/metrics/HRV_metrics_cleaned.csv",
+    },
+    "bsqi": {                 # retired: bsqi without Kubios (files gone)
         "mse":     CETRAM / "results/entropy_bsqi/sample/MSE_curves_sample.csv",
         "metrics": CETRAM / "results/metrics/HRV_metrics_bsqi.csv",
     },
@@ -274,7 +289,7 @@ def recompute_afternoon_features(dry_run: bool) -> str:
 # Provenance record
 # ---------------------------------------------------------------------------
 
-def write_provenance(log_lines: list[str], dry_run: bool) -> None:
+def write_provenance(log_lines, dry_run):  # type: (list, bool) -> None
     if dry_run:
         return
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
