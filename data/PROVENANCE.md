@@ -1,13 +1,13 @@
       # Data Provenance
 
-      Last synced: 2026-04-24 15:18:53
+      Last synced: 2026-05-05 17:07:23
 
       ## Source mapping
 
       | Multicenter file | Source |
       |---|---|
-      | chile_mse.csv | CETRAM pipeline=bsqi: CETRAM/public_release/results/entropy_bsqi/sample/MSE_curves_sample.csv |
-      | chile_metrics.csv | CETRAM pipeline=bsqi: CETRAM/public_release/results/metrics/HRV_metrics_bsqi.csv |
+      | chile_mse.csv | CETRAM pipeline=bsqi_kubios: CETRAM/public_release/results/entropy/sample/MSE_curves_sample.csv |
+      | chile_metrics.csv | CETRAM pipeline=bsqi_kubios: CETRAM/public_release/results/metrics/HRV_metrics_cleaned.csv |
       | chile_demographics.csv | CETRAM/public_release/data/metadata/subject_demographics.csv |
       | spain_mse.csv | Cruces/public_release/results/entropy/sample/MSE_curves_sample.csv |
       | spain_metrics.csv | Cruces/public_release/results/metrics/HRV_metrics.csv |
