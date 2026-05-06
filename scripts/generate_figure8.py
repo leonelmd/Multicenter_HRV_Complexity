@@ -241,6 +241,15 @@ def load_data():
     # Rename NM cols for cleaner labels in the merged df
     df = df.rename(columns=nm_cols)
 
+    # Coerce all clinical numeric columns to float (second-batch individual files
+    # may store values as text like "77 años (estimado)").
+    numeric_clin = ['Age', 'Disease_duration', 'HY_stage', 'Schwab_England',
+                    'CISI_motor', 'CISI_disability', 'CISI_motor_comp',
+                    'CISI_cognitive', 'CISI_total', 'LEDD', 'NM_burden']
+    for nc in numeric_clin:
+        if nc in df.columns:
+            df[nc] = pd.to_numeric(df[nc], errors='coerce')
+
     print(f"  Merged dataset: {len(df)} PD subjects with both MSE + clinical data")
     print(f"  LEDD available: {df['LEDD'].notna().sum()}/{len(df)} "
           f"[PENDING: awaiting full dataset from clinical collaborator]")
