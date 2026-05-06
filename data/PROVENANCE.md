@@ -1,6 +1,6 @@
       # Data Provenance
 
-      Last synced: 2026-05-05 17:07:23
+      Last synced: 2026-05-06 15:45:12
 
       ## Source mapping
 
@@ -25,8 +25,8 @@
       ## Sync log
 
       ```
-        ✓  OK     chile_mse.csv                             (unchanged)
-✓  OK     chile_metrics.csv                         (unchanged)
+        →  COPY  chile_mse.csv                             [CHANGED]  CETRAM/public_release/results/entropy/sample/MSE_curves_sample.csv
+→  COPY  chile_metrics.csv                         [CHANGED]  CETRAM/public_release/results/metrics/HRV_metrics_cleaned.csv
 ✓  OK     chile_demographics.csv                    (unchanged)
 ✓  OK     spain_mse.csv                             (unchanged)
 ✓  OK     spain_metrics.csv                         (unchanged)

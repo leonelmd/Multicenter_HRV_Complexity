@@ -1,17 +1,17 @@
 metric,primary_autonomic_branch,rho_with_complexity_pooled,CI_lower,CI_upper,partial_r_after_age_sex,unique_variance_%,scale_range_of_peak_correlation,directionally_consistent_across_datasets,interpretation_note
-SDNN,Overall HRV (sympatho-vagal),-0.0681,-0.2,0.0665,-0.0481,0.27,1–20 (peak 1),no,Weak relationship — complexity captures distinct information
-RMSSD,Parasympathetic (vagal),0.0101,-0.1291,0.1509,-0.0551,0.2,1–20 (peak 1),no,Weak relationship — complexity captures distinct information
-pNN50,Parasympathetic (vagal),0.1787,0.0213,0.315,0.272,1.06,1–20 (peak 3),yes,Weak relationship — complexity captures distinct information
-SDANN,Slow sympathetic / circadian,0.3016,-0.0253,0.5549,0.276,6.63,1–3 (peak 2),n/a,Moderate relationship; partial overlap with complexity
-SD1,Parasympathetic (short-term),0.0109,-0.1218,0.1496,-0.0551,0.19,1–20 (peak 1),no,Weak relationship — complexity captures distinct information
-SD2,Sympathovagal (longer-term),-0.0946,-0.2263,0.0426,-0.0496,0.27,1–20 (peak 1),no,Weak relationship — complexity captures distinct information
-SD1SD2,Sympathovagal balance,-0.0394,-0.2106,0.1453,0.0006,0.19,1–2 (peak 1),no,Weak relationship — complexity captures distinct information
-VLF_power,Very slow rhythms (RAAS/thermo),0.2887,0.1401,0.4211,-0.0379,15.23,14–20 (peak 15),no,Weak relationship — complexity captures distinct information
-LF_power,Baroreflex / sympathovagal,0.3588,0.216,0.492,-0.0236,5.49,16–20 (peak 16),yes,Moderate relationship; partial overlap with complexity
-HF_power,Parasympathetic (respiratory),0.1487,-0.0104,0.2952,-0.0257,6.71,18–19 (peak 18),yes,Weak relationship — complexity captures distinct information
-Total_power,Overall HRV (spectral),0.2461,0.0771,0.4086,-0.0504,8.66,16–20 (peak 18),no,Weak relationship — complexity captures distinct information
-LF_HF,Sympathovagal balance,0.0039,-0.1525,0.1685,-0.0674,0.66,none significant,no,Weak relationship — complexity captures distinct information
-LF_norm,Sympathovagal balance,0.5193,0.3725,0.6292,0.1828,0.64,4–11 (peak 4),yes,Largely redundant with complexity
-HF_norm,Parasympathetic (normalised),0.0758,-0.0855,0.2299,0.062,0.0,none significant,no,Weak relationship — complexity captures distinct information
-DFA_alpha1,Short-range fractal scaling,-0.1118,-0.2583,0.0342,-0.0307,0.05,1–2 (peak 1),no,Weak relationship — complexity captures distinct information
-DFA_alpha2,Long-range fractal scaling,0.075,-0.1017,0.2488,-0.0054,2.5,1–2 (peak 1),yes,Weak relationship — complexity captures distinct information
+SDNN,Overall HRV (sympatho-vagal),-0.1383,-0.268,0.0023,0.0557,1.53,1–20 (peak 2),no,Weak relationship — complexity captures distinct information
+RMSSD,Parasympathetic (vagal),0.0292,-0.1268,0.1781,0.0295,2.57,1–20 (peak 8),no,Weak relationship — complexity captures distinct information
+pNN50,Parasympathetic (vagal),0.4044,0.2681,0.5201,0.28,0.77,1–20 (peak 3),yes,Moderate relationship; partial overlap with complexity
+SDANN,Slow sympathetic / circadian,0.3016,-0.0352,0.5664,0.276,6.63,1–3 (peak 2),n/a,Moderate relationship; partial overlap with complexity
+SD1,Parasympathetic (short-term),0.0295,-0.1081,0.1873,0.0292,2.57,1–20 (peak 8),no,Weak relationship — complexity captures distinct information
+SD2,Sympathovagal (longer-term),-0.1661,-0.2962,-0.0302,0.0526,0.97,1–20 (peak 6),no,Weak relationship — complexity captures distinct information
+SD1SD2,Sympathovagal balance,0.0286,-0.1553,0.1982,0.0662,4.41,1–20 (peak 3),yes,Weak relationship — complexity captures distinct information
+VLF_power,Very slow rhythms (RAAS/thermo),0.2166,0.0621,0.3481,-0.0359,14.4,14–15 (peak 15),no,Weak relationship — complexity captures distinct information
+LF_power,Baroreflex / sympathovagal,0.2943,0.1382,0.4286,0.0349,4.61,none significant,yes,Weak relationship — complexity captures distinct information
+HF_power,Parasympathetic (respiratory),0.1693,0.0236,0.317,0.0552,5.32,none significant,no,Weak relationship — complexity captures distinct information
+Total_power,Overall HRV (spectral),0.2182,0.0573,0.3755,0.0129,8.17,none significant,no,Weak relationship — complexity captures distinct information
+LF_HF,Sympathovagal balance,-0.1073,-0.2447,0.0483,-0.0376,1.53,none significant,no,Weak relationship — complexity captures distinct information
+LF_norm,Sympathovagal balance,0.3731,0.2285,0.4969,0.1545,1.68,4–11 (peak 4),yes,Moderate relationship; partial overlap with complexity
+HF_norm,Parasympathetic (normalised),0.155,0.0075,0.2987,0.1204,0.01,none significant,no,Weak relationship — complexity captures distinct information
+DFA_alpha1,Short-range fractal scaling,-0.176,-0.3267,-0.0364,-0.1006,1.3,1–20 (peak 2),yes,Weak relationship — complexity captures distinct information
+DFA_alpha2,Long-range fractal scaling,0.039,-0.1244,0.2057,-0.0684,0.0,none significant,yes,Weak relationship — complexity captures distinct information
