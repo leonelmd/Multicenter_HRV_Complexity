@@ -108,6 +108,8 @@ def main():
         # ── Appendix 2: per-scale AUC, ECG vs PPG modality ───────────────────
         ("python scripts/generate_appendix2.py",
          "Appendix 2 — Per-scale AUC across modalities (ECG vs PPG)"),
+        ("python scripts/generate_appendix3.py",
+         "Appendix 3 — Sensitivity of rcMSE to recording length"),
     ]
 
     for cmd, desc in steps:
