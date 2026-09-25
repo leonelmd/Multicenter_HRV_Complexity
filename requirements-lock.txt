@@ -1,0 +1,18 @@
+# Exact versions used to produce the released figures.
+# Generated on the analysis machine; regenerate with: pip freeze
+#
+# Reproduce with:  pip install -r requirements-lock.txt
+
+pandas==2.3.3
+numpy==2.2.6
+scipy==1.15.3
+scikit-learn==1.7.2
+matplotlib==3.10.9
+seaborn==0.13.2
+pingouin==0.6.1
+statsmodels==0.14.6
+neurokit2==0.2.13
+python-pptx==1.0.2
+
+# Julia side (see scripts/julia/Project.toml):
+#   julia >= 1.9 with CSV, DataFrames, Combinatorics, Trapz, CurveFit

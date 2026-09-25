@@ -50,9 +50,22 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
 BASE            = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NAGOYA_RRI_DIR  = "/Users/leo/HRV-Complexity/Nagoya/public_release/data/processed_rri"
-NAGOYA_META_CSV = "/Users/leo/HRV-Complexity/Nagoya/public_release/data/metadata/metadata.csv"
+# Resolved relative to the repo root; override with NAGOYA_ROOT if needed.
+_NAGOYA_ROOT    = os.environ.get(
+    "NAGOYA_ROOT",
+    os.path.abspath(os.path.join(BASE, "..", "..", "Nagoya", "public_release")))
+NAGOYA_RRI_DIR  = os.path.join(_NAGOYA_ROOT, "data", "processed_rri")
+NAGOYA_META_CSV = os.path.join(_NAGOYA_ROOT, "data", "metadata", "metadata.csv")
 OUT_CSV         = os.path.join(BASE, 'data', 'japan_afternoon_features.csv')
+
+# Suzuki et al. (2022) adjacent-difference exclusion for RMSSD / pNN50.
+SUZUKI_DIFF_EXCL_MS = 100.0
+
+
+def _norm_group(g):
+    """Canonical group labels: 'PD' / 'Control'. Nagoya metadata uses 'control'."""
+    s = str(g).strip().lower()
+    return {"pd": "PD", "control": "Control"}.get(s, str(g).strip())
 
 # ── Settings ──────────────────────────────────────────────────────────────────
 
@@ -177,6 +190,19 @@ def compute_hrv(rri_ms):
     result['DFA_alpha1'] = dfa_alpha(rri_ms, *DFA_ALPHA1_SCALES)
     result['DFA_alpha2'] = dfa_alpha(rri_ms, *DFA_ALPHA2_SCALES)
 
+    # Suzuki et al. (2022) convention for the vagal metrics: exclude successive
+    # differences >= 100 ms before computing RMSSD / pNN50 (J Neural Transm
+    # 129:1299-1306, p.1301). Without it these are inflated ~3.7x / ~2x by
+    # extrasystoles and movement artifact in free-living Holter data.
+    # See Multicenter/SUZUKI_CONSISTENCY_CHECK.md sec. 1.
+    result['HRV_RMSSD_unfiltered'] = result.get('HRV_RMSSD', np.nan)
+    result['HRV_pNN50_unfiltered'] = result.get('HRV_pNN50', np.nan)
+    d = np.diff(np.asarray(rri_ms, dtype=float))
+    d = d[np.abs(d) < SUZUKI_DIFF_EXCL_MS]
+    if d.size > 1:
+        result['HRV_RMSSD'] = float(np.sqrt(np.mean(d ** 2)))
+        result['HRV_pNN50'] = float(100.0 * np.mean(np.abs(d) > 50.0))
+
     return result
 
 
@@ -199,7 +225,11 @@ def main():
 
         info       = meta_d[sid]
         start_time = str(info.get('Start_Time', '09:00:00'))
-        group      = str(info.get('Group', '')).strip()
+        # Normalise the group label. Nagoya's metadata.csv writes 'PD' / 'control'
+        # (mixed case); every other cohort uses 'PD' / 'Control'. Left unnormalised
+        # this forces every downstream consumer to defend itself with
+        # .str.lower().replace(...), and one that forgets silently drops a group.
+        group      = _norm_group(info.get('Group', ''))
         age        = info.get('Age', np.nan)
         gender     = info.get('Gender', np.nan)
 

@@ -1,255 +1,186 @@
-# Multicenter Parkinson's Disease — Cardiac Autonomic Complexity Study
+# Multicenter Parkinson's Disease — Cardiac Autonomic Complexity
 
-Public code and data repository for the multicenter study investigating cardiac autonomic
-complexity as a biomarker for Parkinson's Disease (PD).
+Code and derived data for a multicenter study of cardiac autonomic complexity in
+Parkinson's disease (PD), measured by refined composite multiscale entropy (rcMSE)
+across three independent cohorts and three recording modalities.
 
----
-
-## Study Overview
-
-We measure Heart Rate Variability (HRV) and multiscale entropy complexity (rcMSE nAUC)
-from ECG/PPG recordings across three international centers to identify robust physiological
-biomarkers for Parkinson's Disease.
-
-**Cohorts:**
-
-| Center | Abbrev. | Signal | Recording | N subjects | Groups |
-|--------|---------|--------|-----------|------------|--------|
-| CETRAM, Santiago de Chile | CETRAM | ECG | ~15 min rest | 71 | 35 PD, 36 Control |
-| Hospital Universitario Cruces, Spain | Cruces | PPG | 5–15 min | 58 | 29 PD, 29 Control |
-| Nagoya University, Japan | Nagoya | ECG Holter | 24 h ambulatory | 45* | 24 PD, 21 Control |
-
-\* Nagoya: up to 45 subjects depending on the time window analyzed (16–20h best window).
-
-**Primary biomarker:** `rcMSE nAUC(1–20) / HR` — refined Composite Multiscale Entropy,
-area under the curve over scales 1–20, normalized by mean heart rate.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## Repository Structure
+## Cohorts
+
+| Centre | Signal | Recording | Analysed n | Controls | Source publication |
+|---|---|---|---|---|---|
+| **CETRAM**, Santiago, Chile | ECG, 1000 Hz | ~15 min supine rest | **73** (43 C / 30 PD) | healthy | — |
+| **Cruces**, Bilbao, Spain | finger PPG, 500 Hz | **7.40 min**, during resting-state fMRI | **52** (21 C / 31 PD) | healthy | Iniguez et al. 2022 |
+| **Nagoya**, Japan | ECG Holter (POLAR) | ~24 h ambulatory | **45–50** (21–23 C / 24–27 PD) | **disease controls** | Suzuki et al. 2022 |
+
+Notes that matter for interpretation:
+
+- **Nagoya controls are disease controls**, not healthy volunteers — 12 essential tremor and 11 investigated for numbness/dizziness/light-headedness with no abnormality found. Nagoya effect sizes are therefore against a harder comparator than the other two cohorts.
+- **Cruces carries six records labelled `Other`** (`A01_1, A03_2, A05_2, A09, D01, D05`) with no diagnosis. They are **excluded from all primary analyses**; the published cohort of Iniguez et al. is exactly 31 PD + 21 healthy controls, which matches our Control/PD counts. A sensitivity analysis including them is reported in the manuscript.
+- Nagoya n varies by analysis: 50 subjects have a full record, 45 have a usable 16–20 h window, 43 have complete 24-h HRV.
+
+---
+
+## The complexity index
+
+**rcMSE with a fixed tolerance.** For each subject:
+
+1. Compute refined composite multiscale entropy (Wu et al. 2014) on the RR-interval series, scales τ = 1…20.
+2. The tolerance is `r = 0.2 × SD(RRi)`, computed **once from the original series and held constant across every scale**.
+3. Summarise with `nAUC = trapz(1..n, curve) / n` over the reliable scale range, optionally divided by mean HR.
+
+### Why fixed r is not a detail
+
+Coarse-graining reduces variance with scale. Holding `r` fixed lets that reduction
+express itself in the entropy — which is what MSE exists to measure. Recomputing
+`r` from each coarse-grained series cancels exactly that term: on synthetic
+signals the per-scale variant inverts the canonical Costa contrast, with
+white-noise entropy no longer decaying and 1/f noise rising.
+
+An earlier version of this pipeline recomputed `r` per scale. It has been
+corrected throughout and a regression test (`scripts/julia/test_entropy.jl`)
+now fails loudly if the defect is reintroduced.
+
+### Scale ranges
+
+Reliability limit `N/τ ≥ 200`, validated independently by split-half reliability:
+
+| Cohort | beats | reliable τ | index used |
+|---|---|---|---|
+| CETRAM | ~1088 | ≤ 5 | nAUC(1–5) / HR |
+| Cruces | ~498 | ≤ 2 | nAUC(1–5) / HR — see caveat |
+| Nagoya | ~14 000 (4 h window) | ≤ 20 (up to 70 permitted) | nAUC(1–5) / HR and nAUC(1–20) / HR |
+
+A fixed τ = 1–5 is applied to CETRAM and Cruces so the cohorts remain directly
+comparable. **Caveat:** at 498 beats Cruces exceeds its own reliability limit at
+τ > 2 (split-half reliability of nAUC(1–5) is 0.347, against 0.494 in CETRAM and
+0.670 in Nagoya). Cruces should be read as supporting the *direction* of effect,
+not as independent confirmation of magnitude.
+
+`nAUC` divides the trapezoidal area by the number of points `n`, not by the span
+`n−1`, so it carries an n-dependent factor (0.80 at n=5, 0.95 at n=20). Within a
+cohort this is a constant rescaling and changes nothing; **across cohorts with
+different scale ranges the raw values are not comparable** — use effect sizes.
+
+---
+
+## Repository layout
 
 ```
 public_release/
-├── data/                          # Pre-computed features (SHARED)
-│   ├── chile_mse.csv              # CETRAM: rcMSE per scale, 71 subjects × 20 scales
-│   ├── chile_metrics.csv          # CETRAM: full HRV feature set (neurokit2)
-│   ├── chile_demographics.csv     # CETRAM: Age, Sex
-│   ├── spain_mse.csv              # Cruces: rcMSE per scale, 58 subjects × 20 scales
-│   ├── spain_metrics.csv          # Cruces: full HRV feature set
-│   ├── spain_demographics.csv     # Cruces: Age
-│   ├── japan_afternoon_mse.csv    # Nagoya 16–20h: rcMSE, 45 subjects × 20 scales (best window)
-│   ├── japan_morning_mse.csv      # Nagoya 07–11h: rcMSE, 39 subjects × 20 scales
-│   ├── japan_evolution.csv        # Nagoya: nAUC(1–20) + HRV metrics per 4h window (full 24h)
-│   ├── japan_recalc_metrics.csv   # Nagoya: HRV metrics (full 24h, neurokit2 recalculation)
-│   ├── japan_metadata.csv         # Nagoya: Age, Sex
-│   ├── deidentified_clinical_consolidated.xlsx  # CETRAM clinical data (de-identified)
-│   ├── sample_signals/            # 5 anonymized ECG RRi traces (CETRAM) for Figure 2 demo
-│   └── benchmarks/                # ML cross-validation results (leave-one-cohort-out)
-│
-├── scripts/                       # All scripts: figure generation + statistical analysis
-│   ├── run_pipeline.py                    # Run everything end-to-end
-│   ├── generate_figure1.py        # Figure 1: study design & demographics
-│   ├── generate_figure2.py        # Figure 2: signal archetypes [partial — see below]
-│   ├── generate_figure3.py        # Figure 3: circadian dynamics (Nagoya)
-│   ├── generate_figure4.py        # Figure 4: MSE comparison across centers
-│   ├── generate_figure5.py        # Figure 5: diagnostic performance & AUC comparison
-│   ├── generate_figure6.py        # Figure 6: age-independency validation
-│   ├── generate_figure7.py        # Figure 7: autonomic physiology composite
-│   ├── generate_appendix.py       # Appendix: cross-center generalization matrix
-│   │
-│   │   # Statistical pre-processing for Figure 7 (run automatically by run_pipeline.py)
-│   ├── traditional_hrv_metrics.py         # Step 1: consolidate HRV across centers
-│   ├── multiscale_decomposition.py        # Step 2: scale-metric correlations, MSE curves
-│   ├── complexity_correlation_analysis.py # Step 3: Spearman ρ + bootstrap CIs
-│   ├── incremental_value_analysis.py      # Step 4: hierarchical regression, variance decomp
-│   └── cross_dataset_consistency.py       # Step 5: physiological interpretation, report
-│   ├── generate_figure8.py        # Figure 8: clinical correlations (CETRAM PD cohort)
-│   ├── generate_appendix.py       # Appendix 1: cross-center generalization matrix
-│   └── generate_appendix2.py      # Appendix 2: per-scale AUC, ECG vs PPG modality
-│
-├── figures/                       # Output directory for all figures
-│   ├── Figure1/ … Figure6/        # PNG + SVG per manuscript figure
-│   ├── Figure7/                   # Figure 7 PNG/SVG + all statistical intermediate CSVs
-│   └── Appendix/                  # Appendix 1 (generalization matrix) + Appendix 2 (per-scale AUC)
-│
-└── requirements.txt               # Python dependencies
+├── scripts/
+│   ├── julia/                     rcMSE — the core computation
+│   │   ├── entropy.jl               canonical toolbox (fixed r, Wu shifts)
+│   │   ├── run_rcmse.jl             generic driver, any cohort
+│   │   ├── test_entropy.jl          regression tests
+│   │   └── Project.toml             pinned Julia environment
+│   ├── run_pipeline.py            runs everything below, in order
+│   ├── sync_center_data.py        pulls per-centre outputs into data/
+│   ├── generate_figure2..8.py     manuscript figures (Figure 1 is not scripted —
+│   │                                see figures/Figure1/ below)
+│   ├── generate_appendix*.py      supplementary figures
+│   ├── generate_validation_figure.py   methods-validation figure (S1)
+│   ├── complexity_index.py        single canonical definition of the index
+│   ├── traditional_hrv_metrics.py ┐
+│   ├── multiscale_decomposition.py│ Figure 7 statistical pre-steps,
+│   ├── complexity_correlation_analysis.py │ run in this order
+│   ├── incremental_value_analysis.py      │
+│   └── cross_dataset_consistency.py       ┘
+├── data/                          derived features (see PROVENANCE.md)
+├── figures/                       SVG output + every plotted number as CSV
+├── requirements.txt               Python dependencies
+├── requirements-lock.txt          exact versions used for the released figures
+├── LICENSE                        MIT (code) / CC BY 4.0 (derived data)
+└── CITATION.cff
 ```
 
 ---
 
-## What Can and Cannot Be Run
+## Reproducing
 
-### Can be run (no raw data needed)
-
-**Figures 1–7** can all be regenerated with one command:
+### 1. Environments
 
 ```bash
-cd /path/to/public_release
-python scripts/run_pipeline.py        # regenerates all figures 1–7 + appendix
+pip install -r requirements-lock.txt          # exact released versions
+cd scripts/julia && julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 
-Figures 1–6 read only from `data/*.csv`. Figure 7 requires statistical
-pre-processing (5 steps); `run_pipeline.py` runs these automatically before
-generating Figure 7.
-
-To run individual figures:
-```bash
-python scripts/generate_figure3.py   # any of figures 1–6 directly
-python scripts/generate_figure7.py   # requires pre-processing steps first (see below)
-```
-
-To run the Figure 7 statistical pre-processing steps individually:
-```bash
-# Run in order — each step depends on the previous:
-python scripts/traditional_hrv_metrics.py          # → figures/Figure7/traditional_hrv_metrics.csv
-python scripts/multiscale_decomposition.py         # → figures/Figure7/scale_metric_correlations.csv
-python scripts/complexity_correlation_analysis.py  # → figures/Figure7/spearman_correlations.csv
-python scripts/incremental_value_analysis.py       # → figures/Figure7/hierarchical_regression.csv
-python scripts/cross_dataset_consistency.py        # → figures/Figure7/physiological_interpretation.csv
-```
-
-> **Note:** All statistical outputs are pre-computed in `figures/Figure7/*.csv`. You only
-> need to re-run the analysis scripts if you want to verify or modify the analysis.
-
-### Cannot be run (raw data not shared)
-
-**Figure 2 (RRi traces):** The top row of Figure 2 overlays raw ECG RRi time series.
-The raw RRI signal files are not included for privacy and data-sharing agreement reasons.
-Five anonymized sample traces are provided in `data/sample_signals/` for demonstration.
-The remaining panels of Figure 2 (HR distributions, age distributions, Poincaré plots)
-will render from `data/*.csv` but the RRi trace panels will be empty/blank.
-
-**MSE/HRV feature computation:** The per-scale entropy values in `data/*_mse.csv` were
-computed from raw RRI signals using our Julia RC-MSE toolbox. Re-running this computation
-requires the raw RRI data, which is available upon reasonable request.
-
----
-
-## Setup
+### 2. Verify the entropy implementation
 
 ```bash
-# Python 3.9+ recommended
-pip install -r requirements.txt
+cd scripts/julia
+julia --project=. test_entropy.jl
 ```
 
-Dependencies: `pandas`, `numpy`, `matplotlib`, `seaborn`, `scipy`, `scikit-learn`,
-`python-pptx`.
+Checks SampEn against known limits, confirms rcMSE(τ=1) equals plain SampEn,
+verifies amplitude invariance, and asserts the Costa signature that fixed `r`
+must reproduce.
+
+### 3. Recompute rcMSE (optional — curves are shipped)
+
+```bash
+cd scripts/julia
+julia --project=. run_rcmse.jl \
+      --input <cleaned_peaks_dir> --out ../../data/chile_mse.csv --scales 20
+```
+
+See the header of `run_rcmse.jl` for all options. Requires the per-centre cleaned
+peak files, which are not in this repository.
+
+### 4. Figures
+
+```bash
+python scripts/run_pipeline.py
+```
+
+Regenerates Figures 1–8 and both appendices from `data/`. Runs in a few minutes.
 
 ---
 
-## Key Methods
+## What can and cannot be reproduced here
 
-### Complexity metric
+**Can** — everything from the shipped derived data: Figures 1, 3–7, both
+appendices, the validation figure, and all statistics.
 
-**rcMSE nAUC(1–20)** — Refined Composite Multiscale Sample Entropy, computed via
-the Julia `rcmse` toolbox. For each subject and time window:
-1. Compute SampEn at scales 1–20 (coarse-graining by averaging)
-2. Take the trapezoidal area under the entropy-vs-scale curve (nAUC)
-3. Normalize by mean heart rate (bpm) to remove confounding by heart rate
+**Cannot:**
 
-### Recording windows
+| Item | Why |
+|---|---|
+| Figure 1 | A graphical abstract authored in Affinity Designer. The source is tracked as `figures/Figure1/Figure1.af`; there is no scripted stage for it. |
+| Figure 2 RRi trace panels | Raw RR series are not shared. Five anonymised CETRAM traces are in `data/sample_signals/` for demonstration; the trace panels render empty without the rest. |
+| **Figure 8** | **Depends on individual-level clinical records that are not shared.** `deidentified_clinical_consolidated.xlsx` holds 28 PD patients × 65 clinical variables; the cell sizes make re-identification a real risk and no k-anonymity assessment has been done. The figure and its correlation table are released so the results are inspectable, but the underlying data are not. **Request access from the corresponding author** — see [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md). |
+| rcMSE from raw signal | Requires the per-centre raw RRi. The curves in `data/*_mse.csv` are the shipped starting point. |
+| Deep-learning benchmark | `benchmark_dl_loco.py` needs raw RRi and PyTorch. |
 
-| Center | Window | Scales used | Notes |
-|--------|--------|-------------|-------|
-| CETRAM | Full ~15 min | 1–5 interpretable | Scales 6–20 unreliable (short recording) |
-| Cruces | Full 5–15 min | 1–5 interpretable | Scales 6–20 unreliable |
-| Nagoya | 16–20h (best) | 1–20 | Full 24h Holter; afternoon window optimal for PD discrimination |
-| Nagoya | 07–11h (morning) | 1–20 | Secondary window for comparison |
-
-### Statistical framework
-
-- **Group comparisons:** Mann-Whitney U or Student's t-test; BH-FDR correction
-- **Correlations:** Spearman ρ with bootstrap 95% CIs (n=1000); BH-FDR correction
-- **Partial correlations:** Residualize on age (and sex where available) before Spearman ρ
-- **Incremental value:** Hierarchical logistic regression (Block 1: confounders →
-  Block 2: +pNN50 → Block 3: +complexity); Nagelkerke R², Δ log-likelihood test
-- **Variance partitioning:** Commonality analysis (unique vs shared variance)
-- **ML validation:** Leave-One-Cohort-Out (LOCO) cross-validation with Random Forest
+**Raw physiological recordings and individual-level clinical data are not shared
+in this repository.** They are available from the corresponding author on
+reasonable request, subject to a data-sharing agreement and the contributing
+centres' ethics approvals. See **[DATA_AVAILABILITY.md](DATA_AVAILABILITY.md)**
+for exactly what is and is not included, and how to request access.
 
 ---
 
-## Figure Guide
+## Known limitations
 
-| Figure | File | Description |
-|--------|------|-------------|
-| 1 | `figures/Figure1/Figure1.png` | Study design map + demographics |
-| 2 | `figures/Figure2/Figure2.png` | RRi traces, HR & age distributions, Poincaré plots |
-| 3 | `figures/Figure3/Figure3.png` | Nagoya 24h circadian profile of complexity (Panels A–F) |
-| 4 | `figures/Figure4/Figure4.png` | MSE curves + nAUC comparison across centers |
-| 5 | `figures/Figure5/Figure5.png` | Diagnostic performance, ML validation & feature independence (11 panels) |
-| 6 | `figures/Figure6/Figure6.png` | Age-independence: scatter + partial ρ across centers |
-| 7 | `figures/Figure7/Figure7.png` | Composite: autonomic correlates, confound correction, scale anatomy |
-| 8 | `figures/Figure8/Figure8.png` | Clinical correlations: complexity vs CISI-PD, H&Y, disease duration, non-motor symptoms (CETRAM PD cohort, n=22; LEDD pending) |
-| App. 1 | `figures/Appendix/FigureAppendix.png` | Cross-center generalization matrix (RF, LOCO) |
-| App. 2 | `figures/Appendix/FigureAppendix2.png` | Per-scale AUC across recording modalities (ECG vs PPG) |
+Recorded here rather than buried, because each affects how results should be read.
 
-### Figure 7 panel guide
-
-| Panel | Description | Source |
-|-------|-------------|--------|
-| A | Spearman ρ heatmap: complexity vs traditional HRV × center × group | `scripts/complexity_correlation_analysis.py` |
-| B | Forest plot: cross-dataset consistency of key correlates | `scripts/cross_dataset_consistency.py` |
-| C | Scale physiology heatmap: ρ per scale × metric (CETRAM / Cruces / Nagoya 16–20h) | `generate_figure7.py` inline |
-| D | McFadden R² variance decomposition (incremental value) | `scripts/incremental_value_analysis.py` |
-| E | Annotated MSE curves: PD vs HC + Mann-Whitney per scale | `scripts/multiscale_decomposition.py` |
-| F | Confound correction: raw vs age/sex-adjusted ρ (Pooled n=152) | `generate_figure7.py` inline |
-| G | Autonomic synthesis: raw ρ / partial ρ / unique variance per metric | `generate_figure7.py` inline |
-| H | Scale anatomy: ρ vs timescale for key HRV metrics (Nagoya 16–20h & CETRAM) | `generate_figure7.py` inline |
+1. **Complexity does not outperform simpler metrics on long recordings.** In Nagoya the minimum SDNN over 100-beat windows (Suzuki et al.) reaches AUC 0.913 against 0.838 for the complexity index. At matched window counts complexity wins (0.853 vs 0.811), but SDNN-min subsumes it: after partialling out SDNN-min, complexity retains no independent discrimination (AUC 0.572, p=0.39).
+2. **The group difference is not carried by nonlinearity.** IAAFT surrogates, which preserve the power spectrum and amplitude distribution while destroying nonlinear structure, reproduce almost the entire separation (AUC 0.689 vs 0.699 for real data), and there is no group difference in the nonlinearity index itself (p=0.60).
+3. **Cruces is underpowered for a multiscale index** — see the scale-range caveat above.
+4. **Nagoya PD are less physically active** (Suzuki et al. report standing time 2.1 vs 4.6 h/day). Any window-selection rule based on signal variability is therefore entangled with the disease; window selection here is never based on group separation.
+5. **Absolute entropy is not comparable across cohorts**, because `r = 0.2 × SD` is set by each recording's low-frequency content. Within-cohort comparisons are unaffected.
 
 ---
 
-## Data Dictionary
+## Data provenance
 
-### `data/*_mse.csv` (all centers)
-
-| Column | Description |
-|--------|-------------|
-| `Subject` | Anonymized subject ID |
-| `Group` | `PD` or `Control` |
-| `Scales` | MSE timescale (1–20) |
-| `MSE` | Sample entropy at that scale (rcMSE toolbox) |
-
-### `data/japan_evolution.csv`
-
-Per-subject, per-4h-window summary for the full Nagoya 24h recording.
-
-| Column | Description |
-|--------|-------------|
-| `Subject` | Anonymized subject ID |
-| `Group` | `PD` or `Control` |
-| `Window_start_h` | Start hour of 4h window (0, 4, 8, …, 20) |
-| `n_beats` | Number of RR intervals in window |
-| `nAUC_1_20` | rcMSE nAUC over scales 1–20 (primary complexity metric) |
-| `HR` | Mean heart rate (bpm) |
-| `SDNN` | SDNN (s) |
-| `RMSSD` | RMSSD (s) |
-
-### `figures/Figure7/traditional_hrv_metrics.csv`
-
-Pooled HRV table (166 subjects: CETRAM 71 + Cruces 58 + Nagoya 37 with full HRV).
-
-Key columns: `Subject`, `Center`, `Group`, `Age`, `Sex`, `MeanNN`, `SDNN`, `RMSSD`,
-`pNN50`, `HF_power`, `LF_power`, `LF_HF`, `LF_norm`, `VLF_power`, `Total_power`,
-`DFA_alpha1`, `DFA_alpha2`, `SD1`, `SD2`, `SDANN`, `SampEn_S1`, `rcMSE_AUC`,
-`HR`, `PPG_bias`, `ectopic_method`.
-
----
-
-## Label Conventions
-
-Throughout all figures and results files:
-
-| Internal CSV key | Figure label |
-|-----------------|--------------|
-| `Chile` | CETRAM |
-| `Spain` | Cruces |
-| `Japan-afternoon` | Nagoya (16–20h) |
-| `Japan-morning` | Nagoya (07–11h) |
-| `Japan` | Nagoya (center-level, e.g., in `traditional_hrv_metrics.csv`) |
-
----
+`data/PROVENANCE.md` records the source of every file and the sync log.
+`sync_center_data.py` reproduces the copy from the per-centre repositories.
 
 ## Contact
 
-NeuroEng@Usach group — please open an issue or contact the corresponding author
-for data access requests or questions about the methodology.
+NeuroEng@Usach — Universidad de Santiago de Chile.
+Open an issue, or contact the corresponding author for data access.

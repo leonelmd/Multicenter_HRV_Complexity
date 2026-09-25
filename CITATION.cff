@@ -1,0 +1,88 @@
+cff-version: 1.2.0
+message: "If you use this software or data, please cite it as below."
+title: "Multicenter cardiac autonomic complexity in Parkinson's disease — analysis code and derived data"
+abstract: >-
+  Code and derived data for a multicenter study of cardiac autonomic complexity
+  in Parkinson's disease, combining short resting ECG (CETRAM, Santiago),
+  photoplethysmography during resting-state fMRI (Hospital Universitario Cruces,
+  Bilbao) and 24-hour ambulatory Holter ECG (Nagoya University Hospital).
+  Complexity is quantified by refined composite multiscale entropy (rcMSE) with a
+  fixed tolerance, computed in Julia; all downstream statistics and figures are
+  in Python.
+type: software
+license: MIT
+repository-code: "https://github.com/leonelmd/Multicenter_HRV_Complexity"
+version: "1.0.0"
+date-released: "2026-09-25"
+keywords:
+  - Parkinson's disease
+  - heart rate variability
+  - multiscale entropy
+  - cardiac autonomic dysfunction
+  - refined composite multiscale entropy
+  - biomarker
+authors:
+  - family-names: Medina
+    given-names: Leonel E.
+    affiliation: "Department of Biomedical Engineering, Universidad de Santiago de Chile"
+  - family-names: Berrios Farias
+    given-names: Eduardo
+    affiliation: "Department of Biomedical Engineering, Universidad de Santiago de Chile"
+  - family-names: Chana-Cuevas
+    given-names: Pedro
+    affiliation: "Centro de Trastornos del Movimiento (CETRAM), Santiago, Chile"
+
+references:
+  - type: article
+    title: "Heart-brain synchronization breakdown in Parkinson's disease"
+    authors:
+      - family-names: Iniguez
+        given-names: Martin
+      - family-names: Gabilondo
+        given-names: Inigo
+    journal: "npj Parkinson's Disease"
+    volume: 8
+    start: 64
+    year: 2022
+    doi: "10.1038/s41531-022-00323-w"
+    notes: "Source publication for the Cruces cohort."
+  - type: article
+    title: "Wearable sensor device-based detection of decreased heart rate variability in Parkinson's disease"
+    authors:
+      - family-names: Suzuki
+        given-names: Masashi
+      - family-names: Katsuno
+        given-names: Masahisa
+    journal: "Journal of Neural Transmission"
+    volume: 129
+    start: 1299
+    end: 1306
+    year: 2022
+    doi: "10.1007/s00702-022-02528-y"
+    notes: "Source publication for the Nagoya cohort."
+  - type: article
+    title: "Multiscale entropy analysis of biological signals"
+    authors:
+      - family-names: Costa
+        given-names: Madalena
+      - family-names: Goldberger
+        given-names: Ary L.
+      - family-names: Peng
+        given-names: C.-K.
+    journal: "Physical Review E"
+    volume: 71
+    start: 021906
+    year: 2005
+    doi: "10.1103/PhysRevE.71.021906"
+    notes: "Multiscale entropy; fixed tolerance convention."
+  - type: article
+    title: "Analysis of complex time series using refined composite multiscale entropy"
+    authors:
+      - family-names: Wu
+        given-names: Shuen-De
+    journal: "Physics Letters A"
+    volume: 378
+    start: 1369
+    year: 2014
+    doi: "10.1016/j.physleta.2014.03.034"
+    notes: "Refined composite coarse-graining scheme used here."

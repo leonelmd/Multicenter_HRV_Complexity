@@ -1,0 +1,32 @@
+name = "MulticenterRCMSE"
+authors = ["NeuroEng@Usach"]
+version = "1.0.0"
+
+# Julia environment for the rcMSE computation.
+#
+# Reproduce with:
+#     cd scripts/julia
+#     julia --project=. -e 'using Pkg; Pkg.instantiate()'
+#
+# Then:
+#     julia --project=. test_entropy.jl          # regression tests
+#     julia --project=. run_rcmse.jl --help      # see header of run_rcmse.jl
+
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+CurveFit = "5a033b19-8c74-5913-a970-47c3779ef25c"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Trapz = "592b5752-818d-11e9-1e9a-2b8ca4a44cd1"
+
+[compat]
+CSV = "0.10"
+Combinatorics = "1.0"
+CurveFit = "0.5"
+DataFrames = "1.6"
+Trapz = "2.0"
+julia = "1.9"

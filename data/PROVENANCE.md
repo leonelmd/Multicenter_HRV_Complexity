@@ -1,13 +1,13 @@
       # Data Provenance
 
-      Last synced: 2026-04-24 15:18:53
+      Last synced: 2026-09-25 12:23:49
 
       ## Source mapping
 
       | Multicenter file | Source |
       |---|---|
-      | chile_mse.csv | CETRAM pipeline=bsqi: CETRAM/public_release/results/entropy_bsqi/sample/MSE_curves_sample.csv |
-      | chile_metrics.csv | CETRAM pipeline=bsqi: CETRAM/public_release/results/metrics/HRV_metrics_bsqi.csv |
+      | chile_mse.csv | CETRAM pipeline=sqi: CETRAM/public_release/results/entropy/sample/MSE_curves_sample.csv |
+      | chile_metrics.csv | CETRAM pipeline=sqi: CETRAM/public_release/results/metrics/HRV_metrics_cleaned.csv |
       | chile_demographics.csv | CETRAM/public_release/data/metadata/subject_demographics.csv |
       | spain_mse.csv | Cruces/public_release/results/entropy/sample/MSE_curves_sample.csv |
       | spain_metrics.csv | Cruces/public_release/results/metrics/HRV_metrics.csv |
@@ -31,7 +31,7 @@
 ✓  OK     spain_mse.csv                             (unchanged)
 ✓  OK     spain_metrics.csv                         (unchanged)
 ✓  OK     spain_demographics.csv                    (unchanged)
-✓  OK     japan_metadata.csv                        (unchanged)
+⚠  SKIP   japan_metadata.csv                        (source is OLDER than dest — use --force to override)
 →  DERIVE  japan_afternoon_mse.csv                   (45 subjects, Window 16–20 h)
 →  DERIVE  japan_morning_mse.csv                     (39 subjects, Window 07–11 h)
 →  DERIVE  japan_evolution.csv                       (50 subjects, 995 window-rows)

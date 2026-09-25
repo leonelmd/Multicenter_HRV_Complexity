@@ -40,9 +40,26 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 BASE           = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NAGOYA_RRI_DIR = "/Users/leo/HRV-Complexity/Nagoya/public_release/data/processed_rri"
-NAGOYA_META    = "/Users/leo/HRV-Complexity/Nagoya/public_release/data/metadata/metadata.csv"
+# Resolved relative to the repo root so the script is portable; override with
+# the NAGOYA_ROOT environment variable if the tree is laid out differently.
+_NAGOYA_ROOT   = os.environ.get(
+    "NAGOYA_ROOT",
+    os.path.abspath(os.path.join(BASE, "..", "..", "Nagoya", "public_release")))
+NAGOYA_RRI_DIR = os.path.join(_NAGOYA_ROOT, "data", "processed_rri")
+NAGOYA_META    = os.path.join(_NAGOYA_ROOT, "data", "metadata", "metadata.csv")
 OUT_CSV        = os.path.join(BASE, "data", "japan_recalc_metrics.csv")
+
+# ── Suzuki et al. (2022) vagal-metric convention ──────────────────────────────
+# The source publication for this dataset (J Neural Transm 129:1299-1306, p.1301)
+# excludes RR intervals whose adjacent difference is >= 100 ms before computing
+# RMSSD and pNN50, "to avoid the effects of extrasystoles and artifacts".
+#
+# Without it, 24 h of free-living recording gives RMSSD ~3.7x and pNN50 ~2x the
+# published values (ours 81.9/55.1 ms vs their 22.2/15.0 ms). Those inflated
+# values fed Figures 5 and 7. Applying the rule restores agreement with the
+# published cohort and makes Nagoya comparable to the short resting recordings.
+# See Multicenter/SUZUKI_CONSISTENCY_CHECK.md sec. 1.
+SUZUKI_DIFF_EXCL_MS = 100.0
 
 # ── Quality thresholds ─────────────────────────────────────────────────────────
 RRI_MIN_S    = 0.300   # physiological lower bound (s) — 200 bpm max
@@ -144,6 +161,17 @@ def process_subject(sid, group, rri_dir):
     for col in KEEP_COLS:
         row[col] = hrv[col].values[0] if col in hrv.columns else np.nan
     row["DFA_alpha1"] = dfa_alpha1(rri_ms)
+
+    # Keep the unfiltered values for transparency, then override RMSSD / pNN50
+    # with the Suzuki convention (see SUZUKI_DIFF_EXCL_MS above).
+    row["HRV_RMSSD_unfiltered"] = row.get("HRV_RMSSD", np.nan)
+    row["HRV_pNN50_unfiltered"] = row.get("HRV_pNN50", np.nan)
+    d = np.diff(rri_ms)
+    d = d[np.abs(d) < SUZUKI_DIFF_EXCL_MS]
+    if d.size > 1:
+        row["HRV_RMSSD"] = float(np.sqrt(np.mean(d ** 2)))
+        row["HRV_pNN50"] = float(100.0 * np.mean(np.abs(d) > 50.0))
+    row["vagal_metric_convention"] = f"Suzuki2022_adjdiff_lt_{int(SUZUKI_DIFF_EXCL_MS)}ms"
     return row, None
 
 
@@ -168,7 +196,10 @@ def main():
 
     for _, row in meta.sort_values("Subject_ID").iterrows():
         sid   = row["Subject_ID"]
-        group = row["Group"]
+        # Canonical group labels: Nagoya metadata writes 'PD' / 'control',
+        # every other cohort uses 'PD' / 'Control'.
+        group = {"pd": "PD", "control": "Control"}.get(
+            str(row["Group"]).strip().lower(), str(row["Group"]).strip())
         print(f"  {sid}  ({group:<8}) ... ", end="", flush=True)
         metrics, reason = process_subject(sid, group, NAGOYA_RRI_DIR)
         if metrics:

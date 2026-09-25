@@ -63,9 +63,11 @@ os.makedirs(OUT_DIR, exist_ok=True)
 
 # Individual AUC comparison
 AUC_METRICS = ['Complexity Index (HR-Norm)', 'HRV_DFA_alpha1',
-               'Sample Entropy (S1)', 'HRV_SDNN', 'HRV_RMSSD', 'HRV_pNN50']
+               'Sample Entropy (S1)', 'HRV_SDNN', 'HRV_RMSSD', 'HRV_pNN50',
+               'SDNN100_min', 'CVRR100_min']
 AUC_LABELS  = ['Complexity (HR-Norm)', 'DFA alpha1',
-               'SampEn (S1)', 'SDNN', 'RMSSD', 'pNN50']
+               'SampEn (S1)', 'SDNN', 'RMSSD', 'pNN50',
+               'SDNN100-min', 'CVRR100-min']
 AUC_COLORS  = {
     'Complexity (HR-Norm)': '#8E44AD',
     'DFA alpha1':           '#2980B9',
@@ -73,7 +75,30 @@ AUC_COLORS  = {
     'SDNN':                 '#27AE60',
     'RMSSD':                '#58D68D',
     'pNN50':                '#A8D8A8',
+    # Suzuki et al. 2022 minimum-value indices — the published benchmark for the
+    # Nagoya cohort, previously absent from this comparison. Orange to mark them
+    # as the external reference method rather than one of ours.
+    'SDNN100-min':          '#E67E22',
+    'CVRR100-min':          '#F0B27A',
 }
+
+# Suzuki minimum-value indices, computed by scripts/compute_sdnn_min.py.
+# These require many consecutive beat-windows to be meaningful: Nagoya has ~950
+# windows of 100 beats, CETRAM ~10, Cruces ~5. Interpretation must account for
+# that — see Multicenter/SUZUKI_CONSISTENCY_CHECK.md.
+SDNN_MIN_FILE = os.path.join(DATA_DIR, "sdnn_min_all_centers.csv")
+
+
+def attach_sdnn_min(df, centre_key):
+    """Merge SDNN100_min / CVRR100_min onto a per-centre dataframe."""
+    if not os.path.exists(SDNN_MIN_FILE):
+        df['SDNN100_min'] = np.nan
+        df['CVRR100_min'] = np.nan
+        return df
+    sm = pd.read_csv(SDNN_MIN_FILE)
+    sm = sm[sm.Center == centre_key][['Subject', 'SDNN100_min', 'CVRR100_min',
+                                      'n_windows_100']]
+    return df.merge(sm, on='Subject', how='left')
 
 # Machine learning
 ML_FEATURES = ['Complexity', 'HRV_SDNN', 'HRV_RMSSD', 'HRV_pNN50',
@@ -134,6 +159,7 @@ def load_datasets():
         mse_c[mse_c.Scales == 1].set_index('Subject')['MSE'])
     df_c = df_c.merge(dem_c[['Subject', 'Age']], on='Subject', how='left')
     df_c['Site'] = 'CETRAM'
+    df_c = attach_sdnn_min(df_c, 'Chile')
     datasets['CETRAM'] = df_c
     ml_frames.append(df_c)
 
@@ -141,9 +167,18 @@ def load_datasets():
     mse_s = pd.read_csv(os.path.join(DATA_DIR, "spain_mse.csv"))
     met_s = pd.read_csv(os.path.join(DATA_DIR, "spain_metrics.csv"))
     dem_s = pd.read_csv(os.path.join(DATA_DIR, "spain_demographics.csv"))
+    # Cruces 'Other' (A01_1, A03_2, A05_2, A09, D01, D05) are six records with no
+    # diagnosis in spain_demographics.csv. They are NOT part of the published
+    # cohort — Iniguez et al. 2022 (npj Parkinsons Dis 8:64) report exactly
+    # 31 PD and 21 healthy controls, which matches our Control/PD counts.
+    # Until 2026-08-17 this line mapped 'other' -> 'Control', silently inflating
+    # the control group to 27. They are now excluded, consistent with
+    # MulticohortRCMSE_Paper (spain_other_sensitivity.csv: primary = Control-only).
     for df in (mse_s, met_s):
         df['Group'] = df['Group'].str.lower().replace(
-            {'pd': 'PD', 'control': 'Control', 'parkinson': 'PD', 'other': 'Control'})
+            {'pd': 'PD', 'control': 'Control', 'parkinson': 'PD'})
+    mse_s = mse_s[mse_s['Group'].isin(['Control', 'PD'])]
+    met_s = met_s[met_s['Group'].isin(['Control', 'PD'])]
     comp_s = mse_s[mse_s.Scales.isin(range(1, 6))].groupby('Subject').MSE.mean().reset_index()
     hr_s   = 60000.0 / met_s.set_index('Subject')['HRV_MeanNN']
     df_s   = comp_s.merge(
@@ -155,6 +190,7 @@ def load_datasets():
         mse_s[mse_s.Scales == 1].groupby('Subject').MSE.mean())
     df_s = df_s.merge(dem_s[['Subject', 'Age']], on='Subject', how='left')
     df_s['Site'] = 'Cruces'
+    df_s = attach_sdnn_min(df_s, 'Spain')
     datasets['Cruces'] = df_s
     ml_frames.append(df_s)
 
@@ -197,6 +233,7 @@ def load_datasets():
         df_j['Sample Entropy (S1)']         = df_j['Subject'].map(
             mse_j[mse_j.Scales == 1].set_index('Subject')['MSE'])
         df_j['Site'] = 'Nagoya'
+        df_j = attach_sdnn_min(df_j, 'Japan')
         datasets[win_name] = df_j
 
         if is_aft:

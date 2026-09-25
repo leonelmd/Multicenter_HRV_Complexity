@@ -63,8 +63,11 @@ def main():
 
     steps = [
         # ── Figures 1–7: read directly from data/ ─────────────────────────────
-        ("python scripts/generate_figure1.py",
-         "Figure 1 — Study design & cohort demographics"),
+        # Figure 1 is a graphical abstract authored in Affinity Designer; the
+        # source is tracked as figures/Figure1/Figure1.af. The former
+        # generate_figure1.py produced an early matplotlib draft
+        # (Figure1_alt.png) that was superseded and removed, so there is no
+        # scripted Figure 1 stage. See DATA_AVAILABILITY.md and the README.
         ("python scripts/generate_figure2.py",
          "Figure 2 — Signal archetypes & HR/age distributions  "
          "[NOTE: RRi trace panels require raw data — see README]"),

@@ -1,7 +1,42 @@
+# Python dependencies for the multicenter cardiac-complexity analysis.
+#
+#   pip install -r requirements.txt
+#
+# Lower bounds are the versions the analysis was developed against; the pinned
+# set actually used to produce the released figures is in requirements-lock.txt.
+#
+# Julia is required separately for the rcMSE computation itself — see
+# scripts/julia/ (Project.toml pins that environment).
+
+# --- core analysis -----------------------------------------------------------
 pandas>=2.0.0
 numpy>=1.24.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
 scipy>=1.10.0
 scikit-learn>=1.2.0
+
+# --- figures -----------------------------------------------------------------
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# --- statistics --------------------------------------------------------------
+# pingouin: partial correlations and bootstrap CIs
+#   (complexity_correlation_analysis.py). Its absence used to break the pipeline
+#   at Figure 7 pre-step 3 — it was imported but never declared.
+pingouin>=0.5.3
+# statsmodels: ANCOVA / hierarchical regression
+statsmodels>=0.14.0
+
+# --- signal processing -------------------------------------------------------
+# neurokit2: ECG cleaning, R-peak detection, Kubios artifact correction and
+#   time-domain HRV. Required by the Japan feature scripts and by the upstream
+#   CETRAM cleaning pipeline.
+neurokit2>=0.2.7
+
+# --- optional ----------------------------------------------------------------
+# python-pptx: only for scripts/generate_presentation.py (not part of the
+#   figure pipeline)
 python-pptx>=0.6.21
+# torch: only for scripts/benchmark_dl_loco.py, which additionally needs the raw
+#   RRi and is not run by run_pipeline.py. Install manually if reproducing the
+#   deep-learning benchmark.
+# torch>=2.0.0

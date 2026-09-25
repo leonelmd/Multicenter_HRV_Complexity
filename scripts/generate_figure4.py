@@ -14,6 +14,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import mannwhitneyu
 
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from complexity_index import subject_index_table, DEFAULT_METHOD
+
 # PORTABLE PATH RESOLUTION
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "data")
@@ -106,7 +110,12 @@ def generate_figure4():
         ax2 = fig.add_subplot(gs[1, col_idx])
         add_panel_label(ax2, chr(69 + col_idx))
         
-        sub_index = df_mse[df_mse['Scales'].isin(index_range)].groupby(['Subject', 'Group'])['MSE'].mean().reset_index()
+        # Complexity index via the canonical definition (scripts/complexity_index.py).
+        # method="mean" reproduces the historical inline `MSE.mean()` exactly; see that
+        # module for why the naming was inconsistent with the manuscript and why the
+        # choice of formula does not change any result.
+        sub_index = subject_index_table(df_mse, index_range, method=DEFAULT_METHOD)
+        sub_index = sub_index.rename(columns={'Complexity': 'MSE'})
         
         if met_type == 'CHILE_METRICS':
             df_met = pd.read_csv(CHILE_METRICS)

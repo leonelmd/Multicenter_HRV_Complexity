@@ -72,9 +72,23 @@ CRUCES     = HRV_ROOT / "Cruces"  / "public_release"
 NAGOYA     = HRV_ROOT / "Nagoya"  / "public_release"
 
 # ── CETRAM pipeline selection ──────────────────────────────────────────────────
-# "sqi"  — original pipeline (SQI template-match, Pan-Tompkins peaks)
-# "bsqi" — Eduardo Berríos consensus criterion (Ho et al. 2025) — under evaluation
-CETRAM_PIPELINE = "bsqi"
+# "sqi"   — CURRENT pipeline: clean_data.py (2026-05-05).
+#           bSQI consensus gate (>=0.80) + Lipponen & Tarvainen (2019) "Kubios"
+#           beat-level artifact CORRECTION via nk.signal_fixpeaks. Beats are
+#           corrected, never deleted, so the saved peak sequence contains no
+#           spurious merged intervals. Yields 73 subjects (43 Control / 30 PD).
+#           This is the set used in MulticohortRCMSE_Paper (hash-verified).
+#
+# "bsqi"   — SUPERSEDED: clean_data_bsqi.py (2026-04-23).
+#           Same bSQI gate, but outlier beats are DELETED from the peak sequence.
+#           Because entropy.jl and calculate_metrics.py rebuild RRi with
+#           diff(sample), each deletion merges two intervals — injecting RR
+#           values up to 25 s. The artifact is ~4x more frequent in PD
+#           (0.42% vs 0.10% of intervals, p=0.011) and inflates r = 0.2*SD,
+#           which biases entropy downward more in PD than in controls.
+#           Do not use. Retained only for the sensitivity analysis.
+#           See Multicenter/CETRAM_METHODS_AUDIT.md sec. 2.
+CETRAM_PIPELINE = "sqi"
 
 # ---------------------------------------------------------------------------
 # Copy rules — built at import time from CETRAM_PIPELINE
@@ -85,11 +99,20 @@ _CETRAM_SOURCES = {
         "mse":     CETRAM / "results/entropy/sample/MSE_curves_sample.csv",
         "metrics": CETRAM / "results/metrics/HRV_metrics_cleaned.csv",
     },
-    "bsqi": {
-        "mse":     CETRAM / "results/entropy_bsqi/sample/MSE_curves_sample.csv",
-        "metrics": CETRAM / "results/metrics/HRV_metrics_bsqi.csv",
-    },
 }
+
+# The "bsqi" branch was retired on 2026-08-16. Its inputs now live in
+# CETRAM/public_release/_superseded/ and must not be used for published results.
+if CETRAM_PIPELINE not in _CETRAM_SOURCES:
+    raise SystemExit(
+        f"\nCETRAM_PIPELINE = {CETRAM_PIPELINE!r} is not available.\n"
+        f"Valid options: {sorted(_CETRAM_SOURCES)}\n\n"
+        "The 'bsqi' pipeline (clean_data_bsqi.py) was retired: it deletes outlier\n"
+        "beats from the peak sequence, so diff(sample) merges intervals and injects\n"
+        "RR values up to 25 s — an artifact ~4x more frequent in PD. It is archived\n"
+        "under CETRAM/public_release/_superseded/ for sensitivity analysis only.\n"
+        "See Multicenter/CETRAM_METHODS_AUDIT.md.\n"
+    )
 
 DIRECT_COPIES = [
     # CETRAM (pipeline-dependent)
@@ -127,6 +150,36 @@ def file_status(src: Path, dst: Path) -> str:
     return "OK"
 
 
+_GROUP_CANON = {"pd": "PD", "control": "Control", "controls": "Control",
+                "hc": "Control", "other": "Other"}
+
+
+def _normalise_group_labels(path: Path) -> None:
+    """Canonicalise the Group column of a copied CSV to 'PD' / 'Control' / 'Other'.
+
+    Nagoya's metadata.csv writes 'PD' / 'control' (mixed case) while every other
+    cohort uses 'PD' / 'Control'. Normalising once here, at the point of entry
+    into the release, means no downstream script has to defend itself with
+    .str.lower().replace(...) — and one that forgets cannot silently drop a group.
+    Unrecognised labels are left untouched.
+    """
+    if path.suffix.lower() != ".csv":
+        return
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        return
+    if "Group" not in df.columns:
+        return
+    canon = df["Group"].astype(str).str.strip().str.lower().map(_GROUP_CANON)
+    if canon.isna().all():
+        return
+    new = canon.fillna(df["Group"].astype(str).str.strip())
+    if not new.equals(df["Group"].astype(str)):
+        df["Group"] = new
+        df.to_csv(path, index=False)
+
+
 def copy_file(src: Path, dst: Path, dry_run: bool, force: bool) -> str:
     status = file_status(src, dst)
     if status == "MISSING_SRC":
@@ -138,6 +191,7 @@ def copy_file(src: Path, dst: Path, dry_run: bool, force: bool) -> str:
     action = "COPY" if not dry_run else "WOULD COPY"
     if not dry_run:
         shutil.copy2(src, dst)
+        _normalise_group_labels(dst)
     return f"  →  {action}  {dst.name:40s}  [{status}]  {src.relative_to(HRV_ROOT)}"
 
 
