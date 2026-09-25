@@ -177,7 +177,7 @@ def stars(q: float) -> str:
     return "ns"
 
 
-def bh_fdr(p_values: list[float]) -> np.ndarray:
+def bh_fdr(p_values) -> np.ndarray:
     """Benjamini-Hochberg FDR correction (manual, works on any scipy version)."""
     p = np.array(p_values, dtype=float)
     n = len(p)

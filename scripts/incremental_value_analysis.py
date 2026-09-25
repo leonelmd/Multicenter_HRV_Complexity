@@ -278,7 +278,7 @@ def print_hier_table(hier: pd.DataFrame):
 # ANALYSIS 2 — Commonality analysis
 # ============================================================
 
-def mcfadden_r2(y: np.ndarray, feat_cols: list[str], sub: pd.DataFrame) -> float:
+def mcfadden_r2(y, feat_cols, sub):  # type: (np.ndarray, list, pd.DataFrame) -> float
     """McFadden pseudo-R² for a given set of features on sub."""
     X = sub[feat_cols].values.astype(float)
     scaler = StandardScaler()
