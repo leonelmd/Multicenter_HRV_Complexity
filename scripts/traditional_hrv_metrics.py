@@ -130,7 +130,7 @@ spain = spain.merge(spain_mse[["Subject", "SampEn"]], on="Subject", how="left")
 # Load Japan
 # ---------------------------------------------------------------------------
 japan_m = pd.read_csv(DATA / "japan_recalc_metrics.csv")
-japan_mse = load_mse_scale1(DATA / "japan_afternoon_mse.csv")
+japan_mse = load_mse_scale1(DATA / "japan_window_mse.csv")
 
 japan = japan_m.rename(columns=NK2_MAP)
 # Japan recalc DFA column differs

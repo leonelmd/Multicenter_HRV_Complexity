@@ -8,7 +8,7 @@ Per-scale entropy data (already computed by Julia RC-MSE toolbox):
   - data/chile_mse.csv            — 71 subjects × 20 scales (~15 min rest ECG)
   - data/spain_mse.csv            — 58 subjects × 20 scales (5–15 min PPG)
   - data/japan_morning_mse.csv    — 39 subjects × 20 scales (07–11h window)
-  - data/japan_afternoon_mse.csv  — 45 subjects × 20 scales (16–20h window, best)
+  - data/japan_window_mse.csv  — 47 subjects × 20 scales (18–22 h window, pre-specified)
 
 For short recordings (CETRAM/Cruces): scales 1–5 are physiologically
 interpretable; scales 6–20 are computed but must be interpreted cautiously.
@@ -154,8 +154,8 @@ def load_all_data():
     japan_morning_mse   = load_mse(DATA / "japan_morning_mse.csv")
     japan_morning_mse["Center"] = "Japan"
 
-    japan_afternoon_mse = load_mse(DATA / "japan_afternoon_mse.csv")
-    japan_afternoon_mse["Center"] = "Japan"
+    japan_window_mse = load_mse(DATA / "japan_window_mse.csv")
+    japan_window_mse["Center"] = "Japan"
 
     # Merge each MSE dataset with the corresponding HRV metrics
     def merge_with_hrv(mse_df):
@@ -168,7 +168,7 @@ def load_all_data():
         "Chile":            merge_with_hrv(chile_mse),
         "Spain":            merge_with_hrv(spain_mse),
         "Japan-morning":    merge_with_hrv(japan_morning_mse),
-        "Japan-afternoon":  merge_with_hrv(japan_afternoon_mse),
+        "Japan-afternoon":  merge_with_hrv(japan_window_mse),
     }
 
     # Mean IBI per dataset for time-axis annotation (ms)
@@ -242,7 +242,7 @@ def make_mse_curves(data: dict):
         "Chile":            "CETRAM (ECG · ~15 min)",
         "Spain":            "Cruces (PPG · 5–15 min)",
         "Japan-morning":    "Nagoya 07–11h (ECG · 4 h)",
-        "Japan-afternoon":  "Nagoya 16–20h (ECG · 4 h)",
+        "Japan-afternoon":  "Nagoya 18–22 h (ECG · 4 h)",
     }
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=False)

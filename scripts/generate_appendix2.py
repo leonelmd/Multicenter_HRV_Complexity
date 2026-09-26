@@ -7,7 +7,7 @@ Supplementary figure illustrating the per-scale discriminative power
 and 1–20 (Nagoya Holter), comparing ECG vs PPG modalities.
 
 Purpose: Provides mechanistic context for the reduced significance of the
-HR-normalized complexity index in the Cruces (PPG) cohort.
+complexity index in the Cruces (PPG) cohort.
 """
 
 import os
@@ -18,6 +18,10 @@ from sklearn.metrics import roc_auc_score
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
+fs.apply()
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 
@@ -61,9 +65,9 @@ DATASETS = [
         'max_scale_show':     20,
     },
     {
-        'label':    'Nagoya (16–20h)',
+        'label':    'Nagoya (18–22 h)',
         'subtitle': 'ECG · 4 h Holter · Nagoya, Japan',
-        'file':     'japan_afternoon_mse.csv',
+        'file':     'japan_window_mse.csv',
         'modality': 'ECG',
         'ctrl_groups': ['control'],
         'pd_group':    'PD',
@@ -172,7 +176,7 @@ for ax, ds in zip(axes, DATASETS):
         if lbl:
             ax.text(row['scale'], row['auc'] + 0.018, lbl,
                     ha='center', va='bottom', fontsize=11,
-                    color=color, fontweight='bold', zorder=5)
+                    color=color, fontweight='normal', zorder=5)
 
     # ── Chance line ─────────────────────────────────────────────────────────
     ax.axhline(0.5, color='#666666', linewidth=1.0, linestyle='--', zorder=2, alpha=0.7)
@@ -199,7 +203,7 @@ for ax, ds in zip(axes, DATASETS):
     badge_color = MODALITY_COLOR[ds['modality']]
     badge_text  = ds['modality']
     ax.text(0.97, 0.96, badge_text, transform=ax.transAxes,
-            ha='right', va='top', fontsize=11.5, fontweight='bold',
+            ha='right', va='top', fontsize=11.5, fontweight='normal',
             color='white',
             bbox=dict(boxstyle='round,pad=0.28', facecolor=badge_color,
                       edgecolor='none', alpha=0.92))
@@ -212,7 +216,7 @@ for ax, ds in zip(axes, DATASETS):
             fontsize=9, color='#555555')
 
     # ── Panel title ──────────────────────────────────────────────────────────
-    ax.set_title(ds['label'], fontsize=13, fontweight='bold', pad=6)
+    ax.set_title(ds['label'], fontsize=13, fontweight='normal', pad=6)
     ax.text(0.5, 1.005, ds['subtitle'], transform=ax.transAxes,
             ha='center', va='bottom', fontsize=9, color='#555555',
             style='italic')
@@ -237,7 +241,7 @@ note = (
     "group separation.\n"
     "In PPG recordings (Cruces), inter-beat intervals are derived from photoplethysmographic waveform peaks, whose detection introduces additional "
     "smoothing that compresses short-timescale variability in all subjects.\n"
-    "This attenuates the group difference at τ=1 (AUC = 0.54 in Cruces vs 0.72 in CETRAM), explaining why the HR-normalized complexity index "
+    "This attenuates the group difference at τ=1 (AUC = 0.54 in Cruces vs 0.72 in CETRAM), explaining why the complexity index "
     "does not reach significance in the Cruces cohort.\n"
     "The consistent direction of effect across all scales (Controls > PD) confirms that complexity loss in PD is real but partially obscured at short timescales by PPG modality constraints."
 )
@@ -251,11 +255,6 @@ fig.text(0.5, 0.115, note,
          multialignment='left')
 
 # ── Suptitle ─────────────────────────────────────────────────────────────────
-fig.suptitle(
-    'Supplementary Figure 2: Per-scale discriminative power of MSE SampEn across recording modalities',
-    fontsize=13, fontweight='bold', y=0.97
-)
-
 # ── Save ─────────────────────────────────────────────────────────────────────
 out_png = os.path.join(OUT_DIR, 'FigureAppendix2.png')
 out_svg = os.path.join(OUT_DIR, 'FigureAppendix2.svg')

@@ -37,6 +37,9 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
 from matplotlib.gridspec import GridSpec
 from scipy.stats import mannwhitneyu, spearmanr
 from sklearn.metrics import roc_auc_score
@@ -162,6 +165,7 @@ def synth(kind, n=1100):
 
 # ==========================================================================
 def main():
+    fs.apply()
     print("Loading CETRAM ...")
     subs = load_cetram()
     y = np.array([s["Group"] == "PD" for s in subs], int)
@@ -325,7 +329,7 @@ def main():
     sc = np.arange(1, NSCALES + 1)
 
     def lab(ax, t):
-        ax.text(-0.15, 1.07, t, transform=ax.transAxes, fontsize=17, fontweight="bold")
+        ax.text(-0.15, 1.07, t, transform=ax.transAxes, fontsize=17, fontweight="normal")
 
     # --- A
     ax = fig.add_subplot(gs[0, 0]); lab(ax, "A")
@@ -340,7 +344,7 @@ def main():
         ax.fill_between(sc, mu - se, mu + se, color=COL[g], alpha=.28, zorder=4)
     ax.set_xlabel("Scale $\\tau$"); ax.set_ylabel("Sample entropy")
     ax.set_title("Reference processes vs real data\n(fixed $r=0.2\\times$SD; synthetics mean$\\pm$SD of 8 runs)",
-                 fontweight="bold", fontsize=11)
+                 fontweight="normal", fontsize=11)
     ax.legend(fontsize=7.2, frameon=False, ncol=1, loc="lower left"); ax.grid(alpha=.2)
 
     # --- B
@@ -353,12 +357,13 @@ def main():
     ax.set_xlabel("Spurious long intervals injected (% of beats)")
     ax.set_ylabel("nAUC(1-5), relative to clean")
     ax.set_title("Artifact sensitivity — real CETRAM RRi\n(dashed = rates seen before the guard)",
-                 fontweight="bold", fontsize=11)
+                 fontweight="normal", fontsize=11)
     ax.grid(alpha=.2)
 
     # --- C
     ax = fig.add_subplot(gs[0, 2]); lab(ax, "C")
     piv = C.pivot_table(index=["etype", "m"], columns="r", values="AUC")
+    ax.grid(False)
     im = ax.imshow(piv.values, cmap="RdYlBu_r", vmin=.60, vmax=.82, aspect="auto")
     ax.set_xticks(range(piv.shape[1])); ax.set_xticklabels([f"{v:.2f}" for v in piv.columns])
     ax.set_yticks(range(len(piv))); ax.set_yticklabels([f"{e[:4]} m={m}" for e, m in piv.index], fontsize=8)
@@ -366,7 +371,7 @@ def main():
         for j in range(piv.shape[1]):
             ax.text(j, i, f"{piv.values[i,j]:.2f}", ha="center", va="center", fontsize=7.5)
     ax.set_xlabel("tolerance $r$ ($\\times$SD), fixed across scales")
-    ax.set_title("Parameter sweep — AUC\nnAUC(1-5)/HR", fontweight="bold", fontsize=11)
+    ax.set_title("Parameter sweep — AUC\nnAUC(1-5)/HR", fontweight="normal", fontsize=11)
     plt.colorbar(im, ax=ax, fraction=.046)
 
     # --- D
@@ -384,7 +389,7 @@ def main():
     ax.set_xticks(xp); ax.set_xticklabels(order, fontsize=9)
     ax.set_ylabel("AUC (Control > PD)"); ax.set_ylim(.33, .92)
     ax.set_title("Complexity-index selection — trapezoidal nAUC only, bootstrap 95% CI  (* p<0.05)",
-                 fontweight="bold", fontsize=12)
+                 fontweight="normal", fontsize=12)
     ax.legend(fontsize=9, frameon=False, loc="lower left"); ax.grid(alpha=.2, axis="y")
 
     # --- E
@@ -396,7 +401,7 @@ def main():
     ax.axhline(.5, ls=":", c="k", lw=1)
     ax.set_xlabel("upper scale $k$ of nAUC(1-$k$)"); ax.set_ylabel("AUC")
     ax.set_xticks([1, 5, 10, 15, 20])
-    ax.set_title("Scale-range sweep", fontweight="bold", fontsize=11)
+    ax.set_title("Scale-range sweep", fontweight="normal", fontsize=11)
     ax.legend(fontsize=8, frameon=False); ax.grid(alpha=.2)
 
     # --- F
@@ -410,7 +415,7 @@ def main():
     ax.set_xlabel(f"Beats used (common subset, n={F.n_subj.iloc[0]})"); ax.set_ylabel("AUC")
     ax.set_title("Recording length\n$\\rho$(nAUC,N): C "
                  f"{rhoN['Control'][0]:+.2f}, PD {rhoN['PD'][0]:+.2f} (n.s.)",
-                 fontweight="bold", fontsize=11)
+                 fontweight="normal", fontsize=11)
     ax.grid(alpha=.2, axis="y")
 
     # --- G1
@@ -421,7 +426,7 @@ def main():
     r1 = spearmanr(HR[np.isfinite(raw)], raw[np.isfinite(raw)])
     ax.set_xlabel("Mean HR (bpm)"); ax.set_ylabel("nAUC(1-5), unnormalized")
     ax.set_title(f"Unnormalized vs HR\n$\\rho$={r1[0]:+.2f} (p={r1[1]:.2f}) — orthogonal",
-                 fontweight="bold", fontsize=11)
+                 fontweight="normal", fontsize=11)
     ax.legend(fontsize=8, frameon=False); ax.grid(alpha=.2)
 
     # --- G2
@@ -438,11 +443,9 @@ def main():
     ax.set_xlabel("metric's own $\\rho$ with HR")
     ax.set_ylabel("$\\Delta\\rho$ caused by dividing")
     ax.set_title(f"Dividing distorts HRV correlations\n$\\rho$={rr[0]:+.2f}",
-                 fontweight="bold", fontsize=11)
+                 fontweight="normal", fontsize=11)
     ax.grid(alpha=.2)
 
-    fig.suptitle("Supplementary Figure S1 — Methodological validation of the rcMSE complexity index "
-                 "(CETRAM, fixed $r$)", fontsize=15, fontweight="bold", y=0.965)
     p = os.path.join(OUT, "FigureValidation.png")
     fig.savefig(p, dpi=200, bbox_inches="tight")
     fig.savefig(p.replace(".png", ".svg"), bbox_inches="tight")

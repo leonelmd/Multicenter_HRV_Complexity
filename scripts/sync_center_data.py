@@ -30,11 +30,11 @@ Nagoya  (direct copies):
     data/metadata/metadata.csv                   → japan_metadata.csv
     calculations/japan_4h_nauc.csv       ┐
     results/metrics/Full_HRV_Evolution_1min.csv  ┘ → japan_evolution.csv (merged)
-    calculations/japan_4h_mse_curves.csv         → japan_afternoon_mse.csv (16–20 h)
+    calculations/japan_4h_mse_curves.csv         → japan_window_mse.csv (18–22 h)
     calculations/japan_4h_mse_curves.csv         → japan_morning_mse.csv  (07–11 h)
 
 Computed inside Multicenter (NOT synced, but re-run automatically):
-    compute_japan_window_features.py             → japan_afternoon_features.csv
+    compute_japan_window_features.py             → japan_window_features.csv
 
 Manual / frozen (origin pre-dates this sync mechanism):
     japan_recalc_metrics.csv    — full-24h NeuroKit2 HRV metrics for Nagoya;
@@ -199,16 +199,16 @@ def copy_file(src: Path, dst: Path, dry_run: bool, force: bool) -> str:
 # Derived Japan files
 # ---------------------------------------------------------------------------
 
-def derive_japan_afternoon_mse(dry_run: bool) -> str:
-    """Filter japan_4h_mse_curves.csv to Window_start_h == 16 (16–20 h window)."""
+def derive_japan_window_mse(dry_run: bool) -> str:
+    """Filter japan_4h_mse_curves.csv to Window_start_h == 18 (18–22 h window)."""
     src   = NAGOYA / "calculations/japan_4h_mse_curves.csv"
-    dst   = DATA_DIR / "japan_afternoon_mse.csv"
-    label = "japan_afternoon_mse.csv"
+    dst   = DATA_DIR / "japan_window_mse.csv"
+    label = "japan_window_mse.csv"
     if not src.exists():
         return f"  ✗  SKIP   {label:40s}  (source not found: {src})"
     df = pd.read_csv(src)
     df["Group"] = df["Group"].str.lower().map({"control": "Control", "pd": "PD"}).fillna(df["Group"])  # normalise capitalisation
-    df_aft = (df[df["Window_start_h"] == 16]
+    df_aft = (df[df["Window_start_h"] == 18]
               .rename(columns={"Scale": "Scales"})
               [["Subject", "Group", "Scales", "MSE"]]
               .sort_values(["Subject", "Scales"])
@@ -217,7 +217,7 @@ def derive_japan_afternoon_mse(dry_run: bool) -> str:
         df_aft.to_csv(dst, index=False)
     n = df_aft.Subject.nunique()
     action = "DERIVE" if not dry_run else "WOULD DERIVE"
-    return f"  →  {action}  {label:40s}  ({n} subjects, Window 16–20 h)"
+    return f"  →  {action}  {label:40s}  ({n} subjects, Window 18–22 h)"
 
 
 def derive_japan_morning_mse(dry_run: bool) -> str:
@@ -264,13 +264,17 @@ def derive_japan_evolution(dry_run: bool) -> str:
     nauc["Group"] = _norm(nauc["Group"])
     evo["Group"]  = _norm(evo["Group"])
 
-    # HR is derived directly from n_beats: each nauc window is exactly 4 hours
-    # (minimum 4000 beats required by compute_4h_windows_nauc.jl), so:
-    #   HR [bpm] = n_beats / 240 min
-    nauc["HR"] = nauc["n_beats"] / 240.0
-
-    # SDNN and RMSSD: aggregate 1-min values over the 4-hour window
+    # HR, SDNN and RMSSD: aggregate 1-min values over the 4-hour window
     # [W, W+4). nauc windows slide at 1-hour steps (0,1,...,23).
+    #
+    # HR MUST come from the interval series, not from n_beats / 240 min.
+    # That earlier definition assumed every window is fully covered by retained
+    # beats. It is not: median temporal coverage of the 16-20 h window is 87.3 %
+    # and ranges down to 13.5 %, so n_beats / 240 is a beat *yield*, not a heart
+    # rate (SUB-046 would be assigned 10.0 bpm against an actual 73.8 bpm).
+    # Validation on the 16-20 h window, n = 46:
+    #   median 1-min HR  vs  60000 / mean(retained RRi):  r = 0.990, median |d| = 0.74 bpm
+    #   n_beats / 240    vs  60000 / mean(retained RRi):  r = 0.465, median |d| = 9.21 bpm, max 63.8
     records = []
     for _, row in nauc.iterrows():
         w_start = row["Window_start_h"]
@@ -280,6 +284,7 @@ def derive_japan_evolution(dry_run: bool) -> str:
         records.append({
             "Subject":         row["Subject"],
             "Window_start_h":  w_start,
+            "HR":              sub_evo["HR"].median() if len(sub_evo) else float("nan"),
             "SDNN":            sub_evo["SDNN"].median() if len(sub_evo) else float("nan"),
             "RMSSD":           sub_evo["RMSSD"].median() if len(sub_evo) else float("nan"),
         })
@@ -304,10 +309,10 @@ def derive_japan_evolution(dry_run: bool) -> str:
 
 
 def recompute_afternoon_features(dry_run: bool) -> str:
-    """Re-run compute_japan_window_features.py to update japan_afternoon_features.csv."""
+    """Re-run compute_japan_window_features.py to update japan_window_features.csv."""
     script = THIS_DIR / "compute_japan_window_features.py"
-    dst    = DATA_DIR / "japan_afternoon_features.csv"
-    label  = "japan_afternoon_features.csv"
+    dst    = DATA_DIR / "japan_window_features.csv"
+    label  = "japan_window_features.csv"
     if not script.exists():
         return f"  ✗  SKIP   {label:40s}  (script not found: {script})"
     if dry_run:
@@ -348,10 +353,10 @@ def write_provenance(log_lines: list[str], dry_run: bool) -> None:
         | spain_metrics.csv | Cruces/public_release/results/metrics/HRV_metrics.csv |
         | spain_demographics.csv | Cruces/public_release/data/metadata/subject_demographics.csv |
         | japan_metadata.csv | Nagoya/public_release/data/metadata/metadata.csv |
-        | japan_afternoon_mse.csv | Derived: Nagoya/calculations/japan_4h_mse_curves.csv (Window 16–20 h) |
+        | japan_window_mse.csv | Derived: Nagoya/calculations/japan_4h_mse_curves.csv (Window 18–22 h) |
         | japan_morning_mse.csv | Derived: Nagoya/calculations/japan_4h_mse_curves.csv (Window 07–11 h) |
         | japan_evolution.csv | Derived: japan_4h_nauc.csv + Full_HRV_Evolution_1min.csv |
-        | japan_afternoon_features.csv | Computed by compute_japan_window_features.py (reads Nagoya raw RRi) |
+        | japan_window_features.csv | Computed by compute_japan_window_features.py (reads Nagoya raw RRi) |
         | japan_recalc_metrics.csv | Computed by compute_japan_fullday_hrv.py (long-running, run manually when Nagoya RRi changes) |
         | deidentified_clinical_consolidated.xlsx | **Manual** — CETRAM clinical database |
         | sample_signals/ | **Manual** — anonymised CETRAM RRi traces |
@@ -401,7 +406,7 @@ def main():
 
     # ── Derived Japan files ────────────────────────────────────────────────
     print("\n── Derived Japan files ───────────────────────────────────────────")
-    for fn in (derive_japan_afternoon_mse, derive_japan_morning_mse, derive_japan_evolution):
+    for fn in (derive_japan_window_mse, derive_japan_morning_mse, derive_japan_evolution):
         line = fn(dry_run)
         print(line)
         log.append(line)

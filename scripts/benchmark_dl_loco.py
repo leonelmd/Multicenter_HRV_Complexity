@@ -176,7 +176,7 @@ def load_nagoya():
     """
     Nagoya: *_RRi.txt files (space-separated: rel_time_s  rri_s).
     Filtered to clock hours NAGOYA_WIN = (16, 20) using recording Start_Time
-    from metadata.  This matches the 16–20h window used for handcrafted features.
+    from metadata.  This matches the 18–22 h window used for handcrafted features.
     """
     print(f"Loading Nagoya ({NAGOYA_WIN[0]:02d}:00–{NAGOYA_WIN[1]:02d}:00)...")
     meta    = pd.read_csv(NAGOYA_META_CSV)

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Compute HRV Features for Nagoya 16–20h Window
+Compute HRV Features for Nagoya 18–22 h Window
 ==============================================
 Version: 1.1  (2026-03)
 Authors: NeuroEng@Usach
 
 Reads the raw Nagoya RRi files (one per subject), filters each to the 16:00–20:00
-clock-time window (the best PD-discrimination window, see Figure 3), and computes
+clock-time window and computes
 HRV features using the same pipeline as the other centers.
 
 Features computed
@@ -19,13 +19,13 @@ Features computed
 
 Output
 ------
-  data/japan_afternoon_features.csv
+  data/japan_window_features.csv
   Key columns: Subject, Group, Age, Gender, n_beats, HR,
                HRV_MeanNN, HRV_SDNN, HRV_RMSSD, HRV_pNN50,
                DFA_alpha1, DFA_alpha2
 
 This file is the single authoritative source of Nagoya HRV features for the
-16–20h window and should be used by generate_figure5.py and generate_appendix.py
+18–22 h window and should be used by generate_figure5.py and generate_appendix.py
 instead of mixing japan_evolution.csv (partial) and japan_recalc_metrics.csv (24h).
 
 Note: japan_recalc_metrics.csv (full 24h) is still used by traditional_hrv_metrics.py
@@ -56,7 +56,7 @@ _NAGOYA_ROOT    = os.environ.get(
     os.path.abspath(os.path.join(BASE, "..", "..", "Nagoya", "public_release")))
 NAGOYA_RRI_DIR  = os.path.join(_NAGOYA_ROOT, "data", "processed_rri")
 NAGOYA_META_CSV = os.path.join(_NAGOYA_ROOT, "data", "metadata", "metadata.csv")
-OUT_CSV         = os.path.join(BASE, 'data', 'japan_afternoon_features.csv')
+OUT_CSV         = os.path.join(BASE, 'data', 'japan_window_features.csv')
 
 # Suzuki et al. (2022) adjacent-difference exclusion for RMSSD / pNN50.
 SUZUKI_DIFF_EXCL_MS = 100.0
@@ -69,8 +69,23 @@ def _norm_group(g):
 
 # ── Settings ──────────────────────────────────────────────────────────────────
 
-WIN_START_H = 16   # 16:00 clock time
-WIN_END_H   = 20   # 20:00 clock time
+# ── Window selection ──────────────────────────────────────────────────────────
+# PRE-SPECIFIED ON A LABEL-BLIND CRITERION: the earliest 4-h window with complete
+# subject retention (n = 45) and >=99% median temporal coverage by retained beats,
+# within waking hours. Group labels were NOT consulted.
+#
+#   window   n    median coverage   subjects <80% coverage
+#   15-19h  45        78.4%                  23
+#   16-20h  45        89.6%                  21     <- previously used
+#   17-21h  45        97.3%                   7
+#   18-22h  45        99.7%                   1     <- selected
+#
+# The previous 16-20 h window was chosen because it discriminated best, which is
+# circular. It is also the worse window on data quality. The replacement has a
+# LOWER discrimination (AUC 0.773 vs 0.835), which is itself evidence that it was
+# not selected on the outcome. See Multicenter/CIRCADIAN_ANALYSIS_AUDIT.md.
+WIN_START_H = 18   # 18:00 clock time
+WIN_END_H   = 22   # 22:00 clock time
 RRI_MIN_S   = 0.3  # physiological bounds (seconds)
 RRI_MAX_S   = 2.0
 

@@ -26,6 +26,10 @@ import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
+fs.apply()
 import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -96,8 +100,8 @@ def load_ml_data():
     frames.append(df_s)
 
     # Nagoya 16-20h (single authoritative source)
-    mse_j  = pd.read_csv(os.path.join(DATA_DIR, "japan_afternoon_mse.csv"))
-    feat_j = pd.read_csv(os.path.join(DATA_DIR, "japan_afternoon_features.csv"))
+    mse_j  = pd.read_csv(os.path.join(DATA_DIR, "japan_window_mse.csv"))
+    feat_j = pd.read_csv(os.path.join(DATA_DIR, "japan_window_features.csv"))
     feat_j['Group'] = feat_j['Group'].str.lower().replace(
         {'pd': 'PD', 'control': 'Control'})
     comp_j = mse_j[mse_j.Scales.isin(range(1, 21))].groupby('Subject').MSE.mean().reset_index()
@@ -190,7 +194,7 @@ def generate_appendix():
     ax.set_title(
         'Appendix: Cross-Center Generalization Matrix\n'
         'RF, 7 handcrafted features, Z-scored per center',
-        fontsize=14, fontweight='bold')
+        fontsize=14, fontweight='normal')
 
     plt.tight_layout()
     out_path = os.path.join(OUT_DIR, 'FigureAppendix.png')

@@ -5,11 +5,11 @@ Merged composite of 7 panels (A–G).
 
 Panel A – Spearman ρ correlation heatmap (rcMSE-AUC vs HRV, per center × group)
 Panel B – Cross-dataset consistency forest plot
-Panel C – Scale physiology heatmap: CETRAM | Cruces | Nagoya (16–20h)   [regenerated]
+Panel C – Scale physiology heatmap: CETRAM | Cruces | Nagoya (18–22 h)   [regenerated]
 Panel D – McFadden R² variance decomposition
 Panel E – Age/sex confound correction lollipop                           [regenerated]
 Panel F – Autonomic synthesis (raw ρ | partial ρ | unique variance)      [regenerated]
-Panel G – Scale anatomy: Nagoya (16–20h) & CETRAM                        [regenerated]
+Panel G – Scale anatomy: Nagoya (18–22 h) & CETRAM                        [regenerated]
 
 Panels A, B, D loaded from pre-computed PNGs.
 Panels C, E, F, G re-drawn inline for label consistency.
@@ -22,6 +22,10 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
+fs.apply()
 import matplotlib.image as mpimg
 import matplotlib.gridspec as gridspec
 import seaborn as sns
@@ -61,12 +65,13 @@ def _ordered_metrics(index):
 
 def add_panel_label(ax, label, fontsize=20):
     ax.text(-0.06, 1.08, label, transform=ax.transAxes,
-            fontsize=fontsize, fontweight='bold', va='bottom', ha='right')
+            fontsize=fontsize, fontweight='normal', va='bottom', ha='right')
 
 def show_png(ax, path):
     """Display a PNG in an axis, removing ticks."""
     if os.path.exists(path):
         img = mpimg.imread(path)
+        ax.grid(False)
         ax.imshow(img, aspect='auto', interpolation='lanczos')
     else:
         ax.text(0.5, 0.5, f'Missing:\n{os.path.basename(path)}',
@@ -88,7 +93,7 @@ def draw_panel_C(axes_row):
     configs = [
         ('Chile',          'CETRAM\n(15-min rest)', 5),
         ('Spain',          'Cruces\n(15-min rest)', 5),
-        ('Japan-afternoon','Nagoya (16–20h)\n(4-hour block)', 20),
+        ('Japan-afternoon','Nagoya (18–22 h)\n(4-hour block)', 20),
     ]
 
     for ax, (ds_key, title, max_rel) in zip(axes_row, configs):
@@ -115,7 +120,7 @@ def draw_panel_C(axes_row):
                         cbar=False, linewidths=0.3, linecolor='#dddddd',
                         xticklabels=2, yticklabels=False, alpha=0.35)
 
-        ax.set_title(title, fontsize=12, fontweight='bold', pad=5)
+        ax.set_title(title, fontsize=12, fontweight='normal', pad=5)
         ax.set_xlabel('MSE Scale', fontsize=10)
         ax.set_ylabel('')
         ax.tick_params(axis='y', labelsize=8)
@@ -159,7 +164,7 @@ def draw_panel_E(ax):
     ax.axvline(0, color='#444', lw=1, ls='--', zorder=1)
     ax.set_yticks(ys); ax.set_yticklabels(metrics, fontsize=9)
     ax.set_xlabel('Spearman ρ  (rcMSE-AUC vs HRV,  Pooled n=152)', fontsize=9)
-    ax.set_title('Confound Correction\n(Age & Sex Adjustment)', fontsize=11, fontweight='bold')
+    ax.set_title('Confound Correction\n(Age & Sex Adjustment)', fontsize=11, fontweight='normal')
     h1 = plt.Line2D([0],[0], marker='o', color='gray', mfc='white', mew=2, ms=8, ls='')
     h2 = plt.Line2D([0],[0], marker='o', color='gray', mfc='gray',  ms=8, ls='')
     ax.legend([h1, h2], ['Raw ρ', 'Partial ρ (adj.)'],
@@ -230,7 +235,7 @@ def draw_panel_G(axes_2):
     ls_map = {'pNN50':'-','RMSSD':'--','LF_norm':'-.','SDNN':':'
               ,'DFA_alpha1':(0,(3,1,1,1))}
 
-    datasets = [('Japan-afternoon', 'Nagoya (16–20h)  n=38 — all scales reliable', None),
+    datasets = [('Japan-afternoon', 'Nagoya (18–22 h)  n=38 — all scales reliable', None),
                 ('Chile',           'CETRAM  n=71 — reliable up to scale 5',       5)]
 
     for ax, (ds, title, max_rel) in zip(axes_2, datasets):
@@ -313,11 +318,6 @@ def generate_figure7():
     g_axes = [fig.add_subplot(g_inner[0, j]) for j in range(2)]
     draw_panel_G(g_axes)
     add_panel_label(g_axes[0], 'G')
-
-    plt.suptitle(
-        'Figure 7: Cardiac Complexity as a Novel Autonomic Biomarker\n'
-        'Pooled cohort: CETRAM + Cruces + Nagoya  ·  rcMSE nAUC(1–20) / HR',
-        fontsize=20, fontweight='bold', y=0.995)
 
     os.makedirs(OUT_DIR, exist_ok=True)
     out_path = os.path.join(OUT_DIR, 'Figure7.png')

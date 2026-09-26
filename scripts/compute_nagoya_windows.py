@@ -8,7 +8,7 @@ Produces two tables:
                                  window across 24 h, with clock time. Drives the
                                  circadian panels and the distributional summaries.
 
-  data/japan_scale_profile.csv   scale-resolved MSE out to tau=60 in the 16-20 h
+  data/japan_scale_profile.csv   scale-resolved MSE out to tau=60 in the 18-22 h
                                  window. Drives the multiscale panel.
 
 Why 15 min: complexity at tau<=5 needs ~1000 beats under N/tau>=200, i.e. ~13 min
@@ -178,10 +178,10 @@ def main():
                 a += STEP_S
             pd.DataFrame(win_rows).to_csv(OUT_WIN, index=False)
 
-        # ---- scale profile in the 16-20 h window ----
+        # ---- scale profile in the 18-22 h window (pre-specified; see audit) ----
         if sub not in done_p:
             clk = (clk0 + (t - t[0]) / 3600) % 24
-            seg = x[(clk >= 16) & (clk < 20)]
+            seg = x[(clk >= 18) & (clk < 22)]
             if len(seg) >= 3000:
                 r = R_FACTOR * seg.std(ddof=1)
                 rec = dict(Subject=sub, Group=group, N=len(seg), meanRR=seg.mean(),
