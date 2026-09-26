@@ -25,10 +25,10 @@ Feature set (consistent across all panels)
 
 Nagoya data sources
 -------------------
-  16-20h: japan_afternoon_features.csv — all HC metrics from same window
+  16-20h: japan_window_features.csv — all HC metrics from same window
   07-11h: japan_evolution.csv (HR/SDNN/RMSSD) + japan_recalc_metrics.csv
           (pNN50 / DFA alpha1, 24h fallback — no per-window morning file)
-  Complexity / SampEn S1: japan_{morning,afternoon}_mse.csv
+  Complexity / SampEn S1: japan_{morning,window}_mse.csv
 
 DL reference: data/benchmarks/loco_cv_results.csv (benchmark_dl_loco.py)
 Appendix:     generate_appendix.py — cross-center generalization matrix (RF)
@@ -39,6 +39,10 @@ import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
+fs.apply()
 import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -197,7 +201,7 @@ def load_datasets():
     # ── Nagoya ────────────────────────────────────────────────────────────────
     df_evo    = pd.read_csv(os.path.join(DATA_DIR, "japan_evolution.csv"))
     df_recalc = pd.read_csv(os.path.join(DATA_DIR, "japan_recalc_metrics.csv"))
-    df_feat   = pd.read_csv(os.path.join(DATA_DIR, "japan_afternoon_features.csv"))
+    df_feat   = pd.read_csv(os.path.join(DATA_DIR, "japan_window_features.csv"))
     df_feat['Group'] = df_feat['Group'].str.lower().replace(
         {'pd': 'PD', 'control': 'Control'})
     df_meta = pd.read_csv(os.path.join(DATA_DIR, "japan_metadata.csv"))
@@ -206,7 +210,7 @@ def load_datasets():
 
     for win_name, win_h, mse_file, is_aft in [
         ('Nagoya (07-11h)', 7,  'japan_morning_mse.csv',   False),
-        ('Nagoya (16-20h)', 16, 'japan_afternoon_mse.csv', True),
+        ('Nagoya (16-20h)', 16, 'japan_window_mse.csv', True),
     ]:
         mse_j  = pd.read_csv(os.path.join(DATA_DIR, mse_file))
         comp_j = mse_j[mse_j.Scales.isin(range(1, 21))].groupby('Subject').MSE.mean().reset_index()
@@ -303,7 +307,7 @@ def get_auc(df, metric, group_col='Group', pos_label='PD'):
 
 def add_panel_label(ax, label, fontsize=22):
     ax.text(-0.08, 1.10, label, transform=ax.transAxes,
-            fontsize=fontsize, fontweight='bold', va='bottom', ha='right')
+            fontsize=fontsize, fontweight='normal', va='bottom', ha='right')
 
 
 # ── Figure ─────────────────────────────────────────────────────────────────────
@@ -360,7 +364,7 @@ def generate_figure5():
                 lbl.set_fontsize(13)
                 lbl.set_color('#8E44AD')
 
-        ax.set_title(ds_key, fontsize=16, fontweight='bold')
+        ax.set_title(ds_key, fontsize=16, fontweight='normal')
         ax.set_xlim(0.4, 1.0)
         ax.axvline(0.5, color='black', ls='--', alpha=0.5)
         ax.set_xlabel('AUC', fontsize=11)
@@ -384,7 +388,7 @@ def generate_figure5():
                           color=color, edgecolor='white', linewidth=0.5)
         for bar, val in zip(bars_e, vals):
             ax_e.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01,
-                      f'{val:.2f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+                      f'{val:.2f}', ha='center', va='bottom', fontsize=9, fontweight='normal')
 
     for i, site in enumerate(CENTERS_ML):
         if site in dl_aucs:
@@ -397,7 +401,7 @@ def generate_figure5():
     ax_e.set_ylim(0.45, 1.02)
     ax_e.axhline(0.5, color='gray', ls=':', alpha=0.5)
     ax_e.set_ylabel('LOCO AUC', fontsize=12)
-    ax_e.set_title('Handcrafted Models — LOCO AUC per Center', fontsize=16, fontweight='bold')
+    ax_e.set_title('Handcrafted Models — LOCO AUC per Center', fontsize=16, fontweight='normal')
     ax_e.legend(fontsize=10, loc='upper left')
     sns.despine(ax=ax_e)
 
@@ -411,7 +415,7 @@ def generate_figure5():
         ax_f.text(val + 0.002, bar.get_y() + bar.get_height() / 2,
                   f'{val:.3f}', va='center', fontsize=10)
     ax_f.set_xlabel('Mean Decrease in Gini Impurity', fontsize=12)
-    ax_f.set_title('RF Feature Importance (pooled, full fit)', fontsize=16, fontweight='bold')
+    ax_f.set_title('RF Feature Importance (pooled, full fit)', fontsize=16, fontweight='normal')
     ax_f.set_xlim(0, importances.values.max() * 1.25)
     sns.despine(ax=ax_f)
 
@@ -431,14 +435,14 @@ def generate_figure5():
         h = bar.get_height()
         if h > 0:
             ax_g.text(bar.get_x() + bar.get_width() / 2, h + 0.01,
-                      f'{h:.2f}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+                      f'{h:.2f}', ha='center', va='bottom', fontsize=11, fontweight='normal')
     ax_g.set_xticks(x_g)
     ax_g.set_xticklabels(CENTERS_ML, fontsize=12)
     ax_g.set_ylim(0.45, 1.0)
     ax_g.axhline(0.5, color='gray', ls=':', alpha=0.5, label='Chance')
     ax_g.set_ylabel('LOCO AUC', fontsize=12)
     ax_g.set_title('Handcrafted Complexity Features vs End-to-End DL',
-                   fontsize=16, fontweight='bold')
+                   fontsize=16, fontweight='normal')
     ax_g.legend(fontsize=10)
     ax_g.text(0.98, 0.03, 'DL: 1D-ResNet on raw RRi\nHC: rcMSE/HR + 6 features (LOCO)',
               ha='right', va='bottom', transform=ax_g.transAxes,
@@ -458,7 +462,7 @@ def generate_figure5():
     ax_h.plot([0, 1], [0, 1], 'k--', alpha=0.4)
     ax_h.set_xlabel('False Positive Rate', fontsize=12)
     ax_h.set_ylabel('True Positive Rate', fontsize=12)
-    ax_h.set_title(f'Multi-Center ROC — {best_model} (LOCO)', fontsize=16, fontweight='bold')
+    ax_h.set_title(f'Multi-Center ROC — {best_model} (LOCO)', fontsize=16, fontweight='normal')
     ax_h.legend(fontsize=11, loc='lower right')
     sns.despine(ax=ax_h)
 
@@ -477,17 +481,12 @@ def generate_figure5():
                     cbar=show_cbar, annot_kws={'size': 9})
         n = len(datasets[center])
         ax.set_title(f'Feature Orthogonality\n{center} (n={n})',
-                     fontsize=14, fontweight='bold')
+                     fontsize=14, fontweight='normal')
         if center != 'CETRAM':
             ax.set_yticklabels([])
 
     # ── Suptitle & save ────────────────────────────────────────────────────────
     n_info = "  |  ".join(f"{s}: n={len(df_ml[df_ml.Site==s])}" for s in CENTERS_ML)
-    plt.suptitle(
-        'Figure 5: Diagnostic Performance, Machine Learning Validation, '
-        'and Feature Independence\n'
-        f'{n_info}  |  7 features  |  LOCO cross-validation  |  Z-scored per center',
-        fontsize=20, fontweight='bold', y=1.0)
     fig.subplots_adjust(top=0.965, bottom=0.03, left=0.07, right=0.97,
                         hspace=0.52, wspace=0.35)
 

@@ -4,15 +4,19 @@ Figure 4: Multicenter Cardiac Complexity Validation (Standardized by Signal Leng
 Determines scale range based on available heartbeats (N/Tau >= 200 rule).
 - Chile/Spain (15min, N~1100): Scales 1-5
 - Japan (4hr, N~15000): Scales 1-20
-All indices are HR-Normalized.
+Complexity indices are reported unnormalized; HR is entered as a covariate.
 """
 
 import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import figstyle as fs
+fs.apply()
 import seaborn as sns
 from scipy.stats import mannwhitneyu
+import statsmodels.api as sm
+from sklearn.metrics import roc_auc_score
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -31,10 +35,10 @@ SPAIN_MSE = os.path.join(DATA_DIR, "spain_mse.csv")
 SPAIN_METRICS = os.path.join(DATA_DIR, "spain_metrics.csv")
 JAPAN_EVO = os.path.join(DATA_DIR, "japan_evolution.csv")
 JAPAN_MORNING_MSE = os.path.join(DATA_DIR, "japan_morning_mse.csv")
-JAPAN_AFTERNOON_MSE = os.path.join(DATA_DIR, "japan_afternoon_mse.csv")
+JAPAN_AFTERNOON_MSE = os.path.join(DATA_DIR, "japan_window_mse.csv")
 
 def add_panel_label(ax, label):
-    ax.text(-0.05, 1.15, label, transform=ax.transAxes, fontsize=28, fontweight='bold', va='bottom', ha='right')
+    ax.text(-0.05, 1.15, label, transform=ax.transAxes, fontsize=28, fontweight='normal', va='bottom', ha='right')
 
 def get_sig_chars(p):
     if p < 0.001: return '***'
@@ -95,7 +99,7 @@ def generate_figure4():
             ax1.plot(summary['Scales'], summary['mean'], color=colors[group], linewidth=3, marker='o', markersize=4, label=f"{group} (N={n_controls if group=='Control' else n_pd})")
             ax1.fill_between(summary['Scales'], summary['mean']-summary['sem'], summary['mean']+summary['sem'], color=colors[group], alpha=0.15)
             
-        ax1.set_title(f"{name}\nMSE Spectrum", fontsize=20, fontweight='bold')
+        ax1.set_title(f"{name}\nMSE Spectrum", fontsize=20, fontweight='normal')
         ax1.set_xlabel("Scale Factor", fontsize=14)
         ax1.set_ylabel("Sample Entropy", fontsize=14)
         ax1.set_xlim(1, 20)
@@ -106,7 +110,7 @@ def generate_figure4():
         ax1.axvspan(min(index_range), max(index_range), color='gray', alpha=0.1)
         ax1.legend(fontsize=9, loc='upper right')
 
-        # --- BOTTOM ROW: HR-Normalized Complexity Index ---
+        # --- BOTTOM ROW: Complexity Index (unnormalized; HR as covariate) ---
         ax2 = fig.add_subplot(gs[1, col_idx])
         add_panel_label(ax2, chr(69 + col_idx))
         
@@ -130,7 +134,13 @@ def generate_figure4():
         elif met_type == 'JAPAN_EVO_AFTERNOON':
             df_final = pd.merge(sub_index, hr_j_a, on='Subject')
             
-        df_final['Norm'] = df_final['MSE'] / df_final['HR']
+        # Unnormalized index. Dividing by HR was dropped: the index scales with HR
+        # as HR^b with b = -0.09 / -0.70 / -1.31 across cohorts, so a ratio (which
+        # shifts b to b-1) moves the index further from HR-independence rather than
+        # closer, and its apparent AUC gain is heart rate's own group signal.
+        # See HR_NORMALISATION_ANALYSIS.md and Appendix 5. HR is retained below as
+        # a covariate, which is the defensible adjustment.
+        df_final['Norm'] = df_final['MSE']
         df_plot = df_final[df_final['Group'].isin(['Control', 'PD'])]
 
         sns.boxplot(x='Group', y='Norm', data=df_plot, palette=colors, hue='Group', legend=False, ax=ax2, order=['Control', 'PD'], showfliers=False, width=0.5)
@@ -140,21 +150,32 @@ def generate_figure4():
         p_vals = df_final[df_final['Group'] == 'PD']['Norm'].dropna()
         _, p = mannwhitneyu(c_vals, p_vals, alternative='two-sided')
         
-        range_str = rf"$\Sigma$MSE({min(index_range)}-{max(index_range)}) / HR"
-        ax2.set_title(f"HR-Normalized Complexity\n{range_str}", fontsize=18, fontweight='bold')
-        ax2.set_ylabel("Complexity Index (normalized)", fontsize=14)
+        # HR entered as a covariate — the defensible adjustment (see Appendix 5).
+        _d = df_plot.dropna(subset=['Norm', 'HR']).copy()
+        _d['g'] = (_d['Group'] == 'PD').astype(int)
+        _m = sm.OLS(_d['Norm'], sm.add_constant(_d[['g', 'HR']])).fit()
+        p_adj = _m.pvalues['g']
+        auc_adj = roc_auc_score(_d['g'], -(_d['Norm'] - _m.params['HR'] * _d['HR']))
+
+        range_str = rf"$\Sigma$MSE({min(index_range)}-{max(index_range)})"
+        ax2.set_title(f"Complexity Index (unnormalized)\n{range_str}", fontsize=18, fontweight='normal')
+        ax2.set_ylabel("Complexity Index", fontsize=14)
         ax2.set_xlabel(f"({length_desc})", fontsize=12, style='italic')
         ax2.grid(True, axis='y', alpha=0.15)
-        
-        ax2.text(0.5, 0.92, f"p = {p:.4f} {get_sig_chars(p)}", transform=ax2.transAxes, ha='center', fontsize=16, fontweight='bold')
+
+        ax2.text(0.5, 0.955, f"p = {p:.4f} {get_sig_chars(p)}", transform=ax2.transAxes, ha='center', fontsize=16, fontweight='normal')
+        ax2.text(0.5, 0.895, f"HR-adjusted: p = {p_adj:.4f}, AUC = {auc_adj:.3f}",
+                 transform=ax2.transAxes, ha='center', fontsize=11, color='#16A085',
+                 fontweight='normal')
+        _lo, _hi = ax2.get_ylim()
+        ax2.set_ylim(_lo, _lo + (_hi - _lo) * 1.24)   # headroom for the two annotations
         sns.despine(ax=ax2)
 
     # RULE TEXT LABEL (Rule: N/Tau >= 200)
     rule_text = r"Rule: $N/\tau \geq 200$ for stable entropy estimation"
-    fig.text(0.5, 0.02, rule_text, ha='center', fontsize=20, fontweight='bold', bbox=dict(facecolor='white', alpha=0.5, edgecolor='gray', boxstyle='round,pad=0.5'))
+    fig.text(0.5, 0.012, rule_text, ha='center', fontsize=20, fontweight='normal', bbox=dict(facecolor='white', alpha=0.5, edgecolor='gray', boxstyle='round,pad=0.5'))
 
-    plt.suptitle("Figure 4: Global Validation using Signal-Length Adjusted Complexity Metrics", fontsize=32, fontweight='bold', y=1.0)
-    fig.subplots_adjust(top=0.90, bottom=0.05, left=0.08, right=0.97, hspace=0.45, wspace=0.35)
+    fig.subplots_adjust(top=0.885, bottom=0.075, left=0.08, right=0.97, hspace=0.45, wspace=0.35)
     
     out_path = os.path.join(FIGURES_DIR, "Figure4", "Figure4.png")
     plt.savefig(out_path, dpi=300)

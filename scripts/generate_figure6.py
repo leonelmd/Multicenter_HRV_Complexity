@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Figure 6: Global Validation of Age-Independency of Cardiac Complexity
-- Analysis of HR-Normalized Complexity vs Age across validation centers.
+- Analysis of the unnormalized complexity index vs Age across validation centers.
 - Standardized range rule applied: Chile/Spain (1-5), Japan (1-20).
 - Includes Morning and Afternoon Japanese cohorts.
 """
@@ -10,6 +10,10 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
+fs.apply()
 import seaborn as sns
 from scipy.stats import spearmanr
 
@@ -20,7 +24,7 @@ FIGURES_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "figures")
 os.makedirs(FIGURES_DIR, exist_ok=True)
 
 def add_panel_label(ax, label):
-    ax.text(-0.08, 1.12, label, transform=ax.transAxes, fontsize=28, fontweight='bold', va='bottom', ha='right')
+    ax.text(-0.08, 1.12, label, transform=ax.transAxes, fontsize=28, fontweight='normal', va='bottom', ha='right')
 
 def format_corr_text(r, p):
     if np.isnan(r) or np.isnan(p):
@@ -50,7 +54,7 @@ def generate_figure6():
         ('A', 'CETRAM', 'chile_mse.csv', 'chile_demographics.csv', 'chile_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'CHILE'),
         ('B', 'Cruces', 'spain_mse.csv', 'spain_demographics.csv', 'spain_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'SPAIN'),
         ('C', 'Nagoya (07-11h)', 'japan_morning_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_M'),
-        ('D', 'Nagoya (16-20h)', 'japan_afternoon_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_A')
+        ('D', 'Nagoya (16-20h)', 'japan_window_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_A')
     ]
 
     for i, (label, name, mse_file, dem_file, met_file, scale_range, scale_desc, ds_type) in enumerate(configs):
@@ -84,7 +88,8 @@ def generate_figure6():
             df = pd.merge(pd.merge(comp, df_j_meta[['Subject','Group','Age']], on='Subject'), hr_j, on='Subject')
             df['Group'] = df['Group'].replace({'CONTROL':'Control', 'PD':'PD'})
 
-        df['Norm'] = df['MSE'] / df['HR']
+        # Unnormalized: see HR_NORMALISATION_ANALYSIS.md / Appendix 5.
+        df['Norm'] = df['MSE']
         df = df.dropna(subset=['Age', 'Norm'])
 
         for grp in ['Control', 'PD']:
@@ -99,16 +104,15 @@ def generate_figure6():
             r, p = spearmanr(grp_data['Age'], grp_data['Norm'])
             ax.text(0.05, 0.95 - (0.08 if grp=='PD' else 0), 
                     f"{grp}: {format_corr_text(r, p)}", 
-                    transform=ax.transAxes, color=colors[grp], fontweight='bold', fontsize=16)
+                    transform=ax.transAxes, color=colors[grp], fontweight='normal', fontsize=16)
 
-        ax.set_title(f"{name}\n{scale_desc}", fontsize=22, fontweight='bold')
+        ax.set_title(f"{name}\n{scale_desc}", fontsize=22, fontweight='normal')
         ax.set_xlabel("Age (years)", fontsize=18)
-        ax.set_ylabel("HR-Normalized Complexity", fontsize=18)
+        ax.set_ylabel("Complexity Index (unnormalized)", fontsize=18)
         ax.grid(True, alpha=0.15)
         ax.legend(loc='lower left', fontsize=12)
         sns.despine(ax=ax)
 
-    plt.suptitle("Figure 6: Multi-Center Validation of Age-Independency", fontsize=36, fontweight='bold', y=1.0)
     fig.subplots_adjust(top=0.90, bottom=0.07, left=0.08, right=0.97, hspace=0.4, wspace=0.3)
     
     out_path = os.path.join(FIGURES_DIR, "Figure6", "Figure6.png")

@@ -12,6 +12,10 @@ import warnings
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
+fs.apply()
 import seaborn as sns
 from matplotlib.patches import Ellipse
 from scipy.stats import ttest_ind
@@ -37,7 +41,7 @@ CRUCES_RRI_DIR = os.path.join(PROJECT_ROOT, "Cruces/public_release/data/processe
 NAGOYA_RRI_DIR = os.path.join(PROJECT_ROOT, "Nagoya/public_release/data/processed_rri")
 
 def add_panel_label(ax, label):
-    ax.text(-0.1, 1.05, label, transform=ax.transAxes, fontsize=24, fontweight='bold', va='bottom', ha='right')
+    ax.text(-0.1, 1.05, label, transform=ax.transAxes, fontsize=24, fontweight='normal', va='bottom', ha='right')
 
 def get_poincare_stats(rri):
     """Calculate SD1 and SD2 for Poincaré plot"""
@@ -180,7 +184,7 @@ def generate_figure2():
                     avg_trace = np.nanmean(stack, axis=0)
                 ax1.plot(x_common, avg_trace, color=c, linewidth=2.5)
 
-        ax1.set_title(f"{name}\n(Control={len(ctrl_subjects)}, PD={len(pd_subjects)})", fontsize=14, fontweight='bold')
+        ax1.set_title(f"{name}\n(Control={len(ctrl_subjects)}, PD={len(pd_subjects)})", fontsize=14, fontweight='normal')
         ax1.set_ylabel('RR Interval (ms)', fontsize=12)
         
         if center_type == 'nagoya':
@@ -233,10 +237,10 @@ def generate_figure2():
             if len(c_v) > 1 and len(p_v) > 1:
                 t, p = ttest_ind(c_v, p_v)
                 sig = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else 'n.s.'
-                ax2.text(0.5, 0.9, f'p={p:.3f} ({sig})', transform=ax2.transAxes, ha='center', fontweight='bold', fontsize=12)
+                ax2.text(0.5, 0.9, f'p={p:.3f} ({sig})', transform=ax2.transAxes, ha='center', fontweight='normal', fontsize=12)
                 
             ax2.set_ylabel('Mean HR (bpm)', fontsize=12)
-            ax2.set_title('Heart Rate Distribution', fontsize=13, fontweight='bold')
+            ax2.set_title('Heart Rate Distribution', fontsize=13, fontweight='normal')
         else:
             ax2.text(0.5, 0.5, 'HR Data Unavailable', ha='center', va='center', transform=ax2.transAxes)
         # Standardize HR Scale
@@ -280,9 +284,9 @@ def generate_figure2():
             if len(c_v) > 1 and len(p_v) > 1:
                 t, p = ttest_ind(c_v, p_v)
                 sig = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else 'n.s.'
-                ax3.text(0.5, 0.9, f'p={p:.3f} ({sig})', transform=ax3.transAxes, ha='center', fontweight='bold', fontsize=12)
+                ax3.text(0.5, 0.9, f'p={p:.3f} ({sig})', transform=ax3.transAxes, ha='center', fontweight='normal', fontsize=12)
             ax3.set_ylabel('Age (years)', fontsize=12)
-            ax3.set_title('Age Distribution', fontsize=13, fontweight='bold')
+            ax3.set_title('Age Distribution', fontsize=13, fontweight='normal')
         else:
             ax3.text(0.5, 0.5, 'Age Data Unavailable', ha='center', va='center', transform=ax3.transAxes)
         # Standardize Age Scale
@@ -326,7 +330,7 @@ def generate_figure2():
                                  edgecolor=color, facecolor='none', linewidth=2.5)
                 ax4.add_patch(ellipse)
         
-        ax4.set_title('Poincaré Plot', fontsize=13, fontweight='bold')
+        ax4.set_title('Poincaré Plot', fontsize=13, fontweight='normal')
         ax4.set_xlabel('RRi[n] (ms)', fontsize=11)
         ax4.set_ylabel('RRi[n+1] (ms)', fontsize=11)
         ax4.set_xlim(400, 1400); ax4.set_ylim(400, 1400)
@@ -334,7 +338,6 @@ def generate_figure2():
         ax4.set_aspect('equal')
         sns.despine(ax=ax4)
     
-    plt.suptitle('Figure 2: Multi-Center Signal Archetypes & Demographics', fontsize=26, fontweight='bold', y=0.99)
     fig.subplots_adjust(top=0.93, bottom=0.07, left=0.08, right=0.97, hspace=0.4, wspace=0.3)
     
     out_dir = os.path.join(FIGURES_DIR, "Figure2")

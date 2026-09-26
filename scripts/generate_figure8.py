@@ -2,7 +2,7 @@
 """
 Figure 8: Clinical Correlation Analysis — CETRAM Cohort
 =========================================================
-Correlates the rcMSE cardiac complexity index (nAUC 1–5 / HR) with
+Correlates the rcMSE cardiac complexity index (nAUC 1–5, unnormalized) with
 clinical characteristics of 29 PD patients from the CETRAM cohort.
 
 Clinical data source: data/deidentified_clinical_consolidated.xlsx
@@ -30,6 +30,10 @@ from scipy.stats import spearmanr
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
+fs.apply()
 import matplotlib.gridspec as gridspec
 from matplotlib.patches import FancyBboxPatch
 import matplotlib.ticker as mticker
@@ -183,7 +187,8 @@ def load_data():
             if 'HR' in demo.columns else pd.DataFrame({'Subject': [], 'HR': []})
 
     mse_wide = mse_wide.merge(hr_df, on='Subject', how='left')
-    mse_wide['Complexity'] = mse_wide['nAUC_1_5'] / mse_wide['HR']
+    # Unnormalized: see HR_NORMALISATION_ANALYSIS.md / Appendix 5.
+    mse_wide['Complexity'] = mse_wide['nAUC_1_5']
 
     # Also add DFA_alpha1 from chile_metrics if available
     if 'HRV_DFA_alpha1' in metr.columns and 'Subject' in metr.columns:
@@ -277,7 +282,7 @@ def generate_figure8():
     }
 
     HRV_METRICS = {
-        'Complexity':    'Complexity\n(rcMSE nAUC/HR)',
+        'Complexity':    'Complexity\n(rcMSE nAUC)',
         'HRV_RMSSD':     'RMSSD',
         'HRV_DFA_alpha1': 'DFA α₁',
     }
@@ -360,6 +365,7 @@ def generate_figure8():
 
         vmax = 0.75
         cmap = plt.cm.RdBu_r
+        ax.grid(False)
         im = ax.imshow(rho_mat.values.astype(float), cmap=cmap,
                         vmin=-vmax, vmax=vmax, aspect='auto')
 
@@ -367,7 +373,7 @@ def generate_figure8():
         ax.set_xticklabels(col_order_clean, rotation=40, ha='right', fontsize=9)
         ax.set_yticks(range(len(hrv_order)))
         ax.set_yticklabels(hrv_order, fontsize=10)
-        ax.set_title(title_suffix, fontsize=12, fontweight='bold', pad=8)
+        ax.set_title(title_suffix, fontsize=12, fontweight='normal', pad=8)
 
         # Annotate cells
         for i in range(rho_mat.shape[0]):
@@ -380,7 +386,7 @@ def generate_figure8():
                         txt += sig
                     color = 'white' if abs(val) > 0.45 else 'black'
                     ax.text(j, i, txt, ha='center', va='center',
-                             fontsize=8.5, color=color, fontweight='bold' if sig else 'normal')
+                             fontsize=8.5, color=color, fontweight='normal' if sig else 'normal')
 
         plt.colorbar(im, ax=ax, fraction=0.035, pad=0.03,
                      label='Spearman ρ')
@@ -394,7 +400,7 @@ def generate_figure8():
 
     # ── Row 1: Panel B — Scatter plots for top correlates ─────────────────────
     # Pick top 4 by |ρ| for Complexity
-    comp_crude = corr_crude[corr_crude['HRV'] == 'Complexity (rcMSE nAUC/HR)'].copy()
+    comp_crude = corr_crude[corr_crude['HRV'] == 'Complexity (rcMSE nAUC)'].copy()
     top4 = comp_crude.dropna(subset=['rho']).nlargest(4, 'rho')  # sort by |rho|
     top4 = pd.concat([top4.nlargest(2, 'rho'),
                        comp_crude.dropna(subset=['rho']).nsmallest(2, 'rho')])
@@ -441,13 +447,13 @@ def generate_figure8():
         rho, p, _, _ = spearman_boot(x_v, y_v, n_boot=500)
         p_label = f'p={p:.3f}' if p >= 0.001 else 'p<0.001'
         ax.set_title(f'({"BCDE"[idx]}) {var_label}', fontsize=10.5,
-                      fontweight='bold')
+                      fontweight='normal')
         ax.text(0.96, 0.96, f'ρ = {rho:.2f}\n{p_label}\nn = {mask.sum()}',
                  transform=ax.transAxes, ha='right', va='top', fontsize=9,
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white',
                            edgecolor='#CCCCCC', alpha=0.9))
         ax.set_xlabel(var_label, fontsize=10)
-        ax.set_ylabel('Complexity Index\n(rcMSE nAUC / HR)' if idx == 0 else '',
+        ax.set_ylabel('Complexity Index\n(rcMSE nAUC)' if idx == 0 else '',
                        fontsize=10)
         ax.tick_params(labelsize=9)
 
@@ -490,8 +496,8 @@ def generate_figure8():
 
     ax_C.set_xticks(range(1, len(hy_stages) + 1))
     ax_C.set_xticklabels(hy_labels, fontsize=8.5)
-    ax_C.set_ylabel('Complexity Index (rcMSE nAUC / HR)', fontsize=10)
-    ax_C.set_title('(F) Complexity by H&Y Stage', fontsize=11, fontweight='bold')
+    ax_C.set_ylabel('Complexity Index (rcMSE nAUC)', fontsize=10)
+    ax_C.set_title('(F) Complexity by H&Y Stage', fontsize=11, fontweight='normal')
 
     # Trend line (Spearman over individual subjects)
     rho_hy, p_hy = stats.spearmanr(
@@ -540,14 +546,14 @@ def generate_figure8():
             sig = '***' if p_nm < 0.001 else ('**' if p_nm < 0.01 else
                   ('*' if p_nm < 0.05 else f'p={p_nm:.2f}'))
             ax_D.text(pos, y_max, sig, ha='center', va='bottom',
-                       fontsize=9, color='black', fontweight='bold' if '*' in sig else 'normal')
+                       fontsize=9, color='black', fontweight='normal' if '*' in sig else 'normal')
 
     ax_D.set_xticks(nm_positions)
     ax_D.set_xticklabels([nm.replace(' ', '\n') for nm in nm_plot],
                           fontsize=9, rotation=0)
-    ax_D.set_ylabel('Complexity Index (rcMSE nAUC / HR)', fontsize=10)
+    ax_D.set_ylabel('Complexity Index (rcMSE nAUC)', fontsize=10)
     ax_D.set_title('(G) Complexity by Non-Motor Symptom Presence',
-                    fontsize=11, fontweight='bold')
+                    fontsize=11, fontweight='normal')
 
     from matplotlib.patches import Patch
     ax_D.legend(handles=[Patch(facecolor=CTRL_COLOR, alpha=0.75, label='Absent'),
@@ -579,8 +585,8 @@ def generate_figure8():
                               edgecolor='#CCCCCC', alpha=0.9))
 
     ax_E1.set_xlabel('LED Total (mg/day)', fontsize=10)
-    ax_E1.set_ylabel('Complexity Index\n(rcMSE nAUC / HR)', fontsize=10)
-    ax_E1.set_title('(H) Complexity vs. LEDD', fontsize=11, fontweight='bold')
+    ax_E1.set_ylabel('Complexity Index\n(rcMSE nAUC)', fontsize=10)
+    ax_E1.set_title('(H) Complexity vs. LEDD', fontsize=11, fontweight='normal')
 
     # Partial ρ LEDD controlling for disease duration
     ax_E2 = fig.add_subplot(gs_E[1])
@@ -607,11 +613,11 @@ def generate_figure8():
                                 fmt='none', color='black', capsize=4,
                                 linewidth=1.5)
             ax_E2.text(i, r + (0.015 if r >= 0 else -0.025),
-                        f'{r:.2f}', ha='center', fontsize=10, fontweight='bold')
+                        f'{r:.2f}', ha='center', fontsize=10, fontweight='normal')
 
         ax_E2.set_ylabel('Spearman ρ', fontsize=10)
         ax_E2.set_title('(I) LEDD: raw vs\nduration-adjusted ρ',
-                         fontsize=11, fontweight='bold')
+                         fontsize=11, fontweight='normal')
         ax_E2.set_ylim(-0.8, 0.6)
         ax_E2.tick_params(labelsize=9)
 
@@ -644,10 +650,6 @@ def generate_figure8():
     N_PEND   = N_TOTAL - N_AVAIL
     is_preliminary = N_AVAIL < N_TOTAL
 
-    fig.suptitle(
-        'Figure 8: Cardiac Complexity and Clinical Severity in Parkinson\'s Disease — CETRAM Cohort',
-        fontsize=14, fontweight='bold', y=0.975
-    )
     fig.text(0.5, 0.962,
              f'Panels A–B: Spearman ρ between rcMSE complexity index and CISI-PD subscales, disease duration, and non-motor burden. '
              f'Panels C–D: Group comparisons by H&Y stage and non-motor symptom presence. '
@@ -662,7 +664,7 @@ def generate_figure8():
         fig.text(0.5, 0.50, stamp_txt,
                  fontsize=22, color='#E74C3C', alpha=0.13,
                  ha='center', va='center',
-                 fontweight='bold',
+                 fontweight='normal',
                  rotation=30,
                  transform=fig.transFigure,
                  zorder=0)

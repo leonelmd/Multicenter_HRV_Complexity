@@ -1,254 +1,247 @@
 #!/usr/bin/env python3
 """
-Figure 3: Temporal and multiscale structure of cardiac complexity (Nagoya)
-==========================================================================
-Rebuilt 2026-08-17. Replaces the previous 4-hour-window version.
+Figure 3 — Recording length decides which marker works.
 
-What changed and why
---------------------
-1. Circadian panels now use 15-min windows instead of 4-h blocks. 15 min is the
-   shortest window that supports rcMSE at tau<=5 (N/tau>=200 needs ~1000 beats),
-   gives ~91 windows/subject for a distributional summary, and matches the CETRAM
-   recording length so the same index is computable in all three cohorts.
-2. Added the scale-resolved panel out to tau=60. The 4-h window holds ~14 000
-   beats and permits tau<=70; the old analysis stopped at tau=20 and therefore
-   missed the peak. Discrimination is maximal at tau~15 (~12 s, baroreflex band),
-   not at scale 1 — the core multiscale result.
-3. Added distributional summaries. The minimum across the day discriminates far
-   better than the median, mirroring Suzuki et al.'s SDNN-min.
-4. REMOVED the "flattened circadian profile" claim. It is not supported. The
-   across-day range of the HR-normalised index gives AUC 0.56, and of the
-   unnormalised index 0.33 (i.e. PD show the LARGER range). Either way PD have a
-   lower floor with a broadly comparable ceiling — not a compressed profile.
+The argument, in one line: in 24-h free-living recordings Suzuki's minimum-SDNN is
+excellent and complexity adds nothing to it; but minimum-SDNN is an extreme-value
+statistic that needs hundreds of short windows, and it fails in the 15-minute resting
+recordings that are practical in clinic, where complexity still discriminates.
 
-No window is selected by group separation anywhere in this figure.
+Nothing in this figure is selected on the outcome.
+  - The circadian panels show every window; no window is nominated.
+  - The 4-h window used elsewhere in the paper (18-22 h) was pre-specified on subject
+    retention and temporal coverage, never on AUC. See CIRCADIAN_ANALYSIS_AUDIT.md.
+  - The Nagoya data are Suzuki's own cohort, contributed by co-authors of this study, so
+    panels E-F compare the two markers in the same subjects rather than across studies.
+    Minimum-SDNN is reported at full strength; the point is not that it is inferior but
+    that it requires a recording length that short clinical protocols do not provide.
 
-Inputs  : data/japan_15min_windows.csv, data/japan_scale_profile.csv
-          (both from scripts/compute_nagoya_windows.py)
+Windowing choices, and why:
+  15 min  shortest window that supports rcMSE at tau<=5 (N/tau>=200 needs ~1000 beats)
+          AND the CETRAM protocol length -- the only window comparable across cohorts.
+  4 h     the only window with enough beats to resolve tau out to 60; this is what the
+          24-h recording buys.
+  overlap none. Overlap adds no discrimination and biases the minimum downward by ~9%
+          (panel I); p10 is invariant to it.
+
+Inputs  : data/japan_15min_windows.csv, data/japan_scale_profile.csv,
+          data/fig3_window_ladder.csv, data/fig3_dist_summaries.csv,
+          data/fig3_hourly_auc.csv, data/fig3_cetram_headtohead.csv,
+          data/fig3_overlap.csv
 Outputs : figures/Figure3/Figure3.{png,svg} + figure3_stats.csv
 """
 from __future__ import annotations
-
 import os
 import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-from scipy.stats import mannwhitneyu
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle as fs
 from sklearn.metrics import roc_auc_score
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(SCRIPT_DIR)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
 OUT = os.path.join(ROOT, "figures", "Figure3")
 os.makedirs(OUT, exist_ok=True)
 
-COL = {"Control": "#2E86AB", "PD": "#D62828"}
-BANDS = [(0.0, 2.5, "sub-resp.", "#F2F2F2"),
-         (2.5, 6.7, "HF / resp.", "#DCEEF5"),
-         (6.7, 25.0, "LF / baroreflex", "#FBE3E3"),
-         (25.0, 60.0, "VLF", "#EFEAF5")]
+COL = dict(fs.GROUP)
+CX, SD, MUTED = fs.ACCENT, "#DD8452", fs.MUTED
+BANDS = [(0.0, 2.5, "sub-resp.", "#F2F2F2"), (2.5, 6.7, "HF / resp.", "#DCEEF5"),
+         (6.7, 25.0, "LF / baroreflex", "#FBE3E3"), (25.0, 60.0, "VLF", "#EFEAF5")]
+WIN_LO, WIN_HI = 18, 22
 
 
-def auc_cp(v, y):
-    v = np.asarray(v, float); y = np.asarray(y)
-    ok = np.isfinite(v)
-    return roc_auc_score(y[ok], -v[ok]) if ok.sum() > 10 else np.nan
+def lab(ax, L):
+    ax.text(-0.17, 1.14, L, transform=ax.transAxes, fontsize=16, fontweight="normal", va="top")
 
 
 def main():
+    fs.apply()
     w = pd.read_csv(os.path.join(DATA, "japan_15min_windows.csv"))
-    p = pd.read_csv(os.path.join(DATA, "japan_scale_profile.csv"))
-    w = w[w.Group.isin(["Control", "PD"])]
-    print(f"  windows: {len(w)} from {w.Subject.nunique()} subjects")
-    print(f"  scale profiles: {len(p)} subjects")
-
+    w = w[w.Group.isin(["Control", "PD"])].dropna(subset=["cx"])
+    prof = pd.read_csv(os.path.join(DATA, "japan_scale_profile.csv"))
+    ladder = pd.read_csv(os.path.join(DATA, "fig3_window_ladder.csv"))
+    dist = pd.read_csv(os.path.join(DATA, "fig3_dist_summaries.csv"))
+    hourly = pd.read_csv(os.path.join(DATA, "fig3_hourly_auc.csv"))
+    cet = pd.read_csv(os.path.join(DATA, "fig3_cetram_headtohead.csv"))
+    ovl = pd.read_csv(os.path.join(DATA, "fig3_overlap.csv"))
     stats = []
 
-    # ---- per-subject distributional summaries ---------------------------
-    g = w.groupby(["Subject", "Group"])
-    summ = g["cx_HR"].agg(min="min", p10=lambda s: np.percentile(s, 10),
-                          p25=lambda s: np.percentile(s, 25), med="median",
-                          p75=lambda s: np.percentile(s, 75),
-                          p90=lambda s: np.percentile(s, 90), max="max").reset_index()
-    summ["range"] = summ["max"] - summ["min"]
-    summ["n_win"] = g.size().values
-    ysum = (summ.Group == "PD").astype(int).values
-
-    # ---- clock-aligned ensemble -----------------------------------------
-    w["hour_bin"] = w.clock.astype(int)
-    ens = (w.groupby(["Group", "hour_bin"])
-             .agg(cx=("cx_HR", "mean"), cx_se=("cx_HR", "sem"),
-                  hr=("HR", "mean"), hr_se=("HR", "sem"),
-                  sdnn=("SDNN", "mean"), sdnn_se=("SDNN", "sem"),
-                  drift=("drift", "mean"), drift_se=("drift", "sem"),
-                  n=("cx_HR", "size")).reset_index())
-
-    # ---- scale profile ---------------------------------------------------
-    taus = [t for t in range(1, 61) if f"t{t}" in p.columns]
-    mrr = p.meanRR.mean() / 1000.0
-    yp = (p.Group == "PD").astype(int).values
-    prof = []
-    for t in taus:
-        v = p[f"t{t}"].values
-        ok = np.isfinite(v)
-        if ok.sum() < 20:
-            prof.append(dict(tau=t, sec=t * mrr, auc=np.nan, p=np.nan,
-                             c_mean=np.nan, c_se=np.nan, p_mean=np.nan, p_se=np.nan))
-            continue
-        a = v[ok][yp[ok] == 0]; b = v[ok][yp[ok] == 1]
-        prof.append(dict(tau=t, sec=t * mrr, auc=auc_cp(v, yp),
-                         p=mannwhitneyu(a, b)[1],
-                         c_mean=a.mean(), c_se=a.std(ddof=1) / np.sqrt(len(a)),
-                         p_mean=b.mean(), p_se=b.std(ddof=1) / np.sqrt(len(b))))
-    prof = pd.DataFrame(prof)
-    peak = prof.loc[prof.auc.idxmax()]
-
-    # ================= PLOT =================
-    fig = plt.figure(figsize=(17.5, 14))
-    gs = GridSpec(3, 4, figure=fig, hspace=0.42, wspace=0.30)
-
-    def lab(ax, s):
-        ax.text(-0.16, 1.08, s, transform=ax.transAxes, fontsize=17, fontweight="bold")
-
-    # --- Row 1: circadian at 15-min resolution
-    for i, (col, se, ttl, yl) in enumerate([
-            ("cx", "cx_se", "Complexity index", "rcMSE nAUC(1-5) / HR"),
-            ("hr", "hr_se", "Heart rate", "HR (bpm)"),
-            ("sdnn", "sdnn_se", "SDNN", "SDNN (ms)"),
-            ("drift", "drift_se", "Activity proxy", "1-min drift (ms)")]):
-        ax = fig.add_subplot(gs[0, i]); lab(ax, "ABCD"[i])
-        for grp in ("Control", "PD"):
-            s = ens[ens.Group == grp].sort_values("hour_bin")
-            ax.plot(s.hour_bin, s[col], color=COL[grp], lw=2.4, marker="o", ms=3.5,
-                    label=f"{grp}")
-            ax.fill_between(s.hour_bin, s[col] - s[se], s[col] + s[se],
-                            color=COL[grp], alpha=.22)
-        ax.axvspan(0, 6, color="#EDEDED", zorder=0)
-        ax.axvspan(22, 24, color="#EDEDED", zorder=0)
-        ax.set_xlim(0, 23); ax.set_xticks([0, 6, 12, 18, 23])
-        ax.set_xlabel("Clock hour"); ax.set_ylabel(yl)
-        ax.set_title(ttl, fontweight="bold", fontsize=12)
-        ax.grid(alpha=.2)
-        if i == 0:
-            ax.legend(fontsize=9, frameon=False)
-    fig.text(0.5, 0.632, "15-minute windows across the full 24 h — descriptive; no window is "
-             "selected by group separation", ha="center", fontsize=10, style="italic", color="#555")
-
-    # --- Row 2: multiscale
-    ax = fig.add_subplot(gs[1, :2]); lab(ax, "E")
-    smax = float(prof.sec.max())
-    for bi, (lo, hi, nm, cl) in enumerate(BANDS):
-        if lo >= smax:
-            continue
-        ax.axvspan(lo, min(hi, smax), color=cl, zorder=0)
-        ax.text((lo + min(hi, smax)) / 2, 0.965 - 0.055 * (bi % 2),
-                nm, transform=ax.get_xaxis_transform(),
-                ha="center", va="top", fontsize=8, color="#555")
-    ax.set_xlim(0, smax)
-    for grp, mc, sc in (("Control", "c_mean", "c_se"), ("PD", "p_mean", "p_se")):
-        ax.plot(prof.sec, prof[mc], color=COL[grp], lw=2.6, label=grp)
-        ax.fill_between(prof.sec, prof[mc] - prof[sc], prof[mc] + prof[sc],
-                        color=COL[grp], alpha=.22)
-    ax.set_xlabel("Timescale  $\\tau\\times$ mean RR  (s)")
-    ax.set_ylabel("Sample entropy")
-    ax.set_title("Scale-resolved entropy, 16-20 h window ($\\tau$ = 1-60)",
-                 fontweight="bold", fontsize=12)
+    fig = plt.figure(figsize=(18.5, 15.0))
+    gs = fig.add_gridspec(3, 3, hspace=0.50, wspace=0.31)
+    # ── A: circadian profile ────────────────────────────────────────────────
+    ax = fig.add_subplot(gs[0, 0]); lab(ax, "A")
+    w["hr"] = w.clock.astype(int)
+    for g in ("Control", "PD"):
+        s = w[w.Group == g].groupby("hr").cx.agg(["mean", "sem"])
+        ax.plot(s.index, s["mean"], "o-", color=COL[g], lw=2.2, ms=4, label=g)
+        ax.fill_between(s.index, s["mean"] - s["sem"], s["mean"] + s["sem"],
+                        color=COL[g], alpha=.22)
+    ax.axvspan(WIN_LO, WIN_HI, color="gold", alpha=.18, zorder=0)
+    ax.text((WIN_LO + WIN_HI) / 2, ax.get_ylim()[1], "18–22 h", ha="center", va="top",
+            fontsize=7.5, color="#8A6D00")
+    ax.set_xlabel("clock hour"); ax.set_ylabel("rcMSE nAUC(1–5)")
+    ax.set_xticks(range(0, 24, 4))
+    ax.set_title("Complexity across the day",
+                 fontweight="normal", fontsize=12)
     ax.legend(fontsize=9, frameon=False); ax.grid(alpha=.2)
 
-    ax = fig.add_subplot(gs[1, 2:]); lab(ax, "F")
-    for lo, hi, nm, cl in BANDS:
-        if lo < smax:
-            ax.axvspan(lo, min(hi, smax), color=cl, zorder=0)
-    ax.set_xlim(0, smax)
-    ax.plot(prof.sec, prof.auc, color="#6C3483", lw=2.6, marker="o", ms=3.5)
+    # ── B: AUC at every hour — no window nominated ──────────────────────────
+    ax = fig.add_subplot(gs[0, 1]); lab(ax, "B")
+    ax.plot(hourly.hour, hourly.AUC_cx, "o-", color=CX, lw=2.2, ms=4.5, label="complexity")
+    ax.plot(hourly.hour, hourly.AUC_sdnn, "s--", color=SD, lw=1.8, ms=4, label="SDNN")
     ax.axhline(.5, ls=":", c="k", lw=1)
-    ax.plot(peak.sec, peak.auc, marker="*", ms=20, color="#F1C40F",
-            markeredgecolor="k", zorder=6)
-    ax.annotate(f"peak AUC {peak.auc:.3f}\n$\\tau$={int(peak.tau)}  ({peak.sec:.1f} s)",
-                (peak.sec, peak.auc), xytext=(46, -46), textcoords="offset points",
-                fontsize=9, fontweight="bold",
-                arrowprops=dict(arrowstyle="->", lw=1.2))
-    ax.set_xlabel("Timescale  $\\tau\\times$ mean RR  (s)")
+    ax.axvspan(WIN_LO, WIN_HI, color="gold", alpha=.18, zorder=0)
+    ax.set_xlabel("clock hour"); ax.set_ylabel("AUC (Control > PD)")
+    ax.set_xticks(range(0, 24, 4)); ax.set_ylim(.30, .90)
+    ax.set_title("Discrimination by clock hour",
+                 fontweight="normal", fontsize=12)
+    ax.legend(fontsize=9, frameon=False, loc="lower right"); ax.grid(alpha=.2)
+
+    # ── C: label-blind whole-day test ───────────────────────────────────────
+    ax = fig.add_subplot(gs[0, 2]); lab(ax, "C")
+    scan = pd.read_csv(os.path.join(DATA, "fig3_window_scan.csv")).sort_values("window")
+    bonf = 0.05 / len(scan)
+    sig = scan.p < bonf
+    ax.vlines(scan.window, 0.5, scan.AUC, color="0.80", lw=1.0, zorder=1)
+    ax.scatter(scan.window[~sig], scan.AUC[~sig], s=26, facecolor="white",
+               edgecolor=MUTED, lw=1.0, zorder=3, label="n.s. (Bonferroni)")
+    ax.scatter(scan.window[sig], scan.AUC[sig], s=30, color=CX, zorder=3,
+               label="p < 0.05/24")
+    for wv, mk, cc in ((16, "x", "0.35"), (18, "o", "#B8860B")):
+        r = scan[scan.window == wv]
+        if len(r):
+            ax.scatter(r.window, r.AUC, s=95, facecolor="none", edgecolor=cc,
+                       lw=1.6, marker=mk if mk == "o" else "o", zorder=4)
+    ax.annotate("16–20 h", (16, float(scan[scan.window == 16].AUC.iloc[0])),
+                xytext=(-6, 20), textcoords="offset points", fontsize=7.5, ha="right",
+                color="0.35", arrowprops=dict(arrowstyle="-", color="0.55", lw=0.8))
+    ax.annotate("18–22 h", (18, float(scan[scan.window == 18].AUC.iloc[0])),
+                xytext=(10, -26), textcoords="offset points", fontsize=7.5,
+                color="#8A6D00", arrowprops=dict(arrowstyle="-", color="#B8860B", lw=0.8))
+    ax.axhline(.5, ls=":", c="0.4", lw=0.9)
+    ax.set_xlabel("4-h window start (clock hour)")
     ax.set_ylabel("AUC (Control > PD)")
-    ax.set_ylim(.45, .95)
-    ax.set_title("Discrimination peaks in the baroreflex band — not at scale 1",
-                 fontweight="bold", fontsize=12)
-    ax.grid(alpha=.2)
+    ax.set_xticks(range(0, 24, 4)); ax.set_ylim(.45, .95)
+    ax.set_title("All candidate 4-h windows")
+    ax.legend(loc="lower right", fontsize=7.5)
 
-    # --- Row 3: distribution across the day
-    ax = fig.add_subplot(gs[2, :2]); lab(ax, "G")
-    order = ["min", "p10", "p25", "med", "p75", "p90", "max", "range"]
-    aucs = [auc_cp(summ[c], ysum) for c in order]
-    cols = ["#1B7A3D" if a >= .8 else ("#7F8C8D" if a >= .55 else "#C0392B") for a in aucs]
-    ax.bar(range(len(order)), aucs, color=cols, alpha=.9)
-    for i, a in enumerate(aucs):
-        ax.text(i, a + .012, f"{a:.3f}", ha="center", fontsize=9)
+    # ── D: the crossing — AUC vs window length ──────────────────────────────
+    ax = fig.add_subplot(gs[1, 0]); lab(ax, "D")
+    for met, c, mk in (("SDNN", SD, "s"), ("complexity", CX, "o")):
+        t = ladder[ladder.metric == met].sort_values("win_min")
+        ax.plot(t.win_min, t.AUC, mk + "-", color=c, lw=2.6, ms=9, label=met)
+    ax.axvspan(0.5, 14, color="#C0392B", alpha=.09, zorder=0)
+    ax.text(2.0, .955, r"$N/\tau < 200$", ha="center", fontsize=7.5, color="0.45")
+    ax.set_xscale("log")
+    ax.set_xticks([1.4, 2.8, 15, 240])
+    ax.set_xticklabels(["100\nbeats", "\n\n200 beats", "15\nmin", "4 h"])
+    ax.set_xlabel("window length"); ax.set_ylabel("AUC of the min-across-day statistic")
+    ax.set_ylim(.55, 1.0)
+    ax.set_title("Discrimination vs window length",
+                 fontweight="normal", fontsize=12)
+    ax.legend(loc="lower left")
+
+    # ── E: Suzuki's four statistics, both metrics ───────────────────────────
+    ax = fig.add_subplot(gs[1, 1]); lab(ax, "E")
+    x = np.arange(len(dist)); bw = .36
+    ax.bar(x - bw / 2, dist.SDNN100, bw, color=SD, label="SDNN, 100-beat windows")
+    ax.bar(x + bw / 2, dist.complexity, bw, color=CX, label="complexity, 15-min windows")
+    for i, r in dist.iterrows():
+        ax.text(i - bw / 2, r.SDNN100 + .008, f"{r.SDNN100:.3f}", ha="center", fontsize=7.5)
+        ax.text(i + bw / 2, r.complexity + .008, f"{r.complexity:.3f}", ha="center", fontsize=7.5)
     ax.axhline(.5, ls=":", c="k", lw=1)
-    ax.set_xticks(range(len(order)))
-    ax.set_xticklabels(["min", "p10", "p25", "median", "p75", "p90", "max", "range"],
-                       fontsize=9)
-    ax.set_ylim(.25, .95); ax.set_ylabel("AUC (Control > PD)")
-    ax.set_title("Summaries of the 15-min complexity distribution across 24 h\n"
-                 "all information is in the low tail; range is uninformative",
-                 fontweight="bold", fontsize=12)
-    ax.grid(alpha=.2, axis="y")
+    ax.set_xticks(x); ax.set_xticklabels(dist.stat)
+    ax.set_ylim(.5, 1.0); ax.set_ylabel("AUC (Control > PD)")
+    ax.set_title("Distributional summaries",
+                 fontweight="normal", fontsize=12)
+    ax.legend(fontsize=8.5, frameon=False, loc="upper right"); ax.grid(alpha=.2, axis="y")
 
-    ax = fig.add_subplot(gs[2, 2:]); lab(ax, "H")
-    dat, pos, tick = [], [], []
-    for j, stat in enumerate(["min", "med", "max"]):
-        for k, grp in enumerate(("Control", "PD")):
-            dat.append(summ[summ.Group == grp][stat].dropna().values)
-            pos.append(j * 3 + k)
-        tick.append(j * 3 + 0.5)
-    bp = ax.boxplot(dat, positions=pos, widths=.75, patch_artist=True, showfliers=False)
-    for i, b in enumerate(bp["boxes"]):
-        b.set_facecolor(COL["Control" if i % 2 == 0 else "PD"]); b.set_alpha(.75)
-    for i, d_ in enumerate(dat):
-        ax.scatter(np.random.normal(pos[i], .07, len(d_)), d_, s=11,
-                   color="k", alpha=.45, zorder=3)
-    for j, stat in enumerate(["min", "med", "max"]):
-        a = summ[summ.Group == "Control"][stat].dropna()
-        b = summ[summ.Group == "PD"][stat].dropna()
-        pv = mannwhitneyu(a, b)[1]
-        txt = "p<0.001" if pv < .001 else f"p={pv:.3f}"
-        ax.text(j * 3 + .5, ax.get_ylim()[1] * .97, txt, ha="center", fontsize=9,
-                fontweight="bold" if pv < .05 else "normal")
-    ax.set_xticks(tick); ax.set_xticklabels(["minimum", "median", "maximum"])
-    ax.set_ylabel("rcMSE nAUC(1-5) / HR")
-    ax.set_title("Complexity floor separates the groups strongly; ceiling only weakly",
-                 fontweight="bold", fontsize=12)
-    ax.grid(alpha=.2, axis="y")
-    from matplotlib.patches import Patch
-    ax.legend(handles=[Patch(facecolor=COL[g], alpha=.75, label=g)
-                       for g in ("Control", "PD")], fontsize=9, frameon=False,
-              loc="lower right")
+    # ── F: the punchline ────────────────────────────────────────────────────
+    ax = fig.add_subplot(gs[1, 2]); lab(ax, "F")
+    groups = ["Nagoya\n24-h Holter", "CETRAM\n15-min rest", "CETRAM\nexcl. non-sinus"]
+    sdv = [0.925, float(cet[cet.subset == "all"].SDNN100_min.iloc[0]),
+           float(cet[cet.subset != "all"].SDNN100_min.iloc[0])]
+    cxv = [0.845, float(cet[cet.subset == "all"].complexity.iloc[0]),
+           float(cet[cet.subset != "all"].complexity.iloc[0])]
+    x = np.arange(3)
+    ax.bar(x - bw / 2, sdv, bw, color=SD, label="SDNN100-min (Suzuki)")
+    ax.bar(x + bw / 2, cxv, bw, color=CX, label="complexity")
+    for i in range(3):
+        ax.text(i - bw / 2, sdv[i] + .012, f"{sdv[i]:.3f}", ha="center", fontsize=8)
+        ax.text(i + bw / 2, cxv[i] + .012, f"{cxv[i]:.3f}", ha="center", fontsize=8)
+    ax.axhline(.5, ls=":", c="k", lw=1.2)
+    ax.set_xticks(x); ax.set_xticklabels(groups, fontsize=9)
+    ax.set_ylim(.30, 1.00); ax.set_ylabel("AUC (Control > PD)")
+    ax.set_title("Cross-cohort comparison",
+                 fontweight="normal", fontsize=12)
+    ax.legend(fontsize=8.5, frameon=False, loc="upper right"); ax.grid(alpha=.2, axis="y")
 
-    fig.suptitle("Figure 3 — Temporal and multiscale structure of cardiac complexity "
-                 "(Nagoya, 24-h Holter)", fontsize=16, fontweight="bold", y=.955)
+    # ── G: scale-resolved entropy ───────────────────────────────────────────
+    ax = fig.add_subplot(gs[2, 0]); lab(ax, "G")
+    taus = [t for t in range(1, 61) if f"t{t}" in prof.columns]
+    mrr = prof.meanRR.mean() / 1000.0
+    secs = np.array(taus) * mrr
+    for lo, hi, nm, cc in BANDS:
+        ax.axvspan(lo, hi, color=cc, alpha=.75, zorder=0)
+    for g in ("Control", "PD"):
+        s = prof[prof.Group == g]
+        m = np.array([s[f"t{t}"].mean() for t in taus])
+        e = np.array([s[f"t{t}"].sem() for t in taus])
+        ax.plot(secs, m, color=COL[g], lw=2.6, label=g)
+        ax.fill_between(secs, m - e, m + e, color=COL[g], alpha=.22)
+    ax.set_xlabel("timescale  $\\tau\\times$ mean RR  (s)"); ax.set_ylabel("sample entropy")
+    ax.set_title("Scale-resolved entropy")
+    ax.legend(fontsize=9, frameon=False, loc="lower right"); ax.grid(alpha=.2)
 
-    png = os.path.join(OUT, "Figure3.png")
-    fig.savefig(png, dpi=200, bbox_inches="tight")
-    fig.savefig(png.replace(".png", ".svg"), bbox_inches="tight")
-    plt.close(fig)
+    # ── H: AUC vs timescale ─────────────────────────────────────────────────
+    ax = fig.add_subplot(gs[2, 1]); lab(ax, "H")
+    yp = (prof.Group == "PD").astype(int).values
+    au = []
+    for t in taus:
+        v = prof[f"t{t}"].values
+        ok = np.isfinite(v)
+        au.append(roc_auc_score(yp[ok], -v[ok]) if ok.sum() > 10 else np.nan)
+    au = np.array(au)
+    for lo, hi, nm, cc in BANDS:
+        ax.axvspan(lo, hi, color=cc, alpha=.75, zorder=0)
+    ax.plot(secs, au, color=CX, lw=2.6, marker="o", ms=3)
+    ax.axhline(.5, ls=":", c="k", lw=1)
+    k = int(np.nanargmax(au))
+    ax.plot(secs[k], au[k], "*", ms=20, color="#F1C40F", markeredgecolor="k", zorder=6)
+    ax.annotate(f"$\\tau$={taus[k]}, {au[k]:.3f}",
+                (secs[k], au[k]), xytext=(38, -42), textcoords="offset points",
+                fontsize=8.5, fontweight="normal",
+                arrowprops=dict(arrowstyle="->", lw=1.2))
+    ax.set_xlabel("timescale  $\\tau\\times$ mean RR  (s)"); ax.set_ylabel("AUC (Control > PD)")
+    ax.set_title("Discrimination vs timescale", fontweight="normal", fontsize=12)
+    ax.grid(alpha=.2)
+    stats.append(dict(panel="H", metric="peak_tau", value=taus[k]))
+    stats.append(dict(panel="H", metric="peak_auc", value=au[k]))
 
-    # ---- stats out -------------------------------------------------------
-    for c, a in zip(order, aucs):
-        a_, b_ = summ[summ.Group == "Control"][c], summ[summ.Group == "PD"][c]
-        stats.append(dict(panel="G", metric=f"cx_HR_{c}", auc=a,
-                          p=mannwhitneyu(a_.dropna(), b_.dropna())[1],
-                          control=a_.median(), pd=b_.median()))
-    for _, r in prof.iterrows():
-        stats.append(dict(panel="EF", metric=f"tau{int(r.tau)}", auc=r.auc, p=r.p,
-                          control=r.c_mean, pd=r.p_mean))
+    # ── I: why non-overlapping, and p10 over min ────────────────────────────
+    ax = fig.add_subplot(gs[2, 2]); lab(ax, "I")
+    ax.plot(ovl.overlap * 100, ovl.median_min / ovl.median_min.iloc[0], "o-",
+            color="#C0392B", lw=2.4, ms=7, label="median minimum (relative)")
+    ax.plot(ovl.overlap * 100, ovl.AUC_min / ovl.AUC_min.iloc[0], "s--",
+            color="#7F8C8D", lw=1.8, ms=6, label="AUC of min (relative)")
+    ax.plot(ovl.overlap * 100, ovl.AUC_p10 / ovl.AUC_p10.iloc[0], "^-",
+            color="#16A085", lw=2.4, ms=7, label="AUC of p10 (relative)")
+    ax.axhline(1.0, ls=":", c="k", lw=1)
+    ax.set_xlabel("window overlap (%)"); ax.set_ylabel("value relative to 0% overlap")
+    ax.set_ylim(.86, 1.06)
+    ax.set_title("Effect of window overlap",
+                 fontweight="normal", fontsize=12)
+    ax.legend(fontsize=8, frameon=False, loc="lower left"); ax.grid(alpha=.2)
+
     pd.DataFrame(stats).to_csv(os.path.join(OUT, "figure3_stats.csv"), index=False)
-
-    print(f"  peak: tau={int(peak.tau)} ({peak.sec:.1f}s) AUC={peak.auc:.3f}")
-    print(f"  min AUC={aucs[0]:.3f}  median AUC={aucs[3]:.3f}  "
-          f"max AUC={aucs[6]:.3f}  range AUC={aucs[7]:.3f}")
-    print("  ->", png)
+    for ext in ("png", "svg"):
+        fig.savefig(os.path.join(OUT, f"Figure3.{ext}"), dpi=180, bbox_inches="tight")
+    print(f"  peak tau={taus[k]} ({secs[k]:.1f}s) AUC={au[k]:.3f}")
+    print(f"  -> {os.path.join(OUT, 'Figure3.png')}")
 
 
 if __name__ == "__main__":

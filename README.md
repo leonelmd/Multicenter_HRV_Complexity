@@ -50,9 +50,15 @@ Reliability limit `N/τ ≥ 200`, validated independently by split-half reliabil
 
 | Cohort | beats | reliable τ | index used |
 |---|---|---|---|
-| CETRAM | ~1088 | ≤ 5 | nAUC(1–5) / HR |
-| Cruces | ~498 | ≤ 2 | nAUC(1–5) / HR — see caveat |
-| Nagoya | ~14 000 (4 h window) | ≤ 20 (up to 70 permitted) | nAUC(1–5) / HR and nAUC(1–20) / HR |
+| CETRAM | ~1088 | ≤ 5 | nAUC(1–5) |
+| Cruces | ~498 | ≤ 2 | nAUC(1–5) — see caveat |
+| Nagoya | ~14 000 (4 h window) | ≤ 20 (up to 70 permitted) | nAUC(1–5) and nAUC(1–20) |
+
+All indices are reported **unnormalized**. Dividing by mean heart rate was tested
+and rejected: the index scales as HR^b with b = −0.09 / −0.70 / −1.31 across
+cohorts, so a ratio moves it further from HR-independence, and the AUC it appears
+to gain is heart rate's own group signal. Where adjustment is wanted, HR is entered
+as a covariate. See `HR_NORMALISATION_ANALYSIS.md` and Appendix 5.
 
 A fixed τ = 1–5 is applied to CETRAM and Cruces so the cohorts remain directly
 comparable. **Caveat:** at 498 beats Cruces exceeds its own reliability limit at

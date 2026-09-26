@@ -110,6 +110,8 @@ def main():
          "Appendix 2 — Per-scale AUC across modalities (ECG vs PPG)"),
         ("python scripts/generate_appendix3.py",
          "Appendix 3 — Sensitivity of rcMSE to recording length"),
+        ("python scripts/generate_appendix4.py",
+         "Appendix 4 — Spectral character, matched noise, and the beat-indexed time base"),
     ]
 
     for cmd, desc in steps:

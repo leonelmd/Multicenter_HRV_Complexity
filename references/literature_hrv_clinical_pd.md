@@ -200,7 +200,7 @@ Detectable Spearman ρ at 80% power (α=0.05, two-tailed): **|ρ| ≥ 0.46**
 | Age | Continuous covariate in all partial correlations |
 | Sex | Binary covariate |
 | Disease duration | Covariate in secondary models (collinear with H&Y) |
-| Mean HR | Complexity already normalized by HR (rcMSE nAUC / HR) |
+| Mean HR | Enter as a covariate. The index is reported unnormalized; dividing by HR was tested and rejected (see `HR_NORMALISATION_ANALYSIS.md`) |
 | LEDD | Include in sensitivity analysis; flag pending data |
 | Comorbidities (diabetes, HTN) | Sensitivity analysis excluding known HRV confounders |
 
