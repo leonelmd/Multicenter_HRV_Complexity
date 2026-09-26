@@ -9,13 +9,13 @@ Authors: NeuroEng@Usach
 Panels
 ------
 A–D  Individual AUC comparison per center (Complexity vs 5 comparators):
-       A = CETRAM  |  B = Cruces  |  C = Nagoya 07-11h  |  D = Nagoya 16-20h
+       A = CETRAM  |  B = Cruces  |  C = Nagoya 07-11h  |  D = Nagoya 18-22h
 E    LOCO AUC per center × model (LogReg / RF / SVM), DL reference
 F    RF feature importance (pooled data, full fit)
 G    Best handcrafted model vs end-to-end 1D-ResNet (LOCO)
 H    Consolidated multi-center ROC curves (best HC model)
 I–K  Spearman correlation heatmaps showing feature orthogonality
-       I = CETRAM  |  J = Cruces  |  K = Nagoya 16-20h
+       I = CETRAM  |  J = Cruces  |  K = Nagoya 18-22h
 
 Feature set (consistent across all panels)
 -------------------------------------------
@@ -25,7 +25,7 @@ Feature set (consistent across all panels)
 
 Nagoya data sources
 -------------------
-  16-20h: japan_window_features.csv — all HC metrics from same window
+  18-22h: japan_window_features.csv — all HC metrics from same window
   07-11h: japan_evolution.csv (HR/SDNN/RMSSD) + japan_recalc_metrics.csv
           (pNN50 / DFA alpha1, 24h fallback — no per-window morning file)
   Complexity / SampEn S1: japan_{morning,window}_mse.csv
@@ -136,9 +136,9 @@ def load_datasets():
     Returns
     -------
     datasets : dict keyed by display name ('CETRAM', 'Cruces',
-               'Nagoya (07-11h)', 'Nagoya (16-20h)').
+               'Nagoya (07-11h)', 'Nagoya (18-22h)').
                Each DataFrame contains AUC_METRICS columns + Group + Site.
-    df_ml    : pooled DataFrame for LOCO (CETRAM + Cruces + Nagoya 16-20h)
+    df_ml    : pooled DataFrame for LOCO (CETRAM + Cruces + Nagoya 18-22h)
                with ML_FEATURES + Group / Site / Label columns.
     """
     datasets  = {}
@@ -210,13 +210,13 @@ def load_datasets():
 
     for win_name, win_h, mse_file, is_aft in [
         ('Nagoya (07-11h)', 7,  'japan_morning_mse.csv',   False),
-        ('Nagoya (16-20h)', 16, 'japan_window_mse.csv', True),
+        ('Nagoya (18-22h)', 16, 'japan_window_mse.csv', True),
     ]:
         mse_j  = pd.read_csv(os.path.join(DATA_DIR, mse_file))
         comp_j = mse_j[mse_j.Scales.isin(range(1, 21))].groupby('Subject').MSE.mean().reset_index()
 
         if is_aft:
-            # All HC features from dedicated 16-20h window file
+            # All HC features from dedicated 18-22h window file
             met_j = df_feat[['Subject', 'Group', 'Age', 'HR',
                               'HRV_SDNN', 'HRV_RMSSD', 'HRV_pNN50', 'DFA_alpha1']].copy()
             met_j = met_j.rename(columns={'DFA_alpha1': 'HRV_DFA_alpha1'})
@@ -334,7 +334,7 @@ def generate_figure5():
     ax_a = fig.add_subplot(gs[0, 0])   # CETRAM AUC bars
     ax_b = fig.add_subplot(gs[0, 1])   # Cruces AUC bars
     ax_c = fig.add_subplot(gs[0, 2])   # Nagoya 07-11h AUC bars
-    ax_d = fig.add_subplot(gs[0, 3])   # Nagoya 16-20h AUC bars
+    ax_d = fig.add_subplot(gs[0, 3])   # Nagoya 18-22h AUC bars
     ax_e = fig.add_subplot(gs[1, :2])  # LOCO × model
     ax_f = fig.add_subplot(gs[1, 2:])  # Feature importance
     ax_g = fig.add_subplot(gs[2, :2])  # HC vs DL
@@ -344,7 +344,7 @@ def generate_figure5():
     ax_k = fig.add_subplot(gs[3, 2:])  # Nagoya heatmap + colorbar
 
     # ── Panels A–D: Individual AUC bars ───────────────────────────────────────
-    panel_order = ['CETRAM', 'Cruces', 'Nagoya (07-11h)', 'Nagoya (16-20h)']
+    panel_order = ['CETRAM', 'Cruces', 'Nagoya (07-11h)', 'Nagoya (18-22h)']
     axes_auc    = [ax_a, ax_b, ax_c, ax_d]
 
     for ax, ds_key, letter in zip(axes_auc, panel_order, ['A', 'B', 'C', 'D']):
@@ -467,7 +467,7 @@ def generate_figure5():
     sns.despine(ax=ax_h)
 
     # ── Panels I–K: Feature orthogonality heatmaps ────────────────────────────
-    hm_centers = ['CETRAM', 'Cruces', 'Nagoya (16-20h)']
+    hm_centers = ['CETRAM', 'Cruces', 'Nagoya (18-22h)']
     hm_axes    = [ax_i, ax_j, ax_k]
 
     for ax, center, letter in zip(hm_axes, hm_centers, ['I', 'J', 'K']):
@@ -475,7 +475,7 @@ def generate_figure5():
         corr_df = datasets[center][AUC_METRICS].copy()
         corr_df.columns = AUC_LABELS
         corr_matrix = corr_df.corr(method='spearman')
-        show_cbar = (center == 'Nagoya (16-20h)')
+        show_cbar = (center == 'Nagoya (18-22h)')
         sns.heatmap(corr_matrix, annot=True, cmap='RdBu_r', center=0,
                     vmin=-1, vmax=1, ax=ax, fmt='.2f',
                     cbar=show_cbar, annot_kws={'size': 9})

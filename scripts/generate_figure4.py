@@ -58,7 +58,7 @@ def generate_figure4():
         ('CETRAM', CHILE_MSE, 'CHILE_METRICS', range(1, 6), '15m Rest'),
         ('Cruces', SPAIN_MSE, 'SPAIN_METRICS', range(1, 6), '15m Slice'),
         ('Nagoya (07-11h)', JAPAN_MORNING_MSE, 'JAPAN_EVO_MORNING', range(1, 21), '4h Block'),
-        ('Nagoya (16-20h)', JAPAN_AFTERNOON_MSE, 'JAPAN_EVO_AFTERNOON', range(1, 21), '4h Block')
+        ('Nagoya (18-22h)', JAPAN_AFTERNOON_MSE, 'JAPAN_EVO_AFTERNOON', range(1, 21), '4h Block')
     ]
 
     # Pre-calculate Japan HR per window
@@ -82,7 +82,7 @@ def generate_figure4():
             continue
             
         df_mse = pd.read_csv(mse_file)
-        df_mse['Group'] = df_mse['Group'].str.strip().str.lower().replace({'control': 'Control', 'pd': 'PD', 'parkinson': 'PD', 'other': 'Control'})
+        df_mse['Group'] = df_mse['Group'].str.strip().str.lower().replace({'control': 'Control', 'pd': 'PD', 'parkinson': 'PD'})
         df_mse = df_mse[df_mse['Group'].isin(['Control', 'PD'])]
         
         # Subject Counts for Check

@@ -54,7 +54,7 @@ def generate_figure6():
         ('A', 'CETRAM', 'chile_mse.csv', 'chile_demographics.csv', 'chile_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'CHILE'),
         ('B', 'Cruces', 'spain_mse.csv', 'spain_demographics.csv', 'spain_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'SPAIN'),
         ('C', 'Nagoya (07-11h)', 'japan_morning_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_M'),
-        ('D', 'Nagoya (16-20h)', 'japan_window_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_A')
+        ('D', 'Nagoya (18-22h)', 'japan_window_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_A')
     ]
 
     for i, (label, name, mse_file, dem_file, met_file, scale_range, scale_desc, ds_type) in enumerate(configs):

@@ -57,7 +57,7 @@ ML_FEATURES = ['Complexity', 'HRV_SDNN', 'HRV_RMSSD', 'HRV_pNN50',
 # ── Data loading (mirrors generate_figure5.py) ─────────────────────────────────
 
 def load_ml_data():
-    """Load pooled ML DataFrame (CETRAM + Cruces + Nagoya 16-20h)."""
+    """Load pooled ML DataFrame (CETRAM + Cruces + Nagoya 18-22h)."""
     frames = []
 
     # CETRAM
@@ -86,7 +86,7 @@ def load_ml_data():
     dem_s = pd.read_csv(os.path.join(DATA_DIR, "spain_demographics.csv"))
     for df in (mse_s, met_s):
         df['Group'] = df['Group'].str.lower().replace(
-            {'pd': 'PD', 'control': 'Control', 'parkinson': 'PD', 'other': 'Control'})
+            {'pd': 'PD', 'control': 'Control', 'parkinson': 'PD'})
     comp_s = mse_s[mse_s.Scales.isin(range(1, 6))].groupby('Subject').MSE.mean().reset_index()
     hr_s   = 60000.0 / met_s.set_index('Subject')['HRV_MeanNN']
     df_s   = comp_s.merge(
@@ -99,7 +99,7 @@ def load_ml_data():
     df_s['Site'] = 'Cruces'
     frames.append(df_s)
 
-    # Nagoya 16-20h (single authoritative source)
+    # Nagoya 18-22h (single authoritative source)
     mse_j  = pd.read_csv(os.path.join(DATA_DIR, "japan_window_mse.csv"))
     feat_j = pd.read_csv(os.path.join(DATA_DIR, "japan_window_features.csv"))
     feat_j['Group'] = feat_j['Group'].str.lower().replace(
