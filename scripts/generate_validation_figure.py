@@ -245,7 +245,7 @@ def main():
             for m in ms:
                 for rf in rs:
                     v = np.array([nauc(rcmse(s["rri"], rf * s["rri"].std(ddof=1),
-                                             m=m, etype=et, nscales=5)) for s in subs]) / HR
+                                             m=m, etype=et, nscales=5)) for s in subs])
                     rows.append(dict(etype=et, m=m, r=rf, AUC=auc_cp(v, y)))
                     print(f"   {et} m={m} r={rf:.2f} AUC={rows[-1]['AUC']:.3f}", flush=True)
         C = pd.DataFrame(rows); C.to_csv(cp, index=False)
@@ -343,7 +343,7 @@ def main():
         ax.plot(sc, mu, lw=3.2, color=COL[g], marker="o", ms=4, label=f"CETRAM {g}", zorder=5)
         ax.fill_between(sc, mu - se, mu + se, color=COL[g], alpha=.28, zorder=4)
     ax.set_xlabel("Scale $\\tau$"); ax.set_ylabel("Sample entropy")
-    ax.set_title("Reference processes vs real data\n(fixed $r=0.2\\times$SD; synthetics mean$\\pm$SD of 8 runs)",
+    ax.set_title("Reference processes vs real data",
                  fontweight="normal", fontsize=11)
     ax.legend(fontsize=7.2, frameon=False, ncol=1, loc="lower left"); ax.grid(alpha=.2)
 
@@ -356,7 +356,7 @@ def main():
     ax.set_xscale("symlog", linthresh=0.1)
     ax.set_xlabel("Spurious long intervals injected (% of beats)")
     ax.set_ylabel("nAUC(1-5), relative to clean")
-    ax.set_title("Artifact sensitivity — real CETRAM RRi\n(dashed = rates seen before the guard)",
+    ax.set_title("Artifact sensitivity, CETRAM",
                  fontweight="normal", fontsize=11)
     ax.grid(alpha=.2)
 
@@ -371,7 +371,7 @@ def main():
         for j in range(piv.shape[1]):
             ax.text(j, i, f"{piv.values[i,j]:.2f}", ha="center", va="center", fontsize=7.5)
     ax.set_xlabel("tolerance $r$ ($\\times$SD), fixed across scales")
-    ax.set_title("Parameter sweep — AUC\nnAUC(1-5)/HR", fontweight="normal", fontsize=11)
+    ax.set_title("Parameter sweep, nAUC(1-5)", fontsize=11)
     plt.colorbar(im, ax=ax, fraction=.046)
 
     # --- D

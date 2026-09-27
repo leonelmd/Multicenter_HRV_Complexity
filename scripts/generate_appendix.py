@@ -191,10 +191,7 @@ def generate_appendix():
                 cbar_kws={'label': 'AUC'})
     ax.set_xlabel('Test Center', fontsize=13)
     ax.set_ylabel('Training Center', fontsize=13)
-    ax.set_title(
-        'Appendix: Cross-Center Generalization Matrix\n'
-        'RF, 7 handcrafted features, Z-scored per center',
-        fontsize=14, fontweight='normal')
+    ax.set_title("Cross-centre generalization")
 
     plt.tight_layout()
     out_path = os.path.join(OUT_DIR, 'FigureAppendix.png')

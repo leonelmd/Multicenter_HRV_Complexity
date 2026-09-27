@@ -36,7 +36,7 @@ os.makedirs(OUT_DIR, exist_ok=True)
 DATASETS = [
     {
         'label':    'CETRAM',
-        'subtitle': 'ECG · ~15 min · Santiago, Chile',
+        'subtitle': 'ECG · 15 min · Santiago, Chile',
         'file':     'chile_mse.csv',
         'modality': 'ECG',
         'ctrl_groups': ['Control'],
@@ -46,30 +46,30 @@ DATASETS = [
     },
     {
         'label':    'Cruces',
-        'subtitle': 'PPG · 5–15 min · Bilbao, Spain',
+        'subtitle': 'PPG · 7.40 min · Bilbao, Spain',
         'file':     'spain_mse.csv',
         'modality': 'PPG',
-        'ctrl_groups': ['Control', 'Other'],
+        'ctrl_groups': ['Control'],
         'pd_group':    'PD',
         'max_scale_reliable': 5,
         'max_scale_show':     20,
     },
     {
         'label':    'Nagoya (07–11h)',
-        'subtitle': 'ECG · 4 h Holter · Nagoya, Japan',
+        'subtitle': 'ECG · 4 h wearable · Nagoya, Japan',
         'file':     'japan_morning_mse.csv',
         'modality': 'ECG',
-        'ctrl_groups': ['control'],
+        'ctrl_groups': ['Control'],
         'pd_group':    'PD',
         'max_scale_reliable': 20,
         'max_scale_show':     20,
     },
     {
         'label':    'Nagoya (18–22 h)',
-        'subtitle': 'ECG · 4 h Holter · Nagoya, Japan',
+        'subtitle': 'ECG · 4 h wearable · Nagoya, Japan',
         'file':     'japan_window_mse.csv',
         'modality': 'ECG',
-        'ctrl_groups': ['control'],
+        'ctrl_groups': ['Control'],
         'pd_group':    'PD',
         'max_scale_reliable': 20,
         'max_scale_show':     20,
@@ -216,10 +216,8 @@ for ax, ds in zip(axes, DATASETS):
             fontsize=9, color='#555555')
 
     # ── Panel title ──────────────────────────────────────────────────────────
-    ax.set_title(ds['label'], fontsize=13, fontweight='normal', pad=6)
-    ax.text(0.5, 1.005, ds['subtitle'], transform=ax.transAxes,
-            ha='center', va='bottom', fontsize=9, color='#555555',
-            style='italic')
+    ax.set_title(f"{ds['label']}\n{ds['subtitle']}", fontsize=11,
+                 fontweight='normal', linespacing=1.5, pad=8)
 
 # ── Figure-level legend ───────────────────────────────────────────────────────
 ecg_patch = mpatches.Patch(color=MODALITY_COLOR['ECG'], label='ECG (CETRAM, Nagoya)')
@@ -235,29 +233,11 @@ fig.legend(handles=[ecg_patch, ppg_patch, chance_line, unreliable_patch, sig_lin
            fontsize=9.5, frameon=True, framealpha=0.9,
            bbox_to_anchor=(0.5, 0.01))
 
-# ── Bottom annotation box (PPG vs ECG note) ───────────────────────────────────
-note = (
-    "Modality note — ECG vs PPG: In ECG recordings (CETRAM, Nagoya), scale τ=1 corresponds to true beat-to-beat RR interval variability and yields the largest "
-    "group separation.\n"
-    "In PPG recordings (Cruces), inter-beat intervals are derived from photoplethysmographic waveform peaks, whose detection introduces additional "
-    "smoothing that compresses short-timescale variability in all subjects.\n"
-    "This attenuates the group difference at τ=1 (AUC = 0.54 in Cruces vs 0.72 in CETRAM), explaining why the complexity index "
-    "does not reach significance in the Cruces cohort.\n"
-    "The consistent direction of effect across all scales (Controls > PD) confirms that complexity loss in PD is real but partially obscured at short timescales by PPG modality constraints."
-)
+# (modality note moved to the figure legend; see FIGURE_LEGENDS.md)
 
-fig.text(0.5, 0.115, note,
-         ha='center', va='top', fontsize=8.5,
-         color='#333333',
-         wrap=True,
-         bbox=dict(boxstyle='round,pad=0.5', facecolor='#F7F7F7',
-                   edgecolor='#BBBBBB', linewidth=0.8),
-         multialignment='left')
-
-# ── Suptitle ─────────────────────────────────────────────────────────────────
-# ── Save ─────────────────────────────────────────────────────────────────────
 out_png = os.path.join(OUT_DIR, 'FigureAppendix2.png')
 out_svg = os.path.join(OUT_DIR, 'FigureAppendix2.svg')
+
 fig.savefig(out_png, dpi=180, bbox_inches='tight')
 fig.savefig(out_svg, bbox_inches='tight')
 plt.close()
