@@ -14,7 +14,7 @@ across three independent cohorts and three recording modalities.
 |---|---|---|---|---|---|
 | **CETRAM**, Santiago, Chile | ECG, 1000 Hz | ~15 min supine rest | **73** (43 C / 30 PD) | healthy | — |
 | **Cruces**, Bilbao, Spain | finger PPG, 500 Hz | **7.40 min**, during resting-state fMRI | **52** (21 C / 31 PD) | healthy | Iniguez et al. 2022 |
-| **Nagoya**, Japan | ECG Holter (POLAR) | ~24 h ambulatory | **45–50** (21–23 C / 24–27 PD) | **disease controls** | Suzuki et al. 2022 |
+| **Nagoya**, Japan | ECG, wearable chest strap (POLAR) | ~24 h ambulatory | **45–50** (21–23 C / 24–27 PD) | **disease controls** | Suzuki et al. 2022 |
 
 Notes that matter for interpretation:
 

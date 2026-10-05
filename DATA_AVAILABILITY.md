@@ -53,7 +53,7 @@ committee.
 |---|---|---|
 | CETRAM | raw ECG, 1000 Hz, ~15 min | CETRAM, Santiago de Chile |
 | Cruces | finger PPG, 500 Hz, 7.40 min | Hospital Universitario Cruces, Bilbao |
-| Nagoya | 24-h Holter RR series | Nagoya University Hospital |
+| Nagoya | 24-h wearable RR series | Nagoya University Hospital |
 
 **Consequences:** the raw-trace panels of Figure 2 render empty (five anonymised
 CETRAM traces are provided in `data/sample_signals/` for demonstration); rcMSE

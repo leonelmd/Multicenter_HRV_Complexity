@@ -138,8 +138,9 @@ def main():
     ax.text(2.0, .955, r"$N/\tau < 200$", ha="center", fontsize=7.5, color="0.45")
     ax.set_xscale("log")
     ax.set_xticks([1.4, 2.8, 15, 240])
-    ax.set_xticklabels(["100\nbeats", "\n\n200 beats", "15\nmin", "4 h"])
-    ax.set_xlabel("window length"); ax.set_ylabel("AUC of the min-across-day statistic")
+    ax.set_xticklabels(["100\nbeats", "200\nbeats", "15\nmin", "4 h"], fontsize=7.5)
+    ax.set_xlabel("window length within the 24-h record")
+    ax.set_ylabel("AUC of the min-across-day statistic")
     ax.set_ylim(.55, 1.0)
     ax.set_title("Discrimination vs window length",
                  fontweight="normal", fontsize=12)
@@ -162,10 +163,15 @@ def main():
 
     # ── F: the punchline ────────────────────────────────────────────────────
     ax = fig.add_subplot(gs[1, 2]); lab(ax, "F")
-    groups = ["Nagoya\n24-h Holter", "CETRAM\n15-min rest", "CETRAM\nexcl. non-sinus"]
-    sdv = [0.925, float(cet[cet.subset == "all"].SDNN100_min.iloc[0]),
+    groups = ["Nagoya\n24-h wearable", "CETRAM\n15-min rest",
+              "CETRAM\nexcl. outliers"]
+    # Nagoya values come from the panel-E summaries, not hard-coded, so that F
+    # cannot drift from E when the inputs are rebuilt.
+    nag_sd = float(dist[dist.stat == "min"].SDNN100.iloc[0])
+    nag_cx = float(dist[dist.stat == "min"].complexity.iloc[0])
+    sdv = [nag_sd, float(cet[cet.subset == "all"].SDNN100_min.iloc[0]),
            float(cet[cet.subset != "all"].SDNN100_min.iloc[0])]
-    cxv = [0.845, float(cet[cet.subset == "all"].complexity.iloc[0]),
+    cxv = [nag_cx, float(cet[cet.subset == "all"].complexity.iloc[0]),
            float(cet[cet.subset != "all"].complexity.iloc[0])]
     x = np.arange(3)
     ax.bar(x - bw / 2, sdv, bw, color=SD, label="SDNN100-min (Suzuki)")
@@ -232,7 +238,7 @@ def main():
             color="#16A085", lw=2.4, ms=7, label="AUC of p10 (relative)")
     ax.axhline(1.0, ls=":", c="k", lw=1)
     ax.set_xlabel("window overlap (%)"); ax.set_ylabel("value relative to 0% overlap")
-    ax.set_ylim(.86, 1.06)
+    ax.set_ylim(.74, 1.06)
     ax.set_title("Effect of window overlap",
                  fontweight="normal", fontsize=12)
     ax.legend(fontsize=8, frameon=False, loc="lower left"); ax.grid(alpha=.2)

@@ -5,7 +5,7 @@ abstract: >-
   Code and derived data for a multicenter study of cardiac autonomic complexity
   in Parkinson's disease, combining short resting ECG (CETRAM, Santiago),
   photoplethysmography during resting-state fMRI (Hospital Universitario Cruces,
-  Bilbao) and 24-hour ambulatory Holter ECG (Nagoya University Hospital).
+  Bilbao) and 24-hour ambulatory wearable chest-strap ECG (Nagoya University Hospital).
   Complexity is quantified by refined composite multiscale entropy (rcMSE) with a
   fixed tolerance, computed in Julia; all downstream statistics and figures are
   in Python.
