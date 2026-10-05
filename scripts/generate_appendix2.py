@@ -4,7 +4,7 @@ Appendix Figure 2: Per-scale AUC across all recording contexts
 ==============================================================
 Supplementary figure illustrating the per-scale discriminative power
 (AUC, Mann-Whitney U) of MSE SampEn across scales 1–5 (short recordings)
-and 1–20 (Nagoya Holter), comparing ECG vs PPG modalities.
+and 1–20 (Nagoya wearable), comparing ECG vs PPG modalities.
 
 Purpose: Provides mechanistic context for the reduced significance of the
 complexity index in the Cruces (PPG) cohort.

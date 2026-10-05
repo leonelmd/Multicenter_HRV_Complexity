@@ -13,7 +13,7 @@ where adjustment is required. Group contrasts are Mann–Whitney *U* tests and a
 the receiver-operating-characteristic curve (AUC) oriented as Control > PD, so AUC > 0.5
 indicates lower values in PD. Cohorts: CETRAM (Santiago; 15-min supine resting ECG at
 1000 Hz; 43 controls, 30 PD), Cruces (Bilbao; 7.40-min finger PPG at 500 Hz recorded
-during resting-state fMRI; 21 healthy controls, 31 PD), Nagoya (24-h Holter; 21 disease
+during resting-state fMRI; 21 healthy controls, 31 PD), Nagoya (24-h wearable; 21 disease
 controls, 26 PD in the analysis window). Nagoya disease controls were investigated for
 essential tremor or for numbness/dizziness with no abnormality found, so the Nagoya
 contrast is against a harder comparator than the two healthy-control cohorts.
@@ -69,7 +69,7 @@ All *p* values are Mann–Whitney *U*.
 
 ## Figure 3 — Recording length determines which autonomic marker is applicable
 
-Nagoya 24-h Holter cohort, which is the source cohort of Suzuki et al. (2022); minimum-SDNN
+Nagoya 24-h wearable cohort, which is the source cohort of Suzuki et al. (2022); minimum-SDNN
 values shown here are a reproduction of that published analysis in the same subjects.
 No window, scale or parameter in this figure was selected on the group contrast.
 
@@ -102,24 +102,31 @@ interactions (*p* < 0.001), indicating a deficit that is present across the day 
 varies with time of day.
 
 **(D)** AUC of the minimum-across-day statistic as a function of window length, for SDNN
-and for the complexity index. SDNN discrimination is maximal in short windows (100 beats,
-0.925; 200 beats, 0.940) and declines as windows lengthen (15 min, 0.797; 4 h, 0.752).
-The complexity index cannot be estimated below ~15 minutes because *N*/τ falls under 200
-at τ = 5 (shaded region), and is 0.845 at 15 min and 0.773 at 4 h. The two markers
-therefore have opposite window-length requirements.
+and for the complexity index. All points derive from the full 24-h Nagoya records: the
+abscissa is the length of the window over which the statistic is computed before the
+minimum is taken across the day, and *not* the duration of the recording, so that at the
+15-min point roughly 96 windows per subject remain available. SDNN discrimination is
+maximal in short windows (100 beats, 0.905; 200 beats, 0.919) and declines as windows
+lengthen (15 min, 0.795; 4 h, 0.760), consistent with longer windows averaging over the
+transient low-variability episodes that carry the group difference. The complexity index
+cannot be estimated below ~15 minutes because *N*/τ falls under 200 at τ = 5 (shaded
+region), and is 0.842 at 15 min and 0.756 at 4 h. The two markers therefore have opposite
+window-length requirements. Note that this panel isolates the window-length penalty on
+minimum SDNN; the separate penalty of having few windows to take a minimum over, which
+applies when the recording itself is short, is shown in panel F.
 
 **(E)** The four distributional summaries used by Suzuki et al. (minimum, first decile,
 first quartile, median across the recording), computed for SDNN in 100-beat windows and
 for the complexity index in 15-minute windows. Minimum-SDNN is the strongest index
-(0.925) and exceeds the corresponding complexity statistic at every summary level.
+(0.905) and exceeds the corresponding complexity statistic at every summary level.
 
 **(F)** The same two markers in the 24-h cohort and in CETRAM's 15-minute resting
-recordings. In Nagoya, minimum-SDNN (0.925) exceeds complexity (0.845), is correlated with
+recordings. In Nagoya, minimum-SDNN (0.905) exceeds complexity (0.842), is correlated with
 it at ρ = +0.80, and complexity adds no incremental discrimination in a joint logistic
 model (*p* = 0.46). In CETRAM, where only ~10 hundred-beat windows are available per
-subject rather than ~920, minimum-SDNN falls to 0.460 while complexity reaches 0.695;
-excluding the 11 subjects whose interval series are inconsistent with sinus rhythm
-(SDNN > 100 ms in a 15-minute supine recording) the values are 0.532 and 0.628. The
+subject rather than ~920, minimum-SDNN falls to 0.460 while complexity reaches 0.699;
+excluding the 11 subjects whose interval series are extreme outliers of undetermined origin
+(SDNN > 100 ms over the 15-min resting recording, together with up to 27% of successive intervals changing by more than 200 ms) the values are 0.532 and 0.633. The
 minimum is an extreme-value statistic and requires many windows to identify the transient
 low-variability episodes that carry the group difference; that requirement is not met by
 short clinical recordings.
@@ -133,14 +140,18 @@ the beat count that only a multi-hour recording provides.
 τ = 4 (3.3 s, respiratory band; AUC 0.870) rather than at scale 1, and declines
 monotonically thereafter.
 
-**(I)** Effect of window overlap on the distributional statistics, computed for SDNN in
-15-minute windows across all 45 subjects and expressed relative to non-overlapping
-windows. Increasing overlap from 0 % to 90 % raises the number of windows per subject from
-92 to 911 and lowers the median minimum by 9 %, because the minimum over more draws is
-mechanically smaller, while leaving AUC essentially unchanged (within ±0.026, non-monotonic).
-The tenth percentile is completely invariant. Overlapping windows therefore add no
-information and render minimum-based statistics incomparable across studies; all analyses
-here use non-overlapping windows, and the tenth percentile is preferred to the minimum as
+**(I)** Effect of window overlap on the distributional statistics of the complexity
+index, computed in 15-minute windows across all 47 subjects and expressed relative to
+non-overlapping windows. Overlapping windows were recomputed from the raw RR series on a
+0.75-minute sliding grid, of which each overlap level is an exact subset, rather than
+obtained by resampling the non-overlapping series. Increasing overlap from 0 % to 90 %
+raises the number of windows per subject from 92 to 911 and lowers the median minimum
+monotonically by 21 % (0.181 to 0.144), because the minimum over more draws is
+mechanically smaller, and correspondingly degrades the AUC of the minimum from 0.839 to
+0.782. The tenth percentile is unaffected (0.806 to 0.813), as is the median (0.709).
+Overlapping windows therefore add no information and render minimum-based statistics
+incomparable across studies; all analyses here use non-overlapping windows, and the tenth
+percentile is preferred to the minimum as
 the low-tail statistic.
 
 ---
@@ -159,10 +170,10 @@ deviation rises, a consequence of setting *r* = 0.2 × SD.
 show median and interquartile range with individual subjects overlaid. The upper *p* value
 is the unadjusted Mann–Whitney test; the lower line gives the *p* value and AUC with mean
 heart rate entered as a covariate, which is the appropriate adjustment (see Appendix 5).
-CETRAM: *p* = 0.0048, HR-adjusted *p* = 0.0009, AUC 0.692. Cruces: *p* = 0.275,
-HR-adjusted *p* = 0.589, AUC 0.536. Nagoya 07–11 h: *p* = 0.0148, HR-adjusted *p* = 0.0400,
-AUC 0.728. Nagoya 18–22 h: *p* = 0.0001, HR-adjusted *p* = 0.0003, AUC 0.835. The Cruces
-contrast does not survive heart-rate adjustment.
+CETRAM: *p* = 0.004, HR-adjusted *p* = 0.002, HR-adjusted AUC 0.699. Cruces:
+*p* = 0.185, HR-adjusted *p* = 0.544, HR-adjusted AUC 0.536. Nagoya 18–22 h:
+*p* = 0.0015, HR-adjusted *p* < 0.001, HR-adjusted AUC 0.782. Values are those of
+Table 2 of the main text. The Cruces contrast does not survive heart-rate adjustment.
 
 ---
 
@@ -303,7 +314,7 @@ excluding 1, so division moves every cohort further from heart-rate independence
 index with heart rate as a covariate. The apparent gain from dividing (+0.046, +0.040,
 +0.010) tracks the discriminative power of heart rate itself (0.615, 0.639, 0.788): the
 ratio is an undisclosed composite of complexity and heart rate rather than a corrected
-measure. Removing heart rate properly gives 0.699, 0.536 and 0.835.
+measure. Removing heart rate properly gives 0.699, 0.536 and 0.782.
 
 **(E)** Nagoya index against heart rate, before and after division, illustrating the
 induced dependence.

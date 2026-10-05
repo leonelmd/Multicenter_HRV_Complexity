@@ -15,7 +15,7 @@ Preprocessing applied upstream (per cohort):
                       Recording duration: 5–15 min rest.
                       HRV computed with neurokit2 nk.hrv() (Lomb-Scargle freq domain).
                       *** PPG-derived RRi: frequency-domain metrics subject to PPG bias. ***
-  - Japan (Nagoya)  : Pre-cleaned 24-h Holter ECG RRi, bounds 300–2000 ms only.
+  - Japan (Nagoya)  : Pre-cleaned 24-h wearable RR series, bounds 300–2000 ms only.
                       HRV computed with custom Julia pipeline + neurokit2 recalculation.
 
 SampEn is extracted as MSE at Scale=1 from the RC-MSE toolbox outputs (*_mse.csv),

@@ -63,7 +63,12 @@ def window_indices(rri: np.ndarray, nb: int) -> dict:
 def clean(x: np.ndarray) -> np.ndarray:
     x = np.asarray(x, float)
     x = x[np.isfinite(x)]
-    if x.size and np.nanmax(x) < 20:      # seconds -> ms
+    # Seconds -> ms. Decide on the MEDIAN, not the maximum: the Nagoya series encode
+    # recording gaps as single very long intervals (up to 346 s), so a max-based test
+    # reads a seconds file as milliseconds whenever one such gap is present, after
+    # which the 300-2000 ms guard discards every beat and the subject is silently
+    # dropped. That removed 8 of 50 Nagoya subjects before this was fixed.
+    if x.size and np.nanmedian(x) < 20:
         x = x * 1000.0
     return x[(x > RRI_MIN) & (x < RRI_MAX)]
 
