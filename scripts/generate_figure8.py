@@ -16,7 +16,12 @@ A – Spearman ρ heatmap: complexity + traditional HRV × clinical scales
 B – Scatter plots: top 4 clinical correlates with regression lines
 C – Hoehn & Yahr stage boxplots (complexity by disease stage)
 D – Non-motor symptom burden: composite score + key individual symptoms
-E – LEDD subgroup analysis (n=9 with available data; pending completion)
+E – LEDD subgroup analysis (patients with dose-level medication records)
+
+Clinical data are final (2026-10-31): 28/30 PD with clinical records; P010 and P013 have
+none and are reported as missing. All PD are assumed to be on levodopa; the time of the
+last dose before the ECG is unknown (no ON/OFF control). LED is available only where the
+record gives doses (first-batch records list drug names without doses).
 
 Reference: see references/literature_hrv_clinical_pd.md
 """
@@ -255,9 +260,20 @@ def load_data():
         if nc in df.columns:
             df[nc] = pd.to_numeric(df[nc], errors='coerce')
 
-    print(f"  Merged dataset: {len(df)} PD subjects with both MSE + clinical data")
+    # Keep only PD subjects with a clinical record; report the ones without
+    n_pd_mse = mse_wide['Subject'].nunique()
+    if 'Clinical data available' in clin.columns:
+        avail = set(clin.loc[clin['Clinical data available'] == True, 'Anonymous_ID'])
+    else:
+        avail = set(clin['Anonymous_ID'])
+    missing = sorted(set(mse_wide['Subject']) - avail)
+    df = df[df['Subject'].isin(avail)].reset_index(drop=True)
+    df.attrs['n_pd_total'] = n_pd_mse
+    df.attrs['missing'] = missing
+    print(f"  Merged dataset: {len(df)}/{n_pd_mse} PD subjects with MSE + clinical data "
+          f"(no clinical record: {', '.join(missing) if missing else 'none'})")
     print(f"  LEDD available: {df['LEDD'].notna().sum()}/{len(df)} "
-          f"[PENDING: awaiting full dataset from clinical collaborator]")
+          f"(dose-level medication records only)")
     return df, nm_cols
 
 
@@ -467,7 +483,7 @@ def generate_figure8():
     hy_data   = [df[df['HY_stage'] == s]['Complexity'].dropna().values
                   for s in hy_stages]
     hy_n      = [len(d) for d in hy_data]
-    hy_labels = [f'H&Y {s:.1g}\n(n={n})' for s, n in zip(hy_stages, hy_n)]
+    hy_labels = [f'H&Y {s:g}\n(n={n})' for s, n in zip(hy_stages, hy_n)]
     colors    = [HY_COLORS.get(s, GRAY) for s in hy_stages]
 
     bp = ax_C.boxplot(hy_data, patch_artist=True, widths=0.55,
@@ -625,18 +641,20 @@ def generate_figure8():
     ax_E3 = fig.add_subplot(gs_E[2])
     ax_E3.axis('off')
     note_txt = (
-        f"⚠  LEDD Analysis — Preliminary\n\n"
-        f"Current data: n = {ledd_n} / {len(df)} PD patients\n"
-        f"Remaining {len(df) - ledd_n} subjects pending\n"
-        f"(data collection in progress).\n\n"
+        f"LEDD subgroup\n\n"
+        f"n = {ledd_n} / {len(df)} PD patients with\n"
+        f"dose-level medication records;\n"
+        f"the remaining records list drug\n"
+        f"names without doses.\n"
+        f"All PD assumed on levodopa; time of\n"
+        f"last dose before the ECG unknown.\n\n"
         f"Literature context:\n"
         f"LEDD is not expected to be an\n"
         f"independent predictor of complexity\n"
         f"once disease duration is controlled\n"
         f"(Haapaniemi 2001; Devos 2003;\n"
         f"Lerma 2016; meta: Solla 2020).\n\n"
-        f"Results will be updated when\n"
-        f"the full dataset is available."
+        f"Exploratory (small n)."
     )
     ax_E3.text(0.05, 0.95, note_txt, transform=ax_E3.transAxes,
                va='top', ha='left', fontsize=9.5, color='#444444',
@@ -645,16 +663,19 @@ def generate_figure8():
                          edgecolor='#F39C12', linewidth=1.2, alpha=0.95))
 
     # ── Supertitle & save ─────────────────────────────────────────────────────
-    N_TOTAL  = 28   # official CETRAM PD count (28 subjects with MSE data)
-    N_AVAIL  = len(df)
+    N_TOTAL  = df.attrs.get('n_pd_total', len(df))   # PD subjects in the MSE analysis set
+    N_AVAIL  = len(df)                               # ... with a clinical record
     N_PEND   = N_TOTAL - N_AVAIL
-    is_preliminary = N_AVAIL < N_TOTAL
+    MISSING  = ', '.join(df.attrs.get('missing', []))
+    is_preliminary = False   # clinical data collection closed 2026-10-31
 
     fig.text(0.5, 0.962,
              f'Panels A–B: Spearman ρ between rcMSE complexity index and CISI-PD subscales, disease duration, and non-motor burden. '
              f'Panels C–D: Group comparisons by H&Y stage and non-motor symptom presence. '
-             f'Panel E: LEDD analysis (preliminary). '
-             f'Current n = {N_AVAIL}/{N_TOTAL} PD patients; {N_PEND} clinical records pending.',
+             f'Panel E: LEDD subgroup. '
+             f'n = {N_AVAIL}/{N_TOTAL} PD patients with clinical data'
+             + (f' (no clinical record: {MISSING})' if MISSING else '') + '. '
+             f'All PD on levodopa; time of last dose before the ECG unknown.',
              ha='center', fontsize=9, color=GRAY, wrap=True)
 
     # ── Preliminary stamp (diagonal watermark) ────────────────────────────────
