@@ -56,7 +56,7 @@ def generate_figure4():
     # Configuration for each column
     configs = [
         ('CETRAM', CHILE_MSE, 'CHILE_METRICS', range(1, 6), '15m Rest'),
-        ('Cruces', SPAIN_MSE, 'SPAIN_METRICS', range(1, 6), '15m Slice'),
+        ('Cruces', SPAIN_MSE, 'SPAIN_METRICS', range(1, 6), '7.4m rs-fMRI'),
         ('Nagoya (07-11h)', JAPAN_MORNING_MSE, 'JAPAN_EVO_MORNING', range(1, 21), '4h Block'),
         ('Nagoya (18-22h)', JAPAN_AFTERNOON_MSE, 'JAPAN_EVO_AFTERNOON', range(1, 21), '4h Block')
     ]
@@ -75,7 +75,9 @@ def generate_figure4():
         
     # New evolution file uses Window_start_h (4h windows at 1h steps, proper nAUC)
     hr_j_m = df_evo[df_evo['Window_start_h'] == 7][['Subject','HR']].copy()
-    hr_j_a = df_evo[df_evo['Window_start_h'] == 16][['Subject','HR']].copy()
+    # 18:00-22:00, the window of japan_window_mse.csv (was 16, i.e. HR from the wrong window)
+    # HR from the same per-window feature file used for Table 3 and the claims check.
+    hr_j_a = pd.read_csv(os.path.join(DATA_DIR, 'japan_window_features.csv'))[['Subject','HR']].copy()
 
     for col_idx, (name, mse_file, met_type, index_range, length_desc) in enumerate(configs):
         if not os.path.exists(mse_file):
@@ -118,7 +120,12 @@ def generate_figure4():
         # method="mean" reproduces the historical inline `MSE.mean()` exactly; see that
         # module for why the naming was inconsistent with the manuscript and why the
         # choice of formula does not change any result.
-        sub_index = subject_index_table(df_mse, index_range, method=DEFAULT_METHOD)
+        # Manuscript definition: trapezoidal area over scales a..b divided by the number
+        # of scales (Methods eq. for nAUC; also verify_manuscript_claims.py). The
+        # historical "mean" ranks subjects slightly differently, so its p values did not
+        # match the text.
+        sub_index = subject_index_table(df_mse, index_range, method="trapz")
+        sub_index['Complexity'] = sub_index['Complexity'] / len(list(index_range))
         sub_index = sub_index.rename(columns={'Complexity': 'MSE'})
         
         if met_type == 'CHILE_METRICS':
@@ -135,7 +142,7 @@ def generate_figure4():
             df_final = pd.merge(sub_index, hr_j_a, on='Subject')
             
         # Unnormalized index. Dividing by HR was dropped: the index scales with HR
-        # as HR^b with b = -0.09 / -0.70 / -1.31 across cohorts, so a ratio (which
+        # as HR^b with b = -0.40 / -0.43 / -1.03 across cohorts (Appendix 5), so a ratio (which
         # shifts b to b-1) moves the index further from HR-independence rather than
         # closer, and its apparent AUC gain is heart rate's own group signal.
         # See HR_NORMALISATION_ANALYSIS.md and Appendix 5. HR is retained below as
@@ -153,11 +160,11 @@ def generate_figure4():
         # HR entered as a covariate — the defensible adjustment (see Appendix 5).
         _d = df_plot.dropna(subset=['Norm', 'HR']).copy()
         _d['g'] = (_d['Group'] == 'PD').astype(int)
-        _m = sm.OLS(_d['Norm'], sm.add_constant(_d[['g', 'HR']])).fit()
+        _m = sm.OLS(_d['Norm'], sm.add_constant(_d[['g', 'HR']])).fit(cov_type='HC3')  # HC3, as in Methods
         p_adj = _m.pvalues['g']
         auc_adj = roc_auc_score(_d['g'], -(_d['Norm'] - _m.params['HR'] * _d['HR']))
 
-        range_str = rf"$\Sigma$MSE({min(index_range)}-{max(index_range)})"
+        range_str = rf"nAUC({min(index_range)}-{max(index_range)})"
         ax2.set_title(f"Complexity Index (unnormalized)\n{range_str}", fontsize=18, fontweight='normal')
         ax2.set_ylabel("Complexity Index", fontsize=14)
         ax2.set_xlabel(f"({length_desc})", fontsize=12, style='italic')

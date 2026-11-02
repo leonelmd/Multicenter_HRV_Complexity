@@ -43,6 +43,7 @@ NSCALES, M, R_FACTOR = 5, 2, 0.2
 RRI_MIN, RRI_MAX = 300.0, 2000.0
 OUT = os.path.join(DATA, "length_ladder.csv")
 FORCE = "--force" in sys.argv
+CHUNKED = "--chunked" in sys.argv   # pause every ~145 s (only needed in time-limited sandboxes)
 
 
 def _AB(s, m, r):
@@ -144,7 +145,7 @@ def main():
                              **{f"MSE_s{i+1}": cv[i] for i in range(NSCALES)}))
         pd.DataFrame(rows).to_csv(OUT, index=False)
         print(f"  {cohort:7s} {sub:8s} N_full={len(x):6d}  {time.time()-t0:.0f}s", flush=True)
-        if time.time() - t0 > 145:
+        if CHUNKED and time.time() - t0 > 145:
             print("PAUSE — re-run to continue")
             return
     d = pd.DataFrame(rows)

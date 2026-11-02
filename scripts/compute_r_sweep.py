@@ -50,7 +50,9 @@ def rcmse_multi(x, scales, rs, m=2):
         out[ok, si] = -np.log(A[ok]/B[ok])
     return out
 
-BASE='/sessions/keen-eloquent-noether/mnt/HRV-Complexity'; MC=f'{BASE}/Multicenter/public_release'
+# HRV-Complexity root, derived from this file (scripts/ -> public_release/ -> Multicenter/ -> root)
+MC=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE=os.path.dirname(os.path.dirname(MC))
 CAP=2000
 def load(name):
     recs=[]
@@ -58,13 +60,15 @@ def load(name):
         for g in ['Control','PD']:
             for p in sorted(glob.glob(f'{BASE}/CETRAM/public_release/results/cleaned_detections/{g}/*_cleaned.csv')):
                 s=os.path.basename(p).replace('_cleaned.csv','')
-                x=np.diff(pd.read_csv(p)['sample'].values.astype(float)); recs.append((s,g,x[np.isfinite(x)]))
+                x=np.diff(pd.read_csv(p)['sample'].values.astype(float)); x=x[np.isfinite(x)]
+                # Same 300-2000 ms guard as compute_length_ladder.py and the Methods.
+                recs.append((s,g,x[(x>300.0)&(x<2000.0)]))
     elif name=='Cruces':
         grp=dict(pd.read_csv(f'{MC}/data/spain_mse.csv')[['Subject','Group']].drop_duplicates().values)
-        for p in sorted(glob.glob(f'{BASE}/Cruces/data/processed/RRi/*.csv')):
+        for p in sorted(glob.glob(f'{BASE}/Cruces/public_release/data/processed/RRi/*.csv')):
             s=os.path.basename(p).replace('.csv','')
             if grp.get(s) not in ('Control','PD'): continue
-            x=np.loadtxt(p).astype(float); recs.append((s,grp[s],x[np.isfinite(x)]))
+            x=np.loadtxt(p).astype(float); x=x[np.isfinite(x)]; recs.append((s,grp[s],x[(x>300.0)&(x<2000.0)]))
     else:
         meta=pd.read_csv(f'{BASE}/Nagoya/public_release/data/metadata/metadata.csv')
         grp=dict(pd.read_csv(f'{MC}/data/japan_window_mse.csv')[['Subject','Group']].drop_duplicates().values)
@@ -91,7 +95,10 @@ def load(name):
 KS=np.array([0.05,0.10,0.125,0.15,0.175,0.20,0.25,0.30,0.35,0.40,0.50])
 RABS=np.array([4.,6.,8.,10.,12.5,15.,20.,25.,30.,40.,50.,60.])
 SC=list(range(1,6)); MS=[1,2,3]; rows=[]
-for coh in ['CETRAM','Cruces','Nagoya']:
+import sys
+COHORTS=[a for a in sys.argv[1:] if a in ('CETRAM','Cruces','Nagoya')] or ['CETRAM','Cruces','Nagoya']
+OUTNAME='r_sweep.csv' if len(COHORTS)==3 else 'r_sweep_'+'_'.join(COHORTS)+'.csv'
+for coh in COHORTS:
     recs=load(coh)
     print(f"{coh}: n={len(recs)} medianN={int(np.median([len(x) for _,_,x in recs]))}",flush=True)
     for j,(s,g,x) in enumerate(recs):
@@ -108,5 +115,5 @@ for coh in ['CETRAM','Cruces','Nagoya']:
                     mode='k' if i<len(KS) else 'abs',
                     level=lab,r_ms=rs[p],SD=sd,N=len(x),cx=f(cur),h1=f(c1),h2=f(c2)))
         if (j+1)%20==0: print(f"   {j+1}/{len(recs)}",flush=True)
-    pd.DataFrame(rows).to_csv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'data','r_sweep.csv'),index=False)
+    pd.DataFrame(rows).to_csv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'data',OUTNAME),index=False)
 print("DONE")

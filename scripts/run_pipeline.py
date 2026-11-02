@@ -106,6 +106,10 @@ def main():
          "Appendix 1 — Cross-center generalization matrix (RF, LOCO)"),
 
         # ── Appendix 2: per-scale AUC, ECG vs PPG modality ───────────────────
+        # ── Supplementary S6/S7: cross-cohort transfer (supersedes the
+        #    classification panels of Figure 5 and the RF matrix of Appendix 1) ──
+        ("python scripts/generate_figS_crosscohort.py",
+         "Supplementary S6/S7 — Cross-cohort transfer (logistic regression, LOCO)"),
         ("python scripts/generate_appendix2.py",
          "Appendix 2 — Per-scale AUC across modalities (ECG vs PPG)"),
         ("python scripts/generate_appendix3.py",
