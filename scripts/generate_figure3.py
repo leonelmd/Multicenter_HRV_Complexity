@@ -164,7 +164,7 @@ def main():
     # ── F: the punchline ────────────────────────────────────────────────────
     ax = fig.add_subplot(gs[1, 2]); lab(ax, "F")
     groups = ["Nagoya\n24-h wearable", "CETRAM\n15-min rest",
-              "CETRAM\nexcl. outliers"]
+              "CETRAM\nexcl. SDNN>100 ms"]
     # Nagoya values come from the panel-E summaries, not hard-coded, so that F
     # cannot drift from E when the inputs are rebuilt.
     nag_sd = float(dist[dist.stat == "min"].SDNN100.iloc[0])
