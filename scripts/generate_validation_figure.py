@@ -64,6 +64,13 @@ def _AB(sig, m, r, etype):
     n = len(sig) - m
     if n < 3:
         return 0.0, 0.0
+    if etype == "sample":       # KD-tree pair counts; identical to the matrix version
+        from scipy.spatial import cKDTree
+        sig = np.asarray(sig, float)
+        tB = cKDTree(np.stack([sig[i:i + n] for i in range(m)], 1))
+        tA = cKDTree(np.stack([sig[i:i + n] for i in range(m + 1)], 1))
+        return ((tA.count_neighbors(tA, r, p=np.inf) - n) / 2.0,
+                (tB.count_neighbors(tB, r, p=np.inf) - n) / 2.0)
     X = sig[np.arange(n)[:, None] + np.arange(m)[None, :]].astype(np.float32)
     d = np.abs(X[:, None, :] - X[None, :, :]).max(2)
     xm = sig[np.arange(n) + m].astype(np.float32)
@@ -235,20 +242,22 @@ def main():
     # ---- C: parameter sweep (fixed r throughout) -------------------------
     print("C) parameter sweep")
     cp = os.path.join(OUT, "validation_C_params.csv")
-    if os.path.exists(cp) and not FORCE:
-        C = pd.read_csv(cp)
-        print("   cached")
-    else:
-        ms, rs, ets = [1, 2, 3], [0.10, 0.15, 0.20, 0.25], ["sample", "fuzzy"]
-        rows = []
-        for et in ets:
-            for m in ms:
-                for rf in rs:
-                    v = np.array([nauc(rcmse(s["rri"], rf * s["rri"].std(ddof=1),
-                                             m=m, etype=et, nscales=5)) for s in subs])
-                    rows.append(dict(etype=et, m=m, r=rf, AUC=auc_cp(v, y)))
-                    print(f"   {et} m={m} r={rf:.2f} AUC={rows[-1]['AUC']:.3f}", flush=True)
-        C = pd.DataFrame(rows); C.to_csv(cp, index=False)
+    # Incremental: each (etype, m, r) cell is appended to the cache as it finishes, so a
+    # time-limited run can be resumed (python scripts/generate_validation_figure.py).
+    ms, rs, ets = [1, 2, 3], [0.10, 0.15, 0.20, 0.25], ["sample", "fuzzy"]
+    rows = pd.read_csv(cp).to_dict("records") if os.path.exists(cp) and not FORCE else []
+    done = {(r_["etype"], int(r_["m"]), round(float(r_["r"]), 3)) for r_ in rows}
+    for et in ets:
+        for m in ms:
+            for rf in rs:
+                if (et, m, round(rf, 3)) in done:
+                    continue
+                v = np.array([nauc(rcmse(s["rri"], rf * s["rri"].std(ddof=1),
+                                         m=m, etype=et, nscales=5)) for s in subs])
+                rows.append(dict(etype=et, m=m, r=rf, AUC=auc_cp(v, y)))
+                pd.DataFrame(rows).to_csv(cp, index=False)
+                print(f"   {et} m={m} r={rf:.2f} AUC={rows[-1]['AUC']:.3f}", flush=True)
+    C = pd.DataFrame(rows)
 
     # ---- D: complexity-index selection -----------------------------------
     print("D) index selection")
@@ -295,7 +304,7 @@ def main():
             for i in common:
                 seg = subs[i]["rri"] if L is None else subs[i]["rri"][:L]
                 v.append(nauc(rcmse(seg, RFACTOR * seg.std(ddof=1), nscales=5)))
-            v = np.array(v) / HR[common]
+            v = np.array(v)          # unnormalized index (the HR ratio was rejected)
             ok = np.isfinite(v); yy = y[common][ok]
             rows.append(dict(N=("full" if L is None else L), n_subj=int(ok.sum()),
                              AUC=auc_cp(v, y[common]),
@@ -425,7 +434,7 @@ def main():
         ax.scatter(HR[s], raw[s], c=COL[g], marker=mk, s=28, alpha=.75, label=g)
     r1 = spearmanr(HR[np.isfinite(raw)], raw[np.isfinite(raw)])
     ax.set_xlabel("Mean HR (bpm)"); ax.set_ylabel("nAUC(1-5), unnormalized")
-    ax.set_title(f"Unnormalized vs HR\n$\\rho$={r1[0]:+.2f} (p={r1[1]:.2f}) — orthogonal",
+    ax.set_title(f"Unnormalized vs HR\n$\\rho$={r1[0]:+.2f} (p={r1[1]:.2f})",
                  fontweight="normal", fontsize=11)
     ax.legend(fontsize=8, frameon=False); ax.grid(alpha=.2)
 

@@ -208,6 +208,10 @@ def derive_japan_window_mse(dry_run: bool) -> str:
         return f"  ✗  SKIP   {label:40s}  (source not found: {src})"
     df = pd.read_csv(src)
     df["Group"] = df["Group"].str.lower().map({"control": "Control", "pd": "PD"}).fillna(df["Group"])  # normalise capitalisation
+    # 16:00-20:00 alternative window (Methods, Window selection): same derivation.
+    (df[df["Window_start_h"] == 16].rename(columns={"Scale": "Scales"})
+       [["Subject", "Group", "Scales", "MSE"]].sort_values(["Subject", "Scales"])
+       .to_csv(DATA_DIR / "japan_afternoon_mse.csv", index=False)) if not dry_run else None
     df_aft = (df[df["Window_start_h"] == 18]
               .rename(columns={"Scale": "Scales"})
               [["Subject", "Group", "Scales", "MSE"]]

@@ -62,9 +62,10 @@ def load(c):
         m = pd.read_csv(os.path.join(DATA, "japan_window_mse.csv"))
         met = pd.read_csv(os.path.join(DATA, "japan_window_features.csv"))
     m = m[m.Group.isin(["Control", "PD"])]
-    idx = (m[m.Scales.between(1, 5)].sort_values("Scales")
+    hi = 20 if c == "Nagoya" else 5   # each cohort's primary scale range
+    idx = (m[m.Scales.between(1, hi)].sort_values("Scales")
              .groupby(["Subject", "Group"])
-             .apply(lambda g: np.trapezoid(g.MSE.values, np.arange(1, 6)) / 5,
+             .apply(lambda g: np.trapezoid(g.MSE.values, np.arange(1, hi + 1)) / hi,
                     include_groups=False)
              .rename("cx").reset_index())
     met = met.copy()

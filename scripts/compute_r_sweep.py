@@ -10,10 +10,9 @@
 # run. Split-half halves (h1, h2) are emitted at every tolerance for the reliability
 # panel.
 #
-# NOTE: Nagoya is capped at CAP beats to keep the O(N^2) sweep tractable. The SHAPE of
-# the r-response survives the cap, but absolute Nagoya AUCs are NOT comparable to the
-# published full-length values -- the effect grows with N (1000: 0.599, 2000: 0.655,
-# 4000: 0.681, full ~15900: 0.867).
+# Nagoya: full 18:00-22:00 window (the pre-specified analysis window), no beat cap
+# (KD-tree counts since 2026-11-18; previously 16:00-20:00 capped at 2000 beats).
+# All cohorts use nAUC over scales 1-5 here.
 #
 # Output: data/r_sweep.csv
 
@@ -21,17 +20,21 @@ import numpy as np, pandas as pd, glob, os
 from datetime import datetime
 
 def counts_multi(x, m, rs):
-    """A(m+1), B(m) match counts at every tolerance in sorted rs. One pass, no sorting of distances."""
+    """A(m+1), B(m) match counts (Chebyshev distance <= r) at every tolerance in sorted rs.
+
+    KD-tree pair counting (scipy cKDTree.count_neighbors with an array of radii);
+    identical counts to the former O(N^2) loop, which made the full Nagoya window
+    intractable and forced a 2000-beat cap.
+    """
+    from scipy.spatial import cKDTree
     N = len(x); nr = len(rs); A = np.zeros(nr); B = np.zeros(nr)
     for mm, acc in ((m, B), (m + 1, A)):
         M = N - mm + 1
         if M < 2: continue
-        emb = np.lib.stride_tricks.sliding_window_view(x, mm)[:M]
-        tot = np.zeros(nr + 1)
-        for i in range(M - 1):
-            d = np.max(np.abs(emb[i+1:] - emb[i]), axis=1)
-            tot += np.bincount(np.searchsorted(rs, d, side='left'), minlength=nr + 1)
-        acc += np.cumsum(tot)[:nr]
+        emb = np.ascontiguousarray(np.lib.stride_tricks.sliding_window_view(x, mm)[:M])
+        t = cKDTree(emb)
+        c = t.count_neighbors(t, np.asarray(rs, float), p=np.inf)
+        acc += (np.asarray(c, float) - M) / 2.0
     return A, B
 
 def rcmse_multi(x, scales, rs, m=2):
@@ -53,7 +56,7 @@ def rcmse_multi(x, scales, rs, m=2):
 # HRV-Complexity root, derived from this file (scripts/ -> public_release/ -> Multicenter/ -> root)
 MC=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE=os.path.dirname(os.path.dirname(MC))
-CAP=2000
+CAP=None   # no cap: full 18:00-22:00 window (KD-tree counts)
 def load(name):
     recs=[]
     if name=='CETRAM':
@@ -81,7 +84,7 @@ def load(name):
             try:
                 st=datetime.strptime(str(inf['Start_Time']).strip(),'%H:%M:%S'); off=st.hour*3600+st.minute*60+st.second
             except Exception: off=9*3600
-            ab=(t+off)%86400; msk=(ab>=57600)&(ab<72000)
+            ab=(t+off)%86400; msk=(ab>=64800)&(ab<79200)   # 18:00-22:00, the pre-specified window
             x=r[msk]; x=x[np.isfinite(x)]
             # Physiological filter, matching compute_japan_window_features.py
             # (RRI_MIN_S=0.3, RRI_MAX_S=2.0). The processed_rri files encode data
@@ -89,7 +92,7 @@ def load(name):
             # otherwise inflate SD by >50x and corrupt r = k x SD.
             x=x[(x>300.0)&(x<2000.0)]
             if len(x)<200: continue
-            recs.append((s,grp[s],x[:CAP]))
+            recs.append((s,grp[s],x if CAP is None else x[:CAP]))
     return recs
 
 KS=np.array([0.05,0.10,0.125,0.15,0.175,0.20,0.25,0.30,0.35,0.40,0.50])
@@ -98,10 +101,23 @@ SC=list(range(1,6)); MS=[1,2,3]; rows=[]
 import sys
 COHORTS=[a for a in sys.argv[1:] if a in ('CETRAM','Cruces','Nagoya')] or ['CETRAM','Cruces','Nagoya']
 OUTNAME='r_sweep.csv' if len(COHORTS)==3 else 'r_sweep_'+'_'.join(COHORTS)+'.csv'
+# Resumable: one part file per (cohort, subject) under data/_rsweep_parts/; time-limited
+# runs (--max-seconds N) stop cleanly and continue on the next call. The final table is
+# written once every subject of the requested cohorts is done; with a single cohort the
+# rows of that cohort replace its rows in data/r_sweep.csv.
+import time
+DATA=os.path.join(MC,'data'); PARTS=os.path.join(DATA,'_rsweep_parts'); os.makedirs(PARTS,exist_ok=True)
+SH=tuple(int(v) for v in sys.argv[sys.argv.index('--shard')+1].split('/')) if '--shard' in sys.argv else (0,1)
+TMAX=float(sys.argv[sys.argv.index('--max-seconds')+1]) if '--max-seconds' in sys.argv else 1e12
+t0=time.time(); complete=True
 for coh in COHORTS:
     recs=load(coh)
     print(f"{coh}: n={len(recs)} medianN={int(np.median([len(x) for _,_,x in recs]))}",flush=True)
     for j,(s,g,x) in enumerate(recs):
+        part=os.path.join(PARTS,f'{coh}_{s}.csv')
+        if os.path.exists(part) or j % SH[1] != SH[0]: continue
+        if time.time()-t0>TMAX: complete=False; break
+        rows=[]
         sd=np.std(x,ddof=1); h=len(x)//2
         rs_all=np.concatenate([KS*sd,RABS]); order=np.argsort(rs_all); rs=rs_all[order]
         inv=np.empty_like(order); inv[order]=np.arange(len(order))
@@ -114,6 +130,18 @@ for coh in COHORTS:
                 rows.append(dict(Cohort=coh,Subject=s,Group=g,m=mm,
                     mode='k' if i<len(KS) else 'abs',
                     level=lab,r_ms=rs[p],SD=sd,N=len(x),cx=f(cur),h1=f(c1),h2=f(c2)))
-        if (j+1)%20==0: print(f"   {j+1}/{len(recs)}",flush=True)
-    pd.DataFrame(rows).to_csv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'data',OUTNAME),index=False)
-print("DONE")
+        pd.DataFrame(rows).to_csv(part,index=False)
+        print(f"   {coh} {s} {time.time()-t0:.0f}s",flush=True)
+    if not complete: break
+if SH[1] > 1 and complete:
+    complete = all(os.path.exists(os.path.join(PARTS,f'{c}_{s}.csv')) for c in COHORTS for s,_,_ in load(c))
+    if not complete: print('shard done; others pending')
+if not complete:
+    print("PAUSE: re-run to continue")
+else:
+    new=pd.concat([pd.read_csv(os.path.join(PARTS,f'{c}_{s}.csv')) for c in COHORTS for s,_,_ in load(c)],ignore_index=True)
+    out=os.path.join(DATA,'r_sweep.csv')
+    if len(COHORTS)<3 and os.path.exists(out):
+        old=pd.read_csv(out); new=pd.concat([old[~old.Cohort.isin(COHORTS)],new],ignore_index=True)
+    new.to_csv(out,index=False)
+    print("DONE ->",out)

@@ -48,6 +48,8 @@ MAX_TAU_PROFILE = 60   # 4-h window supports tau<=70 under N/tau>=200
 OUT_WIN = os.path.join(DATA, "japan_15min_windows.csv")
 OUT_PROF = os.path.join(DATA, "japan_scale_profile.csv")
 FORCE = "--force" in sys.argv
+PROFILE_ONLY = "--profile-only" in sys.argv   # recompute the 18-22 h scale profile only
+NO_PAUSE = "--no-pause" in sys.argv
 
 # ── Scale-profile fidelity options ────────────────────────────────────────────
 # The 15-min windows always use full refined-composite MSE (they are short enough
@@ -72,15 +74,20 @@ if CAP <= 0:
 
 
 def _AB(s, m, r):
+    """Template-match counts (Chebyshev <= r, self-matches excluded) via KD-tree pair
+    counting; identical to the former O(n^2) matrix, which made the uncapped
+    refined-composite profile impractical."""
+    from scipy.spatial import cKDTree
+    s = np.asarray(s, float)
     n = len(s) - m
     if n < 3:
         return 0.0, 0.0
-    X = s[np.arange(n)[:, None] + np.arange(m)[None, :]].astype(np.float32)
-    d = np.abs(X[:, None, :] - X[None, :, :]).max(2)
-    xm = s[np.arange(n) + m].astype(np.float32)
-    d1 = np.maximum(d, np.abs(xm[:, None] - xm[None, :]))
-    iu = np.triu_indices(n, 1)
-    return float((d1[iu] <= r).sum()), float((d[iu] <= r).sum())
+    Xm = np.stack([s[i:i + n] for i in range(m)], 1)
+    Xm1 = np.stack([s[i:i + n] for i in range(m + 1)], 1)
+    tB, tA = cKDTree(Xm), cKDTree(Xm1)
+    B = (tB.count_neighbors(tB, r, p=np.inf) - n) / 2.0
+    A = (tA.count_neighbors(tA, r, p=np.inf) - n) / 2.0
+    return float(A), float(B)
 
 
 def rcmse(sig, r, taumax):
@@ -138,7 +145,7 @@ def main():
     files = sorted(glob.glob(os.path.join(RRI_DIR, "*_RRi.txt")))
 
     win_rows, prof_rows, done_w, done_p = [], [], set(), set()
-    if os.path.exists(OUT_WIN) and not FORCE:
+    if os.path.exists(OUT_WIN) and (PROFILE_ONLY or not FORCE):
         prev = pd.read_csv(OUT_WIN); win_rows = prev.to_dict("records"); done_w = set(prev.Subject)
     if os.path.exists(OUT_PROF) and not FORCE:
         prev = pd.read_csv(OUT_PROF); prof_rows = prev.to_dict("records"); done_p = set(prev.Subject)
@@ -214,7 +221,7 @@ def main():
                 pd.DataFrame(prof_rows).to_csv(OUT_PROF, index=False)
 
         print(f"  {sub} {group:8s}  {time.time()-t0:.0f}s", flush=True)
-        if time.time() - t0 > 145:
+        if not NO_PAUSE and time.time() - t0 > 145:
             print("PAUSE — re-run to continue")
             return
     print(f"done: {len(set(r['Subject'] for r in win_rows))} subjects windowed, "

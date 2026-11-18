@@ -201,6 +201,19 @@ def compute_hrv(rri_ms):
         print(f"    NK2 time-domain error: {e}")
         return None
 
+    # Frequency domain (Welch on the 4-Hz interpolated series) and Poincare SD1/SD2,
+    # so that the conventional-HRV comparison (traditional_hrv_metrics.py, Fig. 8)
+    # uses the same 18:00-22:00 window as the entropy, not the 24-h record.
+    try:
+        fd = nk.hrv_frequency(peaks, sampling_rate=1000, show=False)
+        result.update(fd.iloc[0].to_dict())
+    except Exception as e:
+        print(f"    NK2 frequency-domain error: {e}")
+    d0 = np.diff(np.asarray(rri_ms, dtype=float))
+    sd1 = np.sqrt(0.5) * np.std(d0, ddof=1)
+    sd2 = np.sqrt(max(2 * np.var(rri_ms, ddof=1) - 0.5 * np.var(d0, ddof=1), 0.0))
+    result.update(HRV_SD1=sd1, HRV_SD2=sd2, HRV_SD1SD2=sd1 / sd2 if sd2 > 0 else np.nan)
+
     # DFA via numpy (fast)
     result['DFA_alpha1'] = dfa_alpha(rri_ms, *DFA_ALPHA1_SCALES)
     result['DFA_alpha2'] = dfa_alpha(rri_ms, *DFA_ALPHA2_SCALES)

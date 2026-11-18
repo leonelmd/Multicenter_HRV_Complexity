@@ -60,3 +60,8 @@ figures/Validation/validation_F_hrnorm.csv
 # Produced an early matplotlib draft of Figure 1 (Figure1_alt.png). Figure 1 is
 # now authored in Affinity Designer; figures/Figure1/Figure1.af is the source.
 scripts/generate_figure1.py
+
+# --- intermediates and local backups (2026-11-18) ------------------------------
+data/_rsweep_parts/
+_pre_adjudication_*/
+figures/Validation/_stale_*/

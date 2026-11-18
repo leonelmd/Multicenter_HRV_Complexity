@@ -18,7 +18,16 @@ import figstyle as fs
 fs.apply()
 import seaborn as sns
 from matplotlib.patches import Ellipse
-from scipy.stats import ttest_ind
+from scipy.stats import mannwhitneyu
+
+
+def _mwu(a, b):
+    """Two-sided Mann-Whitney U p value (as in the text and tables)."""
+    return None, mannwhitneyu(a, b, alternative='two-sided').pvalue
+
+
+def _pfmt(p):
+    return 'p<0.001' if p < 0.001 else f'p={p:.3f}'
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='Mean of empty slice')
 
@@ -36,7 +45,9 @@ JAPAN_EVOLUTION = os.path.join(DATA_DIR, "japan_evolution.csv")
 JAPAN_META = os.path.join(DATA_DIR, "japan_metadata.csv")
 
 # Source data paths (for RRi traces)
-CETRAM_RRI_DIR = os.path.join(PROJECT_ROOT, "CETRAM/public_release/data/processed/hrv_signals")
+# Analysed CETRAM series: cleaned Brammer detections (trace-review exclusions applied).
+CETRAM_RRI_DIR = os.path.join(PROJECT_ROOT, "CETRAM/public_release/results/cleaned_detections")
+JAPAN_WINDOW = os.path.join(DATA_DIR, "japan_window_features.csv")
 CRUCES_RRI_DIR = os.path.join(PROJECT_ROOT, "Cruces/public_release/data/processed/RRi")
 NAGOYA_RRI_DIR = os.path.join(PROJECT_ROOT, "Nagoya/public_release/data/processed_rri")
 
@@ -64,7 +75,7 @@ def generate_figure2():
     centers = [
         ('CETRAM\n(Chile)', CHILE_METRICS, CETRAM_RRI_DIR, 'cetram'),
         ('Cruces\n(Spain)', SPAIN_METRICS, CRUCES_RRI_DIR, 'cruces'),
-        ('Nagoya\n(Japan)', JAPAN_META, NAGOYA_RRI_DIR, 'nagoya')
+        ('Nagoya\n(Japan)', JAPAN_WINDOW, NAGOYA_RRI_DIR, 'nagoya')
     ]
     
     for col_idx, (name, metrics_file, rri_dir, center_type) in enumerate(centers):
@@ -72,6 +83,11 @@ def generate_figure2():
         df_metrics = pd.read_csv(metrics_file)
         # Clean column names
         df_metrics.columns = df_metrics.columns.str.strip()
+        if center_type == 'nagoya':
+            # 47 analysed participants (18:00-22:00 window); HR and age from that file,
+            # recording start time from the metadata for the 24-h trace panel.
+            _m = pd.read_csv(JAPAN_META)[['Subject_ID', 'Start_Time']].rename(columns={'Subject_ID': 'Subject'})
+            df_metrics = df_metrics.merge(_m, on='Subject', how='left')
         
         if 'Group' in df_metrics.columns:
             df_metrics['Group'] = df_metrics['Group'].astype(str).str.strip()
@@ -94,11 +110,11 @@ def generate_figure2():
         def load_rri(subject, center_type, rri_dir):
             try:
                 if center_type == 'cetram':
-                    rri_file = os.path.join(rri_dir, f"{subject}_rri.csv")
-                    if os.path.exists(rri_file):
-                        df = pd.read_csv(rri_file)
-                        if 'RRI_ms' in df.columns: return df['RRI_ms'].values
-                        return df.values.flatten()
+                    for g in ('Control', 'PD'):
+                        f = os.path.join(rri_dir, g, f"{subject}_cleaned.csv")
+                        if os.path.exists(f):
+                            pk = pd.read_csv(f)['sample'].dropna().to_numpy(float)
+                            return np.diff(pk)   # fs = 1000 Hz -> ms
                 elif center_type == 'nagoya':
                     rri_file = os.path.join(rri_dir, f"{subject}_RRi.txt")
                     if os.path.exists(rri_file):
@@ -235,9 +251,9 @@ def generate_figure2():
             c_v = df_metrics[df_metrics['Group'] == 'Control']['HR'].dropna()
             p_v = df_metrics[df_metrics['Group'] == 'PD']['HR'].dropna()
             if len(c_v) > 1 and len(p_v) > 1:
-                t, p = ttest_ind(c_v, p_v)
+                t, p = _mwu(c_v, p_v)
                 sig = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else 'n.s.'
-                ax2.text(0.5, 0.9, f'p={p:.3f} ({sig})', transform=ax2.transAxes, ha='center', fontweight='normal', fontsize=12)
+                ax2.text(0.5, 0.9, f'{_pfmt(p)} ({sig})', transform=ax2.transAxes, ha='center', fontweight='normal', fontsize=12)
                 
             ax2.set_ylabel('Mean HR (bpm)', fontsize=12)
             ax2.set_title('Heart Rate Distribution', fontsize=13, fontweight='normal')
@@ -282,9 +298,9 @@ def generate_figure2():
             p_v = df_metrics[df_metrics['Group'] == 'PD'][age_col].dropna()
             
             if len(c_v) > 1 and len(p_v) > 1:
-                t, p = ttest_ind(c_v, p_v)
+                t, p = _mwu(c_v, p_v)
                 sig = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else 'n.s.'
-                ax3.text(0.5, 0.9, f'p={p:.3f} ({sig})', transform=ax3.transAxes, ha='center', fontweight='normal', fontsize=12)
+                ax3.text(0.5, 0.9, f'{_pfmt(p)} ({sig})', transform=ax3.transAxes, ha='center', fontweight='normal', fontsize=12)
             ax3.set_ylabel('Age (years)', fontsize=12)
             ax3.set_title('Age Distribution', fontsize=13, fontweight='normal')
         else:

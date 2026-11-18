@@ -31,6 +31,14 @@ def format_corr_text(r, p):
         return "ρ=n/a (p=n/a)"
     return f"ρ={r:.2f} (p={p:.2f})"
 
+def _nauc(df_mse, scale_range):
+    """Canonical complexity index nAUC = trapz(curve, 1..n) / n (as in the text), not the scale mean."""
+    d = df_mse[df_mse.Scales.isin(scale_range)].sort_values('Scales')
+    return (d.groupby('Subject').MSE
+             .apply(lambda c: np.trapezoid(c.values, np.arange(1, len(c) + 1)) / len(c))
+             .reset_index())
+
+
 def generate_figure6():
     colors = {'Control': '#2E86AB', 'PD': '#D62828'}
     sns.set_style("ticks")
@@ -52,7 +60,7 @@ def generate_figure6():
     # PANELS
     configs = [
         ('A', 'CETRAM', 'chile_mse.csv', 'chile_demographics.csv', 'chile_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'CHILE'),
-        ('B', 'Cruces', 'spain_mse.csv', 'spain_demographics.csv', 'spain_metrics.csv', range(1, 6), '15m Rest (MSE 1-5)', 'SPAIN'),
+        ('B', 'Cruces', 'spain_mse.csv', 'spain_demographics.csv', 'spain_metrics.csv', range(1, 6), '7.4m PPG during rs-fMRI (MSE 1-5)', 'SPAIN'),
         ('C', 'Nagoya (07-11h)', 'japan_morning_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_M'),
         ('D', 'Nagoya (18-22h)', 'japan_window_mse.csv', None, None, range(1, 21), '4h Block (MSE 1-20)', 'JAPAN_A')
     ]
@@ -66,7 +74,7 @@ def generate_figure6():
             df_dem = pd.read_csv(os.path.join(DATA_DIR, dem_file)).rename(columns={'Anon_ID':'Subject'})
             df_met = pd.read_csv(os.path.join(DATA_DIR, met_file))
             hr = (60000.0 / df_met.set_index('Subject')['HRV_MeanNN']).reset_index().rename(columns={'HRV_MeanNN':'HR'})
-            comp = df_mse[df_mse.Scales.isin(scale_range)].groupby('Subject').MSE.mean().reset_index()
+            comp = _nauc(df_mse, scale_range)
             df = pd.merge(pd.merge(comp, df_dem, on='Subject'), hr, on='Subject')
             df['Group'] = df['Group'].str.upper().replace({'CONTROL':'Control', 'PD':'PD', 'PARKINSON':'PD'})
 
@@ -75,17 +83,17 @@ def generate_figure6():
             df_dem = pd.read_csv(os.path.join(DATA_DIR, dem_file))
             df_met = pd.read_csv(os.path.join(DATA_DIR, met_file))
             hr = (60000.0 / df_met.set_index('Subject')['HRV_MeanNN']).reset_index().rename(columns={'HRV_MeanNN':'HR'})
-            comp = df_mse[df_mse.Scales.isin(scale_range)].groupby('Subject').MSE.mean().reset_index()
+            comp = _nauc(df_mse, scale_range)
             # In Spain, df_dem has Group. comp doesn't have it unless we add it. 
             df = pd.merge(pd.merge(comp, df_dem, on='Subject'), hr, on='Subject')
-            df['Group'] = df['Group'].str.upper().replace({'CONTROL':'Control', 'PD':'PD', 'OTHER':'Control'})
+            df['Group'] = df['Group'].str.upper().replace({'CONTROL':'Control', 'PD':'PD', 'OTHER':'Other'})
 
         elif 'JAPAN' in ds_type:
-            win_h = 7 if 'M' in ds_type else 16
-            hr_j = df_j_evo[df_j_evo['Window_start_h'] == win_h][['Subject','HR']].copy()
+            # HR is not plotted here; merging it previously dropped participants
+            # without an evolution-file row (Nagoya 18-22 h PD: 24 of 26).
             df_mse = pd.read_csv(os.path.join(DATA_DIR, mse_file))
-            comp = df_mse[df_mse.Scales.isin(scale_range)].groupby('Subject').MSE.mean().reset_index()
-            df = pd.merge(pd.merge(comp, df_j_meta[['Subject','Group','Age']], on='Subject'), hr_j, on='Subject')
+            comp = _nauc(df_mse, scale_range)
+            df = pd.merge(comp, df_j_meta[['Subject','Group','Age']], on='Subject')
             df['Group'] = df['Group'].replace({'CONTROL':'Control', 'PD':'PD'})
 
         # Unnormalized: see HR_NORMALISATION_ANALYSIS.md / Appendix 5.
@@ -108,7 +116,7 @@ def generate_figure6():
 
         ax.set_title(f"{name}\n{scale_desc}", fontsize=22, fontweight='normal')
         ax.set_xlabel("Age (years)", fontsize=18)
-        ax.set_ylabel("Complexity Index (unnormalized)", fontsize=18)
+        ax.set_ylabel("Complexity index, nAUC (unnormalized)", fontsize=18)
         ax.grid(True, alpha=0.15)
         ax.legend(loc='lower left', fontsize=12)
         sns.despine(ax=ax)

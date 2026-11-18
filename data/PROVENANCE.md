@@ -1,6 +1,6 @@
       # Data Provenance
 
-      Last synced: 2026-11-01 09:57:34
+      Last synced: 2026-11-18 17:54:42
 
       ## Source mapping
 
@@ -28,8 +28,8 @@
         ✓  OK     chile_mse.csv                             (unchanged)
 ✓  OK     chile_metrics.csv                         (unchanged)
 ✓  OK     chile_demographics.csv                    (unchanged)
-→  COPY  spain_mse.csv                             [CHANGED]  Cruces/public_release/results/entropy/sample/MSE_curves_sample.csv
-→  COPY  spain_metrics.csv                         [CHANGED]  Cruces/public_release/results/metrics/HRV_metrics.csv
+✓  OK     spain_mse.csv                             (unchanged)
+✓  OK     spain_metrics.csv                         (unchanged)
 ✓  OK     spain_demographics.csv                    (unchanged)
 ⚠  SKIP   japan_metadata.csv                        (source is OLDER than dest — use --force to override)
 →  DERIVE  japan_window_mse.csv                      (47 subjects, Window 18–22 h)

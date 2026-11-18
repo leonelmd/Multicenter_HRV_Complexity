@@ -3,7 +3,12 @@
 Multicenter Cardiac Autonomic Complexity Study
 Figure Generation Pipeline
 
-Regenerates all manuscript figures (1–7) from data in data/ and figures/Figure7/.
+Regenerates the manuscript figures from data/ (see FIGURE_LEGENDS.md for the mapping to
+manuscript figure numbers) and finishes with verify_manuscript_claims.py.
+Data-producing steps that need the raw per-centre series are run separately:
+compute_spectral_analysis.py, compute_r_sweep.py, compute_nagoya_windows.py,
+compute_irregular_rhythm_flags.py, compute_nagoya_coverage.py, compute_suzuki_incremental.py,
+compute_fig3_inputs.py, and Nagoya/public_release/scripts/compute_4h_windows_nauc.py.
 Figure 7 requires statistical pre-processing; this pipeline runs those steps
 automatically (steps 1–5) before generating the figure.
 
@@ -116,6 +121,13 @@ def main():
          "Appendix 3 — Sensitivity of rcMSE to recording length"),
         ("python scripts/generate_appendix4.py",
          "Appendix 4 — Spectral character, matched noise, and the beat-indexed time base"),
+        ("python scripts/generate_appendix5.py", "Appendix 5 — Heart-rate normalization (Suppl. Fig. S1)"),
+        ("python scripts/generate_appendix6.py", "Appendix 6 — Entropy-parameter sensitivity (Fig. 5)"),
+        ("python scripts/generate_appendix7.py", "Appendix 7 — Cruces in the context of the source study (Suppl. Fig. S3)"),
+        ("python scripts/generate_validation_figure.py", "Validation figure (Suppl. Fig. S8)"),
+        ("python scripts/sync_legends_from_manuscript.py", "Legends from the manuscript captions"),
+        ("python scripts/build_legends_txt.py", "figures/legends.txt"),
+        ("python scripts/verify_manuscript_claims.py", "Check every headline number in the manuscript"),
     ]
 
     for cmd, desc in steps:

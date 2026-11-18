@@ -5,17 +5,15 @@ Appendix 4: Spectral characterisation, comparison against noise, and the nature
 
 Three things this figure establishes.
 
-1. THE SIGNALS ARE NOT WHITE NOISE. All three cohorts have a 1/f-like spectral
-   exponent. CETRAM's rcMSE curve *falls* with scale, which superficially
-   resembles Costa's white-noise example, but its exponent places it far from
-   white noise; the falling direction comes from the limited low-frequency
-   content of a 15-minute recording, not from an absence of structure.
+1. NONE OF THE COHORTS IS WHITE NOISE. Spectral exponents (beat domain) are
+   computed on the analysed series by compute_spectral_analysis.py.
 
-2. THERE IS REAL PHYSIOLOGY BEYOND THE SPECTRUM. Comparing each subject against
-   1/f^beta noise matched on length, exponent and standard deviation: real RR
-   series are significantly LESS entropic than their spectrally matched
-   surrogates at every scale in every cohort. A power-law spectrum alone does
-   not reproduce the data.
+2. SPECTRUM VERSUS STRUCTURE. Each subject is compared with 1/f^beta noise matched on
+   length, exponent and standard deviation. In the 24-h cohort the real series is
+   far less entropic than its matched noise; in the two short resting cohorts real and
+   matched curves are close (2026-11-18 recomputation on the Brammer / standardized
+   series; the earlier "less entropic in every cohort" result came from the
+   superseded Pan-Tompkins series).
 
 3. THE RR SERIES IS NOT A UNIFORMLY SAMPLED SIGNAL. Its index is beat number,
    not time, and the interval between successive samples *is* the value being
@@ -114,7 +112,7 @@ def main():
     ax.set_xticks(range(3)); ax.set_xticklabels(COH)
     ax.set_ylabel("spectral exponent $\\beta$  (beat domain)")
     ax.set_xlim(-0.6, 2.5); ax.set_ylim(-0.45, 2.35)
-    ax.set_title("All three cohorts are 1/f-like,\nnone is white noise",
+    ax.set_title("Spectral exponent by cohort\n(none is white noise)",
                  fontweight="normal", fontsize=12)
     ax.grid(alpha=.2, axis="y")
 
@@ -159,8 +157,8 @@ def main():
                               median=np.median(a[ok]), q1=np.median(b[ok]),
                               q3=wilcoxon(a[ok], b[ok])[1]))
     ax.set_xlabel("scale $\\tau$ (beats)"); ax.set_ylabel("sample entropy")
-    ax.set_title("Real RR is LESS entropic than noise\nwith the same spectrum "
-                 "(all p<0.05, mostly p<1e-8)", fontweight="normal", fontsize=12)
+    ax.set_title("Real RR against noise with the same spectrum\n"
+                 "(1/f$^\\beta$, matched on length, $\\beta$ and SD)", fontweight="normal", fontsize=12)
     ax.legend(fontsize=7, frameon=False, ncol=1); ax.grid(alpha=.2)
 
     # ---------- E: the RR time base ----------

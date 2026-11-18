@@ -12,15 +12,15 @@ across three independent cohorts and three recording modalities.
 
 | Centre | Signal | Recording | Analysed n | Controls | Source publication |
 |---|---|---|---|---|---|
-| **CETRAM**, Santiago, Chile | ECG, 1000 Hz | ~15 min supine rest | **73** (43 C / 30 PD) | healthy | — |
+| **CETRAM**, Santiago, Chile | ECG, 1000 Hz | ~15 min rest | **69** (42 C / 27 PD; 4 excluded after trace review) | healthy | — |
 | **Cruces**, Bilbao, Spain | finger PPG, 500 Hz | **7.40 min**, during resting-state fMRI | **52** (21 C / 31 PD) | healthy | Iniguez et al. 2022 |
-| **Nagoya**, Japan | ECG, wearable chest strap (POLAR) | ~24 h ambulatory | **45–50** (21–23 C / 24–27 PD) | **disease controls** | Suzuki et al. 2022 |
+| **Nagoya**, Japan | ECG, wearable chest strap (POLAR) | ~24 h in hospital; 18:00–22:00 window pre-specified | **47** (21 C / 26 PD) | **disease controls** | Suzuki et al. 2022 |
 
 Notes that matter for interpretation:
 
 - **Nagoya controls are disease controls**, not healthy volunteers — 12 essential tremor and 11 investigated for numbness/dizziness/light-headedness with no abnormality found. Nagoya effect sizes are therefore against a harder comparator than the other two cohorts.
 - **Cruces carries six records labelled `Other`** (`A01_1, A03_2, A05_2, A09, D01, D05`) with no diagnosis. They are **excluded from all primary analyses**; the published cohort of Iniguez et al. is exactly 31 PD + 21 healthy controls, which matches our Control/PD counts. A sensitivity analysis including them is reported in the manuscript.
-- Nagoya n varies by analysis: 50 subjects have a full record, 45 have a usable 16–20 h window, 43 have complete 24-h HRV.
+- Nagoya n varies by analysis: 50 subjects have a full record (mixed model over all 15-min windows), 47 cover the pre-specified 18:00–22:00 window (primary analysis), 45 the 16:00–20:00 alternative, 39 the 07:00–11:00 window, and 42 reach the 4000-beat length ladder.
 
 ---
 
@@ -30,7 +30,7 @@ Notes that matter for interpretation:
 
 1. Compute refined composite multiscale entropy (Wu et al. 2014) on the RR-interval series, scales τ = 1…20.
 2. The tolerance is `r = 0.2 × SD(RRi)`, computed **once from the original series and held constant across every scale**.
-3. Summarise with `nAUC = trapz(1..n, curve) / n` over the reliable scale range, optionally divided by mean HR.
+3. Summarise with `nAUC = trapz(1..n, curve) / n` over the reliable scale range (unnormalized; HR enters models as a covariate).
 
 ### Why fixed r is not a detail
 
@@ -42,7 +42,12 @@ white-noise entropy no longer decaying and 1/f noise rising.
 
 An earlier version of this pipeline recomputed `r` per scale. It has been
 corrected throughout and a regression test (`scripts/julia/test_entropy.jl`)
-now fails loudly if the defect is reintroduced.
+now fails loudly if the defect is reintroduced. The Nagoya 4-h window curves
+(`Nagoya/public_release/calculations/japan_4h_mse_curves.csv`, source of
+`japan_window_mse.csv`, `japan_morning_mse.csv`, `japan_afternoon_mse.csv` and
+`japan_evolution.csv`) had not been regenerated after that fix; they were recomputed
+with fixed `r` on 2026-11-18 by `Nagoya/public_release/scripts/compute_4h_windows_nauc.py`
+(Python port of the corrected Julia script).
 
 ### Scale ranges
 
@@ -50,12 +55,12 @@ Reliability limit `N/τ ≥ 200`, validated independently by split-half reliabil
 
 | Cohort | beats | reliable τ | index used |
 |---|---|---|---|
-| CETRAM | ~1088 | ≤ 5 | nAUC(1–5) |
+| CETRAM | ~1112 | ≤ 5 | nAUC(1–5) |
 | Cruces | ~498 | ≤ 2 | nAUC(1–5) — see caveat |
-| Nagoya | ~14 000 (4 h window) | ≤ 20 (up to 70 permitted) | nAUC(1–5) and nAUC(1–20) |
+| Nagoya | ~16 000 (18:00–22:00 window) | ≤ 20 (up to 70 permitted) | nAUC(1–20) (primary); nAUC(1–5) reported alongside |
 
 All indices are reported **unnormalized**. Dividing by mean heart rate was tested
-and rejected: the index scales as HR^b with b = −0.09 / −0.70 / −1.31 across
+and rejected: the index scales as HR^b with b = −0.68 / −0.43 / −0.65 across
 cohorts, so a ratio moves it further from HR-independence, and the AUC it appears
 to gain is heart rate's own group signal. Where adjustment is wanted, HR is entered
 as a covariate. See `HR_NORMALISATION_ANALYSIS.md` and Appendix 5.
@@ -157,7 +162,7 @@ appendices, the validation figure, and all statistics.
 |---|---|
 | Figure 1 | A graphical abstract authored in Affinity Designer. The source is tracked as `figures/Figure1/Figure1.af`; there is no scripted stage for it. |
 | Figure 2 RRi trace panels | Raw RR series are not shared. Five anonymised CETRAM traces are in `data/sample_signals/` for demonstration; the trace panels render empty without the rest. |
-| **Figure 8** | **Depends on individual-level clinical records that are not shared.** `deidentified_clinical_consolidated.xlsx` holds 28 PD patients × 65 clinical variables; the cell sizes make re-identification a real risk and no k-anonymity assessment has been done. The figure and its correlation table are released so the results are inspectable, but the underlying data are not. **Request access from the corresponding author** — see [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md). |
+| **Figure 8** | **Depends on individual-level clinical records that are not shared.** `deidentified_clinical_consolidated.xlsx` holds the CETRAM PD clinical variables; the cell sizes make re-identification a real risk and no k-anonymity assessment has been done. The figure and its correlation table are released so the results are inspectable, but the underlying data are not. **Request access from the corresponding author** — see [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md). |
 | rcMSE from raw signal | Requires the per-centre raw RRi. The curves in `data/*_mse.csv` are the shipped starting point. |
 | Deep-learning benchmark | `benchmark_dl_loco.py` needs raw RRi and PyTorch. |
 

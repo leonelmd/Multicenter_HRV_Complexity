@@ -184,12 +184,14 @@ def main():
         g = t[t.level >= 0.125]
         rows.append([c, f"{pub:.3f}", f"{g.AUC.min():.3f}–{g.AUC.max():.3f}"])
     tb = ax.table(cellText=rows,
-                  colLabels=["cohort", "published\n$k$=0.2, $m$=2", "range,\nusable grid"],
+                  colLabels=["cohort", "adopted\n$k$=0.2, $m$=2", "range,\nusable grid"],
                   cellLoc="center", loc="upper center")
     tb.auto_set_font_size(False); tb.set_fontsize(8.5); tb.scale(1, 1.85)
     for j in range(3):
         tb[0, j].set_facecolor("#E8E8E8"); tb[0, j].set_text_props(fontweight="normal")
 
+    ax.text(0.5, 0.18, "nAUC over scales 1-5 in every cohort\n(Nagoya: full 18:00-22:00 window)",
+            transform=ax.transAxes, ha="center", va="top", fontsize=8, color="#555")
     for ext in ("png", "svg"):
         fig.savefig(os.path.join(OUT, f"FigureAppendix6.{ext}"), dpi=200, bbox_inches="tight")
     print(f" -> {os.path.join(OUT, 'FigureAppendix6.png')}")

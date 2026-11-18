@@ -92,7 +92,7 @@ def draw_panel_C(axes_row):
 
     configs = [
         ('Chile',          'CETRAM\n(15-min rest)', 5),
-        ('Spain',          'Cruces\n(15-min rest)', 5),
+        ('Spain',          'Cruces\n(7.4-min PPG, rs-fMRI)', 5),
         ('Japan-afternoon','Nagoya (18–22 h)\n(4-hour block)', 20),
     ]
 
@@ -163,7 +163,7 @@ def draw_panel_E(ax):
 
     ax.axvline(0, color='#444', lw=1, ls='--', zorder=1)
     ax.set_yticks(ys); ax.set_yticklabels(metrics, fontsize=9)
-    ax.set_xlabel('Spearman ρ  (rcMSE-AUC vs HRV,  Pooled n=152)', fontsize=9)
+    ax.set_xlabel(f'Spearman ρ  (rcMSE-AUC vs HRV,  Pooled n={_n_pooled()})', fontsize=9)
     ax.set_title('Confound Correction\n(Age & Sex Adjustment)', fontsize=11, fontweight='normal')
     h1 = plt.Line2D([0],[0], marker='o', color='gray', mfc='white', mew=2, ms=8, ls='')
     h2 = plt.Line2D([0],[0], marker='o', color='gray', mfc='gray',  ms=8, ls='')
@@ -186,7 +186,7 @@ def draw_panel_F(axes_3):
                 for m in metrics]
 
     for ax, vals, xlabel, title in [
-        (axes_3[0], raw_rho,  'Raw Spearman ρ\n(pooled n=152)', 'Raw correlation'),
+        (axes_3[0], raw_rho,  f'Raw Spearman ρ\n(pooled n={_n_pooled()})', 'Raw correlation'),
         (axes_3[1], part_rho, 'Partial ρ\n(age + sex adj.)',    'Age/sex-adjusted'),
     ]:
         for i, (v, c) in enumerate(zip(vals, bar_cols)):
@@ -222,6 +222,11 @@ def draw_panel_F(axes_3):
 
 
 # ── Panel G : Scale anatomy line plots ────────────────────────────────────────
+def _n_pooled():
+    """Pooled sample of the correlation analysis (subjects with complexity and HRV)."""
+    return len(pd.read_csv(os.path.join(RESULTS, 'consolidated_metrics_no_imputation.csv')))
+
+
 def draw_panel_G(axes_2):
     sc = pd.read_csv(os.path.join(RESULTS, 'scale_metric_correlations.csv'))
     key_metrics = ['pNN50', 'RMSSD', 'LF_norm', 'SDNN', 'DFA_alpha1']
@@ -235,11 +240,13 @@ def draw_panel_G(axes_2):
     ls_map = {'pNN50':'-','RMSSD':'--','LF_norm':'-.','SDNN':':'
               ,'DFA_alpha1':(0,(3,1,1,1))}
 
-    datasets = [('Japan-afternoon', 'Nagoya (18–22 h)  n=38 — all scales reliable', None),
-                ('Chile',           'CETRAM  n=71 — reliable up to scale 5',       5)]
+    datasets = [('Japan-afternoon', 'Nagoya (18–22 h)  n={n} — all scales reliable', None),
+                ('Chile',           'CETRAM  n={n} — reliable up to scale 5',       5)]
 
     for ax, (ds, title, max_rel) in zip(axes_2, datasets):
         sub = sc[sc['Dataset'] == ds]
+        ncol = next((c for c in ('N', 'n', 'n_subjects') if c in sub.columns), None)
+        title = title.format(n=int(sub[ncol].max()) if ncol else '?')
         if max_rel is not None:
             ax.axvspan(max_rel + 0.5, 20.5, facecolor='#dddddd', alpha=0.5,
                        zorder=0, label='Unreliable (short recording)')

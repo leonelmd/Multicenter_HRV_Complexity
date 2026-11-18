@@ -179,7 +179,7 @@ def load_data():
     # nAUC over scales 1–5 (reliable range for ~15-min recordings)
     scale_cols = [f'S{i}' for i in range(1, 6)]
     mse_wide['nAUC_1_5'] = mse_wide[scale_cols].apply(
-        lambda r: np.trapz(r.values, x=list(range(1, 6))), axis=1)
+        lambda r: np.trapezoid(r.values, x=list(range(1, 6))) / 5.0, axis=1)  # canonical nAUC = trapz/n
 
     # HR from chile_metrics (HRV_MeanNN → HR)
     if 'Subject' in metr.columns and 'HRV_MeanNN' in metr.columns:
@@ -462,7 +462,7 @@ def generate_figure8():
 
         rho, p, _, _ = spearman_boot(x_v, y_v, n_boot=500)
         p_label = f'p={p:.3f}' if p >= 0.001 else 'p<0.001'
-        ax.set_title(f'({"BCDE"[idx]}) {var_label}', fontsize=10.5,
+        ax.set_title(f'({"CDEF"[idx]}) {var_label}', fontsize=10.5,
                       fontweight='normal')
         ax.text(0.96, 0.96, f'ρ = {rho:.2f}\n{p_label}\nn = {mask.sum()}',
                  transform=ax.transAxes, ha='right', va='top', fontsize=9,
@@ -513,7 +513,7 @@ def generate_figure8():
     ax_C.set_xticks(range(1, len(hy_stages) + 1))
     ax_C.set_xticklabels(hy_labels, fontsize=8.5)
     ax_C.set_ylabel('Complexity Index (rcMSE nAUC)', fontsize=10)
-    ax_C.set_title('(F) Complexity by H&Y Stage', fontsize=11, fontweight='normal')
+    ax_C.set_title('(G) Complexity by H&Y Stage', fontsize=11, fontweight='normal')
 
     # Trend line (Spearman over individual subjects)
     rho_hy, p_hy = stats.spearmanr(
@@ -568,7 +568,7 @@ def generate_figure8():
     ax_D.set_xticklabels([nm.replace(' ', '\n') for nm in nm_plot],
                           fontsize=9, rotation=0)
     ax_D.set_ylabel('Complexity Index (rcMSE nAUC)', fontsize=10)
-    ax_D.set_title('(G) Complexity by Non-Motor Symptom Presence',
+    ax_D.set_title('(H) Complexity by Non-Motor Symptom Presence',
                     fontsize=11, fontweight='normal')
 
     from matplotlib.patches import Patch
@@ -602,7 +602,7 @@ def generate_figure8():
 
     ax_E1.set_xlabel('LED Total (mg/day)', fontsize=10)
     ax_E1.set_ylabel('Complexity Index\n(rcMSE nAUC)', fontsize=10)
-    ax_E1.set_title('(H) Complexity vs. LEDD', fontsize=11, fontweight='normal')
+    ax_E1.set_title('(I) Complexity vs. LEDD', fontsize=11, fontweight='normal')
 
     # Partial ρ LEDD controlling for disease duration
     ax_E2 = fig.add_subplot(gs_E[1])
@@ -632,7 +632,7 @@ def generate_figure8():
                         f'{r:.2f}', ha='center', fontsize=10, fontweight='normal')
 
         ax_E2.set_ylabel('Spearman ρ', fontsize=10)
-        ax_E2.set_title('(I) LEDD: raw vs\nduration-adjusted ρ',
+        ax_E2.set_title('(J) LEDD: raw vs\nduration-adjusted ρ',
                          fontsize=11, fontweight='normal')
         ax_E2.set_ylim(-0.8, 0.6)
         ax_E2.tick_params(labelsize=9)
@@ -671,8 +671,8 @@ def generate_figure8():
 
     fig.text(0.5, 0.962,
              f'Panels A–B: Spearman ρ between rcMSE complexity index and CISI-PD subscales, disease duration, and non-motor burden. '
-             f'Panels C–D: Group comparisons by H&Y stage and non-motor symptom presence. '
-             f'Panel E: LEDD subgroup. '
+             f'Panels C–F: scatter plots. Panels G–H: group comparisons by H&Y stage and non-motor symptom presence. '
+             f'Panels I–J: LEDD subgroup. '
              f'n = {N_AVAIL}/{N_TOTAL} PD patients with clinical data'
              + (f' (no clinical record: {MISSING})' if MISSING else '') + '. '
              f'All PD on levodopa; time of last dose before the ECG unknown.',

@@ -116,7 +116,8 @@ spain_mse = load_mse_scale1(DATA / "spain_mse.csv")
 
 spain = spain_m.rename(columns={**NK2_MAP, **NK2_ONLY_MAP})
 spain["Center"] = "Spain"
-# 'Other' treated as Control per project convention
+# The six 'Other' records are excluded, as in the primary analysis (Methods).
+spain = spain[spain["Group"].str.strip().str.lower().isin(["pd", "control"])].copy()
 spain["Group"] = spain["Group"].str.strip().str.lower().map(
     lambda g: "PD" if g == "pd" else "Control"
 )
@@ -129,15 +130,15 @@ spain = spain.merge(spain_mse[["Subject", "SampEn"]], on="Subject", how="left")
 # ---------------------------------------------------------------------------
 # Load Japan
 # ---------------------------------------------------------------------------
-japan_m = pd.read_csv(DATA / "japan_recalc_metrics.csv")
+# Same 18:00-22:00 window as the entropy (47 participants), not the 24-h record.
+japan_m = pd.read_csv(DATA / "japan_window_features.csv")
 japan_mse = load_mse_scale1(DATA / "japan_window_mse.csv")
 
 japan = japan_m.rename(columns=NK2_MAP)
 # Japan recalc DFA column differs
 japan["DFA_alpha1"] = japan_m[JAPAN_DFA_COL]
-japan["DFA_alpha2"] = np.nan     # Not available in recalc file
-japan["SD1SD2"] = np.nan         # Not in recalc file
-japan["SDANN"] = japan_m.get("HRV_SDANN5", np.nan)  # 24-h recording: valid
+japan["DFA_alpha2"] = japan_m["DFA_alpha2"]
+japan["SDANN"] = japan_m.get("HRV_SDANN5", np.nan)
 japan["Center"] = "Japan"
 japan["Group"] = normalize_group(japan["Group"])
 japan["PPG_bias"] = False        # ECG-derived
@@ -268,3 +269,31 @@ for center in centers:
     sampen_ok = cdf["SampEn"].notna().sum()
     print(f"{center}: n={len(cdf)}  PPG_bias={ppg}  SDANN_populated={sdann_ok}"
           f"  DFA_alpha2_populated={dfa2_ok}  SampEn_populated={sampen_ok}")
+
+
+# ---------------------------------------------------------------------------
+# Complexity index per subject -> figures/Figure7/consolidated_metrics_no_imputation.csv
+# (read by complexity_correlation_analysis.py, incremental_value_analysis.py and
+# cross_dataset_consistency.py). Previously a hand-maintained file that predated the
+# CETRAM trace-review exclusions and the Nagoya fixed-tolerance recomputation; now
+# rebuilt here from the released MSE curves: nAUC over scales 1-5 (CETRAM, Cruces)
+# and 1-20 (Nagoya 18:00-22:00), as in the primary analysis.
+# ---------------------------------------------------------------------------
+def _nauc_table(path, hi, center):
+    m = pd.read_csv(path)
+    m = m[(m["Scales"] >= 1) & (m["Scales"] <= hi)].sort_values("Scales")
+    m["Group"] = normalize_group(m["Group"].astype(str))
+    t = (m.groupby(["Subject", "Group"])["MSE"]
+           .apply(lambda v: np.trapezoid(v.values, np.arange(1, len(v) + 1)) / len(v))
+           .rename("Complexity").reset_index())
+    t["Center"] = center
+    return t[t["Group"].isin(["Control", "PD"])]
+
+
+cons = pd.concat([_nauc_table(DATA / "chile_mse.csv", 5, "Chile"),
+                  _nauc_table(DATA / "spain_mse.csv", 5, "Spain"),
+                  _nauc_table(DATA / "japan_window_mse.csv", 20, "Japan")], ignore_index=True)
+cons = cons[cons["Subject"].isin(combined["Subject"])]
+cons[["Subject", "Center", "Group", "Complexity"]].to_csv(
+    RESULTS / "consolidated_metrics_no_imputation.csv", index=False)
+print(f"Complexity table: {len(cons)} subjects -> consolidated_metrics_no_imputation.csv")
