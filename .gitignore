@@ -65,3 +65,5 @@ scripts/generate_figure1.py
 data/_rsweep_parts/
 _pre_adjudication_*/
 figures/Validation/_stale_*/
+data/_artefact_parts/
+data/_artefact_inj/
