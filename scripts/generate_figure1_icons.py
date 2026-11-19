@@ -25,12 +25,17 @@ def icon_ecg(col):
     return svg(b)
 
 def icon_mri(col):
-    b = (f'<rect x="8" y="10" width="62" height="64" rx="14" fill="{INK}"/>'
-         f'<circle cx="39" cy="42" r="19" fill="white"/>'
-         f'<rect x="22" y="52" width="70" height="7" rx="3.5" fill="{INK}" stroke="white" stroke-width="2"/>'
-         f'<rect x="20" y="74" width="5" height="16" rx="2" fill="{INK}"/><rect x="52" y="74" width="5" height="16" rx="2" fill="{INK}"/>')
-    b += f'<circle cx="78" cy="78" r="15" fill="{col}" stroke="white" stroke-width="3"/>'
-    xs, ys = ppg(69, 84, 18, 11, 2); b += pl(xs, ys, "white", 2.6)
+    # fingertip pulse oximeter (the PPG): finger inserted from below into the clip, pulse wave on its
+    # display; small MRI badge for the scanner context
+    b = (f'<path d="M30 96 L30 44 Q30 30 42 30 Q54 30 54 44 L54 96 Z" fill="{INK}"/>'
+         f'<rect x="14" y="36" width="56" height="34" rx="9" fill="{col}"/>'
+         f'<rect x="20" y="42" width="44" height="22" rx="4" fill="white"/>'
+         f'<path d="M30 82 L54 82" stroke="white" stroke-width="2" stroke-linecap="round"/>'
+         f'<path d="M70 53 Q84 53 84 68 Q84 86 92 92" fill="none" stroke="{INK}" stroke-width="3" stroke-linecap="round"/>')
+    xs, ys = ppg(23, 60, 38, 14, 2); b += pl(xs, ys, INK, 2.6)
+    b += (f'<circle cx="82" cy="16" r="13" fill="white" stroke="{INK}" stroke-width="3"/>'
+          f'<rect x="74.5" y="9" width="15" height="13" rx="3" fill="{INK}"/><circle cx="82" cy="15.5" r="4" fill="white"/>'
+          f'<rect x="76" y="16.5" width="12" height="2" fill="{INK}"/>')
     return svg(b)
 
 def icon_strap(col):

@@ -35,5 +35,5 @@ versions use light grey instead.
 | File | Cohort |
 |---|---|
 | icon_ecg_rest.svg | Santiago: bust with two chest electrodes and an ECG trace (resting ECG) |
-| icon_ppg_fmri.svg | Bilbao: fingertip pulse sensor showing a pulse wave, small MRI badge (finger PPG during fMRI) |
+| icon_ppg_fmri.svg | Bilbao: hand with the index finger in a pulse sensor showing a pulse wave, small MRI badge (finger PPG during fMRI) |
 | icon_chest_strap_24h.svg | Nagoya: bust with chest strap and sensor pod, clock badge (24-h recording) |
