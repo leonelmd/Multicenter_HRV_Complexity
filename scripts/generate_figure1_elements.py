@@ -27,6 +27,7 @@ BASE = os.path.dirname(HERE); D = os.path.join(BASE, "data")
 OUT = os.path.join(BASE, "figures", "Figure1", "elements"); os.makedirs(OUT, exist_ok=True)
 DET = os.path.join(os.path.dirname(os.path.dirname(BASE)), "CETRAM/public_release/results/cleaned_detections")
 C_COL, P_COL, INK, GREY = "#4C72B0", "#C44E52", "#2B2B2B", "#8C8C8C"
+NEUTRAL = "#9A9A9A"   # schematic elements: never the Control/PD colours
 plt.rcParams.update({"svg.fonttype": "none", "font.family": "sans-serif",
                      "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"], "font.size": 9,
                      "axes.spines.top": False, "axes.spines.right": False,
@@ -69,8 +70,8 @@ save(fig, "rr_input.svg")
 # 2. branch A: distribution of the intervals
 fig, ax = plt.subplots(figsize=(1.9, 1.3))
 mu, sd = xc_full.mean(), xc_full.std(ddof=1)
-ax.axvspan(mu - sd, mu + sd, color=C_COL, alpha=0.15, lw=0)
-ax.hist(xc_full, bins=30, color=C_COL, alpha=0.8, edgecolor="white", lw=0.4)
+ax.axvspan(mu - sd, mu + sd, color=NEUTRAL, alpha=0.18, lw=0)
+ax.hist(xc_full, bins=30, color=NEUTRAL, edgecolor="white", lw=0.4)
 ax.axvline(mu, color=INK, lw=0.8)
 ax.annotate("", xy=(mu + sd, ax.get_ylim()[1] * 0.92), xytext=(mu - sd, ax.get_ylim()[1] * 0.92),
             arrowprops=dict(arrowstyle="<->", lw=0.8, color=INK))
@@ -82,7 +83,7 @@ save(fig, "A_variability.svg")
 fig, axs = plt.subplots(3, 1, figsize=(2.3, 2.2), sharex=True)
 for ax, tau in zip(axs, (1, 3, 5)):
     L = len(xc) // tau; cg = xc[:L * tau].reshape(L, tau).mean(1)
-    ax.step(np.arange(L) * tau, cg, where="post", color=P_COL if tau > 1 else INK, lw=0.9)
+    ax.step(np.arange(L) * tau, cg, where="post", color=INK, lw=0.9)
     ax.set_ylim(xc.min() - 10, xc.max() + 10); bare(ax)
     ax.text(-0.02, 0.5, f"τ = {tau}", transform=ax.transAxes, ha="right", va="center", fontsize=8)
 save(fig, "B_coarse_graining.svg")
@@ -93,7 +94,7 @@ fig, ax = plt.subplots(figsize=(1.7, 1.3))
 ax.plot(range(1, 6), e, "o-", color=INK, ms=3.5, lw=1)
 ax.set_xticks(range(1, 6)); ax.set_xlabel("scale τ", fontsize=8); ax.set_ylabel("sample entropy", fontsize=8)
 ax.set_ylim(0, max(e) * 1.15)
-ax.fill_between(range(1, 6), e, 0, color=C_COL, alpha=0.15, lw=0)
+ax.fill_between(range(1, 6), e, 0, color=NEUTRAL, alpha=0.25, lw=0)
 ax.text(3, max(e) * 0.35, "area =\ncomplexity index", ha="center", va="center", fontsize=7)
 save(fig, "B_entropy_curve.svg")
 
