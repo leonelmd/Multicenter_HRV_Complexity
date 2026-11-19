@@ -28,12 +28,12 @@ Pins use the cohort colours of scripts/figstyle.py: Santiago amber #E69F00, Bilb
 Natural Earth needs no attribution; "Made with Natural Earth" is customary if you want to credit it.
 
 ## Modality icons
-Original line icons drawn for this figure (no third-party artwork; free to use and modify).
+Original filled pictograms drawn for this figure (no third-party artwork; free to use and modify).
 `scripts/generate_figure1_icons.py`. Sensors are filled with the cohort colour; `*_neutral.svg`
 versions use light grey instead.
 
 | File | Cohort |
 |---|---|
-| icon_ecg_rest.svg | Santiago: chest electrodes and an ECG monitor (resting single-lead ECG) |
-| icon_ppg_fmri.svg | Bilbao: MRI scanner, finger clip and pulse wave (finger PPG during fMRI) |
-| icon_chest_strap_24h.svg | Nagoya: chest strap with sensor pod and a 24 h badge |
+| icon_ecg_rest.svg | Santiago: bust with two chest electrodes and an ECG trace (resting ECG) |
+| icon_ppg_fmri.svg | Bilbao: MRI scanner with a pulse-wave badge (finger PPG during fMRI) |
+| icon_chest_strap_24h.svg | Nagoya: bust with chest strap and sensor pod, clock badge (24-h recording) |
