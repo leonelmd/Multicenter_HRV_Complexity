@@ -26,3 +26,14 @@ Counts for the cohort labels: Santiago 42 C / 27 PD (15-min ECG); Bilbao 21 C / 
 
 Pins use the cohort colours of scripts/figstyle.py: Santiago amber #E69F00, Bilbao olive #7F7F00, Nagoya cyan #17BECF, all chosen away from the Control (#4C72B0) and PD (#C44E52) colours and checked for colour-vision deficiency; land is neutral grey (#CFCFCF).
 Natural Earth needs no attribution; "Made with Natural Earth" is customary if you want to credit it.
+
+## Modality icons
+Original line icons drawn for this figure (no third-party artwork; free to use and modify).
+`scripts/generate_figure1_icons.py`. Sensors are filled with the cohort colour; `*_neutral.svg`
+versions use light grey instead.
+
+| File | Cohort |
+|---|---|
+| icon_ecg_rest.svg | Santiago: chest electrodes and an ECG monitor (resting single-lead ECG) |
+| icon_ppg_fmri.svg | Bilbao: MRI scanner, finger clip and pulse wave (finger PPG during fMRI) |
+| icon_chest_strap_24h.svg | Nagoya: chest strap with sensor pod and a 24 h badge |
