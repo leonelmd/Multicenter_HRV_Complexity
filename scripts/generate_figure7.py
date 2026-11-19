@@ -163,8 +163,8 @@ def draw_panel_E(ax):
 
     ax.axvline(0, color='#444', lw=1, ls='--', zorder=1)
     ax.set_yticks(ys); ax.set_yticklabels(metrics, fontsize=9)
-    ax.set_xlabel(f'Spearman ρ  (rcMSE-AUC vs HRV,  Pooled n={_n_pooled()})', fontsize=9)
-    ax.set_title('Confound Correction\n(Age & Sex Adjustment)', fontsize=11, fontweight='normal')
+    ax.set_xlabel(f'Spearman ρ  (complexity vs HRV, pooled within-cohort z, n={_n_pooled()})', fontsize=9)
+    ax.set_title('Covariate adjustment\n(age; sex where available)', fontsize=11, fontweight='normal')
     h1 = plt.Line2D([0],[0], marker='o', color='gray', mfc='white', mew=2, ms=8, ls='')
     h2 = plt.Line2D([0],[0], marker='o', color='gray', mfc='gray',  ms=8, ls='')
     ax.legend([h1, h2], ['Raw ρ', 'Partial ρ (adj.)'],
@@ -186,8 +186,8 @@ def draw_panel_F(axes_3):
                 for m in metrics]
 
     for ax, vals, xlabel, title in [
-        (axes_3[0], raw_rho,  f'Raw Spearman ρ\n(pooled n={_n_pooled()})', 'Raw correlation'),
-        (axes_3[1], part_rho, 'Partial ρ\n(age + sex adj.)',    'Age/sex-adjusted'),
+        (axes_3[0], raw_rho,  f'Spearman ρ, within-cohort z\n(pooled n={_n_pooled()})', 'Unadjusted'),
+        (axes_3[1], part_rho, 'Partial ρ\n(age + cohort adj.)',    'Adjusted'),
     ]:
         for i, (v, c) in enumerate(zip(vals, bar_cols)):
             ax.barh(i, v, color=c, alpha=0.75, height=0.65)

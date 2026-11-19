@@ -16,6 +16,7 @@ regression (computed on-the-fly for the interpretation table).
 
 import warnings
 import numpy as np
+from pooling import within_center_z
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -196,7 +197,7 @@ def make_forest_plot():
         ax.set_yticks(list(y_offsets.values()))
         ax.set_yticklabels(ds_order, fontsize=9)
         ax.set_xlabel("Spearman ρ", fontsize=9)
-        ax.set_title(KEY_LABELS[metric], fontsize=8.5, fontweight="bold")
+        ax.set_title(KEY_LABELS[metric], fontsize=8.5, fontweight="bold", pad=16)
         ax.tick_params(axis="x", labelsize=8)
 
         # Light background shading
@@ -212,7 +213,7 @@ def make_forest_plot():
     fig.legend(handles=handles, loc="lower center", ncol=6, fontsize=8,
                bbox_to_anchor=(0.5, -0.10))
     fig.suptitle(
-        "Cross-Dataset Consistency: Spearman ρ between rcMSE-AUC and Key HRV Metrics\n"
+        "Cross-Dataset Consistency: Spearman ρ between the complexity index and key HRV metrics\n"
         "Error bars = bootstrap 95% CI  ·  * q<0.05  ** q<0.01  *** q<0.001 (BH-FDR)",
         fontsize=11, y=1.06,
     )
@@ -234,7 +235,7 @@ def build_interpretation_table(df: pd.DataFrame) -> pd.DataFrame:
     scale_corr = pd.read_csv(RESULTS / "scale_metric_correlations.csv")
 
     # Pooled confounders (same as hierarchical regression pooled model)
-    df_pool = df.copy()
+    df_pool = within_center_z(df, [c for c in df.columns if c not in ("Subject", "Center", "Group", "Group_bin", "Age", "Sex", "Gender") and pd.api.types.is_numeric_dtype(df[c])])
     df_pool["Center_Spain"] = (df_pool["Center"] == "Spain").astype(float)
     df_pool["Center_Japan"] = (df_pool["Center"] == "Japan").astype(float)
     conf_cols_pool = ["Age", "Center_Spain", "Center_Japan"]

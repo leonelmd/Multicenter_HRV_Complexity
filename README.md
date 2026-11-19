@@ -13,7 +13,7 @@ across three independent cohorts and three recording modalities.
 | Centre | Signal | Recording | Analysed n | Controls | Source publication |
 |---|---|---|---|---|---|
 | **CETRAM**, Santiago, Chile | ECG, 1000 Hz | ~15 min rest | **69** (42 C / 27 PD; 4 excluded after trace review) | healthy | — |
-| **Cruces**, Bilbao, Spain | finger PPG, 500 Hz | **7.40 min**, during resting-state fMRI | **52** (21 C / 31 PD) | healthy | Iniguez et al. 2022 |
+| **Cruces**, Bilbao, Spain | finger PPG, stored at 500 Hz (effective 100 Hz) | **7.40 min**, during resting-state fMRI | **52** (21 C / 31 PD) | healthy | Iniguez et al. 2022 |
 | **Nagoya**, Japan | ECG, wearable chest strap (POLAR) | ~24 h in hospital; 18:00–22:00 window pre-specified | **47** (21 C / 26 PD) | **disease controls** | Suzuki et al. 2022 |
 
 Notes that matter for interpretation:
@@ -55,7 +55,7 @@ Reliability limit `N/τ ≥ 200`, validated independently by split-half reliabil
 
 | Cohort | beats | reliable τ | index used |
 |---|---|---|---|
-| CETRAM | ~1112 | ≤ 5 | nAUC(1–5) |
+| CETRAM | ~1115 | ≤ 5 | nAUC(1–5) |
 | Cruces | ~498 | ≤ 2 | nAUC(1–5) — see caveat |
 | Nagoya | ~16 000 (18:00–22:00 window) | ≤ 20 (up to 70 permitted) | nAUC(1–20) (primary); nAUC(1–5) reported alongside |
 
@@ -63,13 +63,15 @@ All indices are reported **unnormalized**. Dividing by mean heart rate was teste
 and rejected: the index scales as HR^b with b = −0.68 / −0.43 / −0.65 across
 cohorts, so a ratio moves it further from HR-independence, and the AUC it appears
 to gain is heart rate's own group signal. Where adjustment is wanted, HR is entered
-as a covariate. See `HR_NORMALISATION_ANALYSIS.md` and Appendix 5.
+as a covariate. See Supplementary Fig. S1 (`generate_appendix5.py`).
 
 A fixed τ = 1–5 is applied to CETRAM and Cruces so the cohorts remain directly
 comparable. **Caveat:** at 498 beats Cruces exceeds its own reliability limit at
-τ > 2 (split-half reliability of nAUC(1–5) is 0.347, against 0.494 in CETRAM and
-0.670 in Nagoya). Cruces should be read as supporting the *direction* of effect,
-not as independent confirmation of magnitude.
+τ > 2. Split-half reliability of the index (first vs second half of each series, each
+half with its own tolerance; `compute_split_half.py`) is 0.37 in CETRAM (1000 beats),
+0.37 in Cruces and 0.42 in Nagoya: the index separates groups but says little about a
+single individual. Cruces should be read as supporting the *direction* of effect, not as
+independent confirmation of magnitude.
 
 `nAUC` divides the trapezoidal area by the number of points `n`, not by the span
 `n−1`, so it carries an n-dependent factor (0.80 at n=5, 0.95 at n=20). Within a
@@ -147,7 +149,9 @@ peak files, which are not in this repository.
 python scripts/run_pipeline.py
 ```
 
-Regenerates Figures 1–8 and both appendices from `data/`. Runs in a few minutes.
+Regenerates Figures 2–8 and the appendices from `data/`. Runs in a few minutes.
+Repository figure names follow the analysis order, not the manuscript numbering; the
+mapping is in the manuscript README.
 
 ---
 
@@ -162,7 +166,7 @@ appendices, the validation figure, and all statistics.
 |---|---|
 | Figure 1 | A graphical abstract authored in Affinity Designer. The source is tracked as `figures/Figure1/Figure1.af`; there is no scripted stage for it. |
 | Figure 2 RRi trace panels | Raw RR series are not shared. Five anonymised CETRAM traces are in `data/sample_signals/` for demonstration; the trace panels render empty without the rest. |
-| **Figure 8** | **Depends on individual-level clinical records that are not shared.** `deidentified_clinical_consolidated.xlsx` holds the CETRAM PD clinical variables; the cell sizes make re-identification a real risk and no k-anonymity assessment has been done. The figure and its correlation table are released so the results are inspectable, but the underlying data are not. **Request access from the corresponding author** — see [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md). |
+| **Figure 8** | **Depends on individual-level clinical records that are not shared.** The CETRAM PD clinical workbook is kept out of this repository; the cell sizes make re-identification a real risk and no k-anonymity assessment has been done. The figure and its correlation table are released so the results are inspectable, but the underlying data are not. **Request access from the corresponding author** — see [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md). |
 | rcMSE from raw signal | Requires the per-centre raw RRi. The curves in `data/*_mse.csv` are the shipped starting point. |
 | Deep-learning benchmark | `benchmark_dl_loco.py` needs raw RRi and PyTorch. |
 
@@ -178,8 +182,8 @@ for exactly what is and is not included, and how to request access.
 
 Recorded here rather than buried, because each affects how results should be read.
 
-1. **Complexity does not outperform simpler metrics on long recordings.** In Nagoya the minimum SDNN over 100-beat windows (Suzuki et al.) reaches AUC 0.913 against 0.838 for the complexity index. At matched window counts complexity wins (0.853 vs 0.811), but SDNN-min subsumes it: after partialling out SDNN-min, complexity retains no independent discrimination (AUC 0.572, p=0.39).
-2. **The group difference is not carried by nonlinearity.** IAAFT surrogates, which preserve the power spectrum and amplitude distribution while destroying nonlinear structure, reproduce almost the entire separation (AUC 0.689 vs 0.699 for real data), and there is no group difference in the nonlinearity index itself (p=0.60).
+1. **Complexity does not outperform minimum SDNN on long recordings.** In Nagoya the minimum SDNN over 100-beat windows (Suzuki et al.) reaches AUC 0.905, against 0.839 for the minimum of the 15-min complexity index and 0.815 for the pre-specified 4-h window. The two minima correlate at ρ = 0.78, and in a joint logistic model complexity adds nothing (likelihood-ratio p = 0.65; `compute_suzuki_incremental.py`).
+2. **The index is largely accounted for by the spectrum in the short cohorts.** In CETRAM and Cruces the entropy curves are close to those of 1/f^β noise matched on length, exponent and SD (Supplementary Fig. S2), so the group difference should not be read as evidence of nonlinear dynamics.
 3. **Cruces is underpowered for a multiscale index** — see the scale-range caveat above.
 4. **Nagoya PD are less physically active** (Suzuki et al. report standing time 2.1 vs 4.6 h/day). Any window-selection rule based on signal variability is therefore entangled with the disease; window selection here is never based on group separation.
 5. **Absolute entropy is not comparable across cohorts**, because `r = 0.2 × SD` is set by each recording's low-frequency content. Within-cohort comparisons are unaffected.

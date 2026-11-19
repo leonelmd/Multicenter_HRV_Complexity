@@ -37,6 +37,7 @@ Notes on data availability:
 import warnings
 import itertools
 import numpy as np
+from pooling import within_center_z
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -185,7 +186,7 @@ def hierarchical_regression(df: pd.DataFrame) -> pd.DataFrame:
         "Chile":  df[df["Center"] == "Chile"],
         "Spain":  df[df["Center"] == "Spain"],
         "Japan":  df[df["Center"] == "Japan"],
-        "Pooled": df,
+        "Pooled": within_center_z(df, [BEST_TRAD, "Complexity"]),
     }
 
     for ds_name, sub in datasets.items():
@@ -305,7 +306,7 @@ def commonality_analysis(df: pd.DataFrame) -> pd.DataFrame:
         "Chile":  df[df["Center"] == "Chile"],
         "Spain":  df[df["Center"] == "Spain"],
         "Japan":  df[df["Center"] == "Japan"],
-        "Pooled": df,
+        "Pooled": within_center_z(df, [BEST_TRAD, "Complexity"]),
     }
 
     for ds_name, sub in datasets.items():
@@ -388,12 +389,12 @@ def make_variance_decomp_plot(comm: pd.DataFrame):
     ds_order = [d for d in ["Chile", "Spain", "Japan", "Pooled"] if d in comm["Dataset"].values]
 
     components = [
-        ("Unique_Complexity",  "#1565C0", "Unique to rcMSE-AUC"),
+        ("Unique_Complexity",  "#1565C0", "Unique to complexity"),
         ("Unique_pNN50",        "#2E7D32", "Unique to pNN50"),
-        ("Shared_pNN50_Compl",  "#7B1FA2", "Shared pNN50 ∩ rcMSE-AUC"),
+        ("Shared_pNN50_Compl",  "#7B1FA2", "Shared pNN50 ∩ complexity"),
         ("Unique_Confounders", "#E65100", "Unique to Confounders"),
         ("Shared_Conf_pNN50",   "#F9A825", "Shared Conf ∩ pNN50"),
-        ("Shared_Conf_Compl",  "#00838F", "Shared Conf ∩ rcMSE-AUC"),
+        ("Shared_Conf_Compl",  "#00838F", "Shared Conf ∩ complexity"),
         ("Shared_Triple",      "#616161", "Triple shared"),
     ]
 
@@ -440,7 +441,7 @@ def make_variance_decomp_plot(comm: pd.DataFrame):
                bbox_to_anchor=(0.5, -0.18))
     fig.suptitle(
         "McFadden R² Commonality Decomposition\n"
-        f"Full model: Confounders + {BEST_TRAD} + rcMSE-AUC",
+        f"Full model: Confounders + {BEST_TRAD} + complexity index",
         fontsize=11, y=1.02,
     )
     plt.tight_layout()
@@ -480,7 +481,7 @@ def adjusted_spearman(df: pd.DataFrame) -> pd.DataFrame:
         "Chile":  df[df["Center"] == "Chile"],
         "Spain":  df[df["Center"] == "Spain"],
         "Japan":  df[df["Center"] == "Japan"],
-        "Pooled": df,
+        "Pooled": within_center_z(df, list(METRIC_COLS) + ["Complexity"]),
     }
 
     rows = []

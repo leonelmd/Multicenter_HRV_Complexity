@@ -28,13 +28,14 @@ agreements of the contributing centres.
 
 ### Clinical data — CETRAM (affects Figure 8)
 
-`deidentified_clinical_consolidated.xlsx` holds **28 PD patients × 65 clinical
-variables**: Hoehn & Yahr stage, CISI-PD subscales, Schwab & England score,
+The CETRAM clinical workbook (`deidentified_clinical_consolidated.xlsx`, not in this
+repository) holds one row per PD participant (25 of the 27 analysed have a clinical
+record) with Hoehn & Yahr stage, CISI-PD subscales, Schwab & England score,
 disease duration, levodopa-equivalent dose, genetic findings, comorbidities and
 non-motor symptom flags.
 
 Although direct identifiers have been removed, the combination of age, sex,
-disease duration and clinical scores across 28 individuals yields very small cell
+disease duration and clinical scores across 25 individuals yields very small cell
 sizes, and a formal k-anonymity assessment has not been carried out. Publishing
 it could permit re-identification. **It is therefore withheld.**
 

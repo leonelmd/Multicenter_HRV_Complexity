@@ -409,7 +409,8 @@ def generate_figure8():
         ax.tick_params(length=0)
 
     # Note on sample size and significance
-    fig.text(0.5, gs_main[0].get_position(fig).y0 - 0.013,
+    if False:  # sample size and FDR note are in the caption; the text overlapped the tick labels
+      fig.text(0.5, gs_main[0].get_position(fig).y0 - 0.013,
              f'n = {len(df)} PD patients (CETRAM). '
              f'Stars denote BH-FDR corrected significance: * q<0.05  ** q<0.01  *** q<0.001.',
              ha='center', fontsize=8.5, color=GRAY, style='italic')
@@ -648,12 +649,6 @@ def generate_figure8():
         f"names without doses.\n"
         f"All PD assumed on levodopa; time of\n"
         f"last dose before the ECG unknown.\n\n"
-        f"Literature context:\n"
-        f"LEDD is not expected to be an\n"
-        f"independent predictor of complexity\n"
-        f"once disease duration is controlled\n"
-        f"(Haapaniemi 2001; Devos 2003;\n"
-        f"Lerma 2016; meta: Solla 2020).\n\n"
         f"Exploratory (small n)."
     )
     ax_E3.text(0.05, 0.95, note_txt, transform=ax_E3.transAxes,
@@ -669,7 +664,8 @@ def generate_figure8():
     MISSING  = ', '.join(df.attrs.get('missing', []))
     is_preliminary = False   # clinical data collection closed 2026-10-31
 
-    fig.text(0.5, 0.962,
+    if False:  # header duplicated the caption
+      fig.text(0.5, 0.962,
              f'Panels A–B: Spearman ρ between rcMSE complexity index and CISI-PD subscales, disease duration, and non-motor burden. '
              f'Panels C–F: scatter plots. Panels G–H: group comparisons by H&Y stage and non-motor symptom presence. '
              f'Panels I–J: LEDD subgroup. '

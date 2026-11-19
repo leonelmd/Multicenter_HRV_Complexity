@@ -66,7 +66,10 @@ NO_PAUSE = "--no-pause" in sys.argv
 #     python scripts/compute_nagoya_windows.py --force --rcmse --cap 0
 # Expect roughly 30-60 min for the cohort single-threaded.
 PROFILE_RCMSE = "--rcmse" in sys.argv
-CAP = 900
+WINDOWS_ONLY = "--windows-only" in sys.argv   # recompute the 15-min windows, keep the profile
+# No cap by default (2026-11-18). The former default of 900 points truncated every
+# coarse-grained series of the 15-min windows (median ~1050 beats) at tau=1.
+CAP = 0
 if "--cap" in sys.argv:
     CAP = int(sys.argv[sys.argv.index("--cap") + 1])
 if CAP <= 0:
@@ -147,7 +150,7 @@ def main():
     win_rows, prof_rows, done_w, done_p = [], [], set(), set()
     if os.path.exists(OUT_WIN) and (PROFILE_ONLY or not FORCE):
         prev = pd.read_csv(OUT_WIN); win_rows = prev.to_dict("records"); done_w = set(prev.Subject)
-    if os.path.exists(OUT_PROF) and not FORCE:
+    if os.path.exists(OUT_PROF) and (not FORCE or WINDOWS_ONLY):
         prev = pd.read_csv(OUT_PROF); prof_rows = prev.to_dict("records"); done_p = set(prev.Subject)
 
     t0 = time.time()

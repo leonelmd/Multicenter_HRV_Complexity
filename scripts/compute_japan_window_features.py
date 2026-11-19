@@ -209,10 +209,16 @@ def compute_hrv(rri_ms):
         result.update(fd.iloc[0].to_dict())
     except Exception as e:
         print(f"    NK2 frequency-domain error: {e}")
+    # Poincare SD1/SD2 from the successive differences. SD1 is the successive-difference
+    # index (SD1 = SDSD / sqrt 2), so it takes the same >= 100 ms exclusion as RMSSD below;
+    # otherwise SD1 and RMSSD describe different series (fixed 2026-11-18).
     d0 = np.diff(np.asarray(rri_ms, dtype=float))
-    sd1 = np.sqrt(0.5) * np.std(d0, ddof=1)
-    sd2 = np.sqrt(max(2 * np.var(rri_ms, ddof=1) - 0.5 * np.var(d0, ddof=1), 0.0))
-    result.update(HRV_SD1=sd1, HRV_SD2=sd2, HRV_SD1SD2=sd1 / sd2 if sd2 > 0 else np.nan)
+    sd1_u = np.sqrt(0.5) * np.std(d0, ddof=1)
+    d0f = d0[np.abs(d0) < SUZUKI_DIFF_EXCL_MS]
+    sd1 = np.sqrt(0.5) * np.std(d0f, ddof=1)
+    sd2 = np.sqrt(max(2 * np.var(rri_ms, ddof=1) - 0.5 * np.var(d0f, ddof=1), 0.0))
+    result.update(HRV_SD1=sd1, HRV_SD2=sd2, HRV_SD1SD2=sd1 / sd2 if sd2 > 0 else np.nan,
+                  HRV_SD1_unfiltered=sd1_u)
 
     # DFA via numpy (fast)
     result['DFA_alpha1'] = dfa_alpha(rri_ms, *DFA_ALPHA1_SCALES)

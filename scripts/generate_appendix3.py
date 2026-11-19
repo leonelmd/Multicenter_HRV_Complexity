@@ -45,7 +45,7 @@ os.makedirs(OUT, exist_ok=True)
 
 COL = {"CETRAM": "#1565C0", "Cruces": "#2E7D32", "Nagoya": "#E65100"}
 MIN_N = 15          # minimum subjects before a ladder point is plotted
-OPERATING = {"Cruces": 498, "CETRAM": 1088}   # median beats actually analysed
+OPERATING = {"Cruces": 498, "CETRAM": 1115}   # median beats actually analysed (n = 52, 69)
 
 
 def auc_cp(v, y):

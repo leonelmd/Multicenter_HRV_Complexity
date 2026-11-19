@@ -227,6 +227,17 @@ sp = pd.read_csv(os.path.join(D, "spectral_analysis.csv"))
 for coh, b in (("CETRAM", 1.44), ("Cruces", 1.24), ("Nagoya", 0.61)):
     chk(f"spectral beta median {coh}", b, sp[sp.Cohort == coh].beta_beat.median(), tol=0.006, fmt="{:.2f}")
 print("\n" + "=" * 96)
+print("10. ADDED 2026-11-18 (evening): uncapped 15-min windows, split-half reliability")
+print("=" * 96)
+ds = pd.read_csv(os.path.join(D, "fig3_dist_summaries.csv")).set_index("stat")
+chk("min of 15-min index across day, AUC", 0.839, float(ds.loc["min", "complexity"]))
+chk("p10 of 15-min index, AUC", 0.806, float(ds.loc["p10", "complexity"]))
+sh = pd.read_csv(os.path.join(D, "split_half_reliability.csv")).dropna()
+for c, claim in [("CETRAM (1000 beats)", 0.37), ("Cruces", 0.37), ("Nagoya", 0.42)]:
+    g = sh[sh.Cohort == c]
+    chk(f"split-half reliability {c}", claim, stats.spearmanr(g.h1, g.h2)[0], tol=0.005, fmt="{:.2f}")
+
+print("\n" + "=" * 96)
 print(f"SUMMARY: {CHECKS - len(FAILS)}/{CHECKS} checks passed")
 if FAILS:
     print(f"\n{len(FAILS)} MISMATCH(ES):")

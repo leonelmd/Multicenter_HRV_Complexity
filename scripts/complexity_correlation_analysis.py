@@ -15,6 +15,7 @@ Two analyses:
 
 import warnings
 import numpy as np
+from pooling import within_center_z
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -148,7 +149,7 @@ def load_data() -> pd.DataFrame:
 def run_spearman(df: pd.DataFrame) -> pd.DataFrame:
     subsets = {"All": df, "PD": df[df["Group"] == "PD"], "HC": df[df["Group"] == "Control"]}
     datasets = {c: df[df["Center"] == c] for c in CENTERS}
-    datasets["Pooled"] = df
+    datasets["Pooled"] = within_center_z(df, list(METRIC_COLS) + ["Complexity"])
 
     rows = []
     for ds_name, ds_df in datasets.items():
@@ -236,7 +237,7 @@ def make_heatmap(spear: pd.DataFrame):
         cbar_kws={"label": "Spearman ρ", "shrink": 0.8},
     )
     ax.set_title(
-        "Spearman ρ: rcMSE-AUC vs Traditional HRV Metrics\n"
+        "Spearman ρ: complexity index vs conventional HRV metrics\n"
         "(* q<0.05, ** q<0.01, *** q<0.001, BH-FDR corrected)",
         fontsize=12, pad=12,
     )
@@ -264,7 +265,7 @@ def make_heatmap(spear: pd.DataFrame):
 def run_partial(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     datasets = {c: df[df["Center"] == c] for c in CENTERS}
-    datasets["Pooled"] = df
+    datasets["Pooled"] = within_center_z(df, list(METRIC_COLS) + ["Complexity"])
 
     for ds_name, sub in datasets.items():
         for m in METRIC_COLS:
