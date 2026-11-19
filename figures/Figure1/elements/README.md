@@ -17,3 +17,12 @@ backgrounds are transparent. Colours match the other figures (control #4C72B0, P
 Counts for the cohort labels: Santiago 42 C / 27 PD (15-min ECG); Bilbao 21 C / 31 PD
 (7.40-min finger PPG during fMRI); Nagoya 21 disease controls / 26 PD (24-h chest strap,
 18:00-22:00 window).
+
+## Map
+| File | Use | Source |
+|---|---|---|
+| world_map_sites.svg | map with pins, leader lines and editable cohort labels | Natural Earth 1:110m land (public domain), Equal Earth projection, Antarctica omitted; `scripts/generate_figure1_map.py` |
+| world_map_pins.svg | same map, pins only (place your own labels) | as above |
+
+Pin colours follow the cohort colours of the other figures (Santiago #4C72B0, Bilbao #55A868, Nagoya #DD8452).
+Natural Earth needs no attribution; "Made with Natural Earth" is customary if you want to credit it.
