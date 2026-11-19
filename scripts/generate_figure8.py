@@ -251,6 +251,13 @@ def load_data():
     # Rename NM cols for cleaner labels in the merged df
     df = df.rename(columns=nm_cols)
 
+    # Age: the value recorded on the day of the ECG (data/chile_demographics.csv, also used
+    # for Table 1 and Figs. 2 and 4), not the age in the clinical report, which comes from a
+    # different date and disagrees for several participants (2026-11-18 reconciliation).
+    _dem = pd.read_csv(os.path.join(BASE, 'data', 'chile_demographics.csv')).rename(
+        columns={'Anon_ID': 'Subject'})
+    df['Age'] = df['Subject'].map(_dem.set_index('Subject')['Age'])
+
     # Coerce all clinical numeric columns to float (second-batch individual files
     # may store values as text like "77 años (estimado)").
     numeric_clin = ['Age', 'Disease_duration', 'HY_stage', 'Schwab_England',
