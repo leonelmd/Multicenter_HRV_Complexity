@@ -24,5 +24,5 @@ Counts for the cohort labels: Santiago 42 C / 27 PD (15-min ECG); Bilbao 21 C / 
 | world_map_sites.svg | map with pins, leader lines and editable cohort labels | Natural Earth 1:110m land (public domain), Equal Earth projection, Antarctica omitted; `scripts/generate_figure1_map.py` |
 | world_map_pins.svg | same map, pins only (place your own labels) | as above |
 
-Pin colours follow the cohort colours of the other figures (Santiago #4C72B0, Bilbao #55A868, Nagoya #DD8452).
+Pins are one neutral dark grey (#3A3A3A) on grey land (#CFCFCF): sites are identified by their labels, and no hue is used that could be confused with the Control (#4C72B0) or PD (#C44E52) colours. Across the figures, cohorts are distinguished by grey shades and line styles only (figstyle.COHORT, COHORT_LS).
 Natural Earth needs no attribution; "Made with Natural Earth" is customary if you want to credit it.

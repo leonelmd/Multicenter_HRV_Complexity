@@ -23,11 +23,14 @@ def equal_earth(lon, lat):
     x = 2 * np.sqrt(3) * lam * np.cos(th) / (3 * (9 * A4 * t6 * t2 + 7 * A3 * t6 + 3 * A2 * t2 + A1))
     y = th * (A4 * t6 * t2 + A3 * t6 + A2 * t2 + A1)
     return x, y
-LAND, INK = "#C9CED6", "#2B2B2B"
-SITES = [  # name, lon, lat, colour (cohort colours used in the other figures), label, label side
-    ("Santiago", -70.67, -33.45, "#4C72B0", "Santiago, Chile\n15-min ECG\n42 C / 27 PD", (-118, -30), "right"),
-    ("Bilbao", -2.93, 43.26, "#55A868", "Bilbao, Spain\n7.40-min PPG\n21 C / 31 PD", (-30, 22), "center"),
-    ("Nagoya", 136.91, 35.18, "#DD8452", "Nagoya, Japan\n24-h chest strap\n21 DC / 26 PD", (168, 12), "center"),
+LAND, INK = "#CFCFCF", "#2B2B2B"
+# One neutral pin colour: sites are named by their labels, and no hue is used that could
+# be read as a group (Control blue / PD red) colour.
+PIN = "#3A3A3A"
+SITES = [  # name, lon, lat, colour, label, label position (lon, lat), alignment
+    ("Santiago", -70.67, -33.45, PIN, "Santiago, Chile\n15-min ECG\n42 C / 27 PD", (-118, -30), "right"),
+    ("Bilbao", -2.93, 43.26, PIN, "Bilbao, Spain\n7.40-min PPG\n21 C / 31 PD", (-30, 22), "center"),
+    ("Nagoya", 136.91, 35.18, PIN, "Nagoya, Japan\n24-h chest strap\n21 DC / 26 PD", (168, 12), "center"),
 ]
 def pin(ax, x, y, col, h=0.15):
     # teardrop: circle of radius r centred h-r above the tip, tangent lines to the tip
@@ -56,7 +59,7 @@ def draw(labels, name):
             tx, ty = equal_earth(llon, llat)
             ax.text(tx, ty, lab, ha=ha, va="center", fontsize=8, color=INK, linespacing=1.25, zorder=7)
             ax.plot([x, tx + (0.03 if ha == "right" else 0)], [y, ty + (0 if ha == "right" else 0.21)],
-                    color=col, lw=0.7, zorder=4)
+                    color="#7A7A7A", lw=0.7, zorder=4)
     X, Y = equal_earth(np.array([-180, 180]), np.array([0, 0]))
     ax.set_xlim(X[0] * 1.01, X[1] * 1.01); ax.set_ylim(equal_earth(0, -58)[1], equal_earth(0, 84)[1])
     ax.set_aspect("equal"); ax.axis("off")

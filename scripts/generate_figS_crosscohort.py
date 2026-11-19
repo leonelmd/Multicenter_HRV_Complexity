@@ -217,7 +217,7 @@ def main():
     fs.panel(a, "a")
     for c in COHORTS:
         fpr, tpr = roc(loco[c]["y"], loco[c]["scores"]["Complexity"])
-        b.plot(fpr, tpr, color=fs.COHORT[c], drawstyle="steps-post",
+        b.plot(fpr, tpr, color=fs.COHORT[c], ls=fs.COHORT_LS[c], lw=1.4, drawstyle="steps-post",
                label=f"{c} ({loco[c]['Complexity'][0]:.2f})")
     b.plot([0, 1], [0, 1], color="0.6", lw=0.8, ls="--")
     b.set_xlabel("False-positive rate"); b.set_ylabel("True-positive rate")
