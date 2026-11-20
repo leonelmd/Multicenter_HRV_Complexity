@@ -1,19 +1,19 @@
 cff-version: 1.2.0
 message: "If you use this software or data, please cite it as below."
-title: "Multicenter cardiac autonomic complexity in Parkinson's disease — analysis code and derived data"
+title: "Reduced multiscale complexity of RR intervals in Parkinson's disease: code and derived data"
 abstract: >-
   Code and derived data for a multicenter study of cardiac autonomic complexity
   in Parkinson's disease, combining short resting ECG (CETRAM, Santiago),
   photoplethysmography during resting-state fMRI (Hospital Universitario Cruces,
   Bilbao) and 24-hour ambulatory wearable chest-strap ECG (Nagoya University Hospital).
   Complexity is quantified by refined composite multiscale entropy (rcMSE) with a
-  fixed tolerance, computed in Julia; all downstream statistics and figures are
-  in Python.
+  fixed tolerance, computed in Julia (with a Python port verified to machine
+  precision); statistics and figures are in Python.
 type: software
 license: MIT
 repository-code: "https://github.com/leonelmd/Multicenter_HRV_Complexity"
-version: "1.0.0"
-date-released: "2026-09-25"
+version: "1.1.0"
+date-released: "2026-11-20"
 keywords:
   - Parkinson's disease
   - heart rate variability

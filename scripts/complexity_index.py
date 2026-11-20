@@ -4,7 +4,7 @@ Canonical definition of the rcMSE complexity index.
 Why this module exists
 ----------------------
 Before 2026-08-16 the complexity index was computed inline in four places
-(generate_figure4/5/6.py and entropy.jl) as `MSE.mean()` over the scale range,
+(the figure scripts and julia/entropy.jl) as `MSE.mean()` over the scale range,
 while the README, both manuscript drafts and MulticohortRCMSE_Paper all described
 it as a *normalized area under the entropy-scale curve* (nAUC). Those are different
 formulas, and no single place in the codebase stated which was actually used.

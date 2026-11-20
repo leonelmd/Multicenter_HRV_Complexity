@@ -118,7 +118,7 @@ else:
 print("\n" + "=" * 96)
 print("4. WINDOW-LENGTH LADDER  (Fig. 3D) and CROSS-COHORT (Fig. 3F)")
 print("=" * 96)
-lad = pd.read_csv(os.path.join(D, "fig3_window_ladder.csv"))
+lad = pd.read_csv(os.path.join(D, "fig7_window_ladder.csv"))
 for met, wmin, claim in [("SDNN", 1.4167, 0.905), ("SDNN", 2.8333, 0.919),
                          ("SDNN", 15, 0.795), ("SDNN", 240, 0.760),
                          ("complexity", 15, 0.842), ("complexity", 240, 0.762)]:
@@ -126,7 +126,7 @@ for met, wmin, claim in [("SDNN", 1.4167, 0.905), ("SDNN", 2.8333, 0.919),
     chk(f"ladder {met} @ {wmin:g} min", claim,
         float(r.AUC.iloc[0]) if len(r) else None, tol=0.004)
 
-h2h = pd.read_csv(os.path.join(D, "fig3_cetram_headtohead.csv"))
+h2h = pd.read_csv(os.path.join(D, "fig7_cetram_headtohead.csv"))
 al = h2h[h2h.subset == "all"].iloc[0]
 ex = h2h[h2h.subset != "all"].iloc[0]
 chk("CETRAM min-SDNN, all", 0.480, float(al.SDNN100_min), tol=0.004)
@@ -181,11 +181,7 @@ for g, rc, pc in age_claims:
 print("\n" + "=" * 96)
 print("8. CROSS-COHORT TRANSFER  (Supplementary Figs. S6-S7, Methods, Discussion)")
 print("=" * 96)
-import subprocess, sys
-_xc = os.path.join(ROOT, "figures", "Appendix", "figS_crosscohort_stats.csv")
-subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "generate_figS_crosscohort.py")],
-               check=True, stdout=subprocess.DEVNULL)
-xc = pd.read_csv(_xc)
+xc = pd.read_csv(os.path.join(ROOT, "figures", "FigS6_S7_cross_cohort", "FigS6_S7_stats.csv"))
 def xget(design, train, test, model):
     r = xc[(xc.design == design) & (xc.train == train) & (xc.test == test) & (xc.model == model)]
     return float(r.auc.iloc[0]) if len(r) else None
@@ -202,7 +198,7 @@ chk("Transfer CETRAM -> Nagoya", 0.866, xget("single", "CETRAM", "Nagoya", "Comp
 print("\n" + "=" * 96)
 print("9. ADDED 2026-11-18 (audit): window scan, primary Nagoya detail, Table 1, flags, sweep, spectra")
 print("=" * 96)
-ws = pd.read_csv(os.path.join(D, "fig3_window_scan.csv"))
+ws = pd.read_csv(os.path.join(D, "fig7_window_scan.csv"))
 chk("windows with p<0.05 (of 24)", 19, float((ws.p < 0.05).sum()), tol=0, fmt="{:.0f}")
 chk("windows surviving Bonferroni", 6, float((ws.p < 0.05 / 24).sum()), tol=0, fmt="{:.0f}")
 chk("window-scan AUC min", 0.569, ws.AUC.min(), tol=0.0015)
@@ -229,7 +225,7 @@ for coh, b in (("CETRAM", 1.44), ("Cruces", 1.24), ("Nagoya", 0.61)):
 print("\n" + "=" * 96)
 print("10. ADDED 2026-11-18 (evening): uncapped 15-min windows, split-half reliability")
 print("=" * 96)
-ds = pd.read_csv(os.path.join(D, "fig3_dist_summaries.csv")).set_index("stat")
+ds = pd.read_csv(os.path.join(D, "fig7_dist_summaries.csv")).set_index("stat")
 chk("min of 15-min index across day, AUC", 0.839, float(ds.loc["min", "complexity"]))
 chk("p10 of 15-min index, AUC", 0.806, float(ds.loc["p10", "complexity"]))
 sh = pd.read_csv(os.path.join(D, "split_half_reliability.csv")).dropna()
@@ -257,3 +253,6 @@ if FAILS:
     for f in FAILS:
         print(f"   - {f}")
 print("=" * 96 + "\n")
+
+if FAILS:
+    raise SystemExit(1)

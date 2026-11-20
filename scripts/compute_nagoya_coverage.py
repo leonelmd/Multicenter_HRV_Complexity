@@ -10,9 +10,7 @@ from datetime import datetime
 import numpy as np, pandas as pd
 from scipy.stats import mannwhitneyu, spearmanr
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-D = os.path.join(BASE, "data")
-RRI = os.path.abspath(os.path.join(BASE, "..", "..", "Nagoya", "public_release", "data", "processed_rri"))
+from paths import DATA as D, NAGOYA_RRI as RRI
 
 
 def coverage(a, b):

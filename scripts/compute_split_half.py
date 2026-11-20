@@ -5,17 +5,18 @@ its own tolerance r = 0.2 SD(half), and reliability is the Spearman correlation 
 across participants. Cruces (whole record, scales 1-5) and Nagoya (18:00-22:00, scales
 1-20); for CETRAM the length ladder gives the same quantity (data/length_ladder.csv, N=1000).
 Writes data/split_half_reliability.csv.
-Run: NAGOYA_ROOT=... CRUCES_ROOT=... python scripts/compute_split_half.py
+Needs the original Cruces and Nagoya series (paths.py).
 """
 import os, glob, importlib.util
 import numpy as np, pandas as pd
 from scipy.stats import spearmanr
 from rcmse_fast import rcmse
-HERE = os.path.dirname(os.path.abspath(__file__)); D = os.path.join(os.path.dirname(HERE), "data")
+HERE = os.path.dirname(os.path.abspath(__file__))
+from paths import DATA as D, CRUCES_RRI
 def nauc(c): return float(np.trapezoid(c, np.arange(1, len(c) + 1)) / len(c)) if np.all(np.isfinite(c)) else np.nan
 rows = []
 grp = pd.read_csv(os.path.join(D, "spain_mse.csv")).drop_duplicates("Subject").set_index("Subject").Group
-for f in sorted(glob.glob(os.path.join(os.environ["CRUCES_ROOT"], "data/processed/RRi/*.csv"))):
+for f in sorted(glob.glob(os.path.join(CRUCES_RRI, "*.csv"))):
     s = os.path.basename(f)[:-4]
     if grp.get(s) not in ("Control", "PD"): continue
     x = np.loadtxt(f).astype(float); x = x[np.isfinite(x)]; h = len(x) // 2

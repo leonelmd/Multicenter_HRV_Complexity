@@ -1,0 +1,2 @@
+# Deterministic SVG output (stable element ids), so a rerun leaves git clean.
+svg.hashsalt: hrv-complexity

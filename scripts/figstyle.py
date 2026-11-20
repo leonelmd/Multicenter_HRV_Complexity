@@ -13,7 +13,7 @@ Usage:
     import figstyle as fs
     fs.apply()
     ...
-    fs.save(fig, OUT, "Figure3")
+    fs.save(fig, OUT, "Fig7_recording_length")
 """
 from __future__ import annotations
 
