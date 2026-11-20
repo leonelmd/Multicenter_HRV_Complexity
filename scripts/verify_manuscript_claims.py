@@ -238,6 +238,19 @@ for c, claim in [("CETRAM (1000 beats)", 0.37), ("Cruces", 0.37), ("Nagoya", 0.4
     chk(f"split-half reliability {c}", claim, stats.spearmanr(g.h1, g.h2)[0], tol=0.005, fmt="{:.2f}")
 
 print("\n" + "=" * 96)
+print("11. ADDED 2026-11-19: parameter sweep uses the primary template convention")
+print("=" * 96)
+rs = pd.read_csv(os.path.join(D, "r_sweep.csv"))
+rs = rs[(rs.m == 2) & (rs["mode"] == "k") & np.isclose(rs.level, 0.2)]
+for coh, f in (("CETRAM", "chile_mse.csv"), ("Cruces", "spain_mse.csv"), ("Nagoya", "japan_window_mse.csv")):
+    pm = pd.read_csv(os.path.join(D, f))
+    pm = pm[pm.Scales <= 5].sort_values("Scales").groupby("Subject").MSE.apply(
+        lambda v: np.trapezoid(v.values, np.arange(1, len(v) + 1)) / len(v))
+    g = rs[rs.Cohort == coh].set_index("Subject").cx
+    chk(f"sweep k=0.2 m=2 equals primary nAUC(1-5), {coh}: max |diff|", 0.0,
+        float((g - pm.reindex(g.index)).abs().max()), tol=1e-9, fmt="{:.1e}")
+
+print("\n" + "=" * 96)
 print(f"SUMMARY: {CHECKS - len(FAILS)}/{CHECKS} checks passed")
 if FAILS:
     print(f"\n{len(FAILS)} MISMATCH(ES):")

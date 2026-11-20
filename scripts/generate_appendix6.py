@@ -14,7 +14,7 @@ CRUCES_NULL_AND_TOLERANCE_CONFOUND.md).
 
 IMPORTANT — the parameters must NOT be chosen to maximise AUC. That is tuning a
 hyperparameter on the outcome. The legitimate criteria are estimator validity (no
-undefined values) and split-half reliability, both shown here. AUC is displayed only
+undefined values) and split-half agreement, both shown here. AUC is displayed only
 to demonstrate that the published conclusions do not depend on the choice.
 
 Input : data/r_sweep.csv  (from scripts/compute_r_sweep.py)
@@ -39,7 +39,7 @@ OUT = os.path.join(ROOT, "figures", "Appendix")
 os.makedirs(OUT, exist_ok=True)
 
 COH = ["CETRAM", "Cruces", "Nagoya"]
-CC = {"CETRAM": "#2E86AB", "Cruces": "#1B8A5A", "Nagoya": "#D35400"}
+CC = dict(fs.COHORT)   # cohort colours shared across figures (distinct from Control/PD)
 PUB_K, PUB_M = 0.20, 2
 MSTYLE = {1: (":", 4), 2: ("-", 6), 3: ("--", 4)}
 
@@ -104,8 +104,8 @@ def main():
                        lw=1.8, zorder=5)
     ax.axvline(PUB_K, ls="--", c="k", lw=1.3)
     ax.set_xlabel("$k$  in  $r = k \\times$ SD")
-    ax.set_ylabel("split-half reliability ($\\rho$)")
-    ax.set_title("Split-half reliability vs tolerance",
+    ax.set_ylabel("split-half agreement ($\\rho$)")
+    ax.set_title("Split-half agreement vs tolerance",
                  fontweight="normal", fontsize=12)
     ax.grid(alpha=.2)
 
@@ -135,8 +135,8 @@ def main():
         t = S[(np.isclose(S.level, PUB_K)) & (S.Cohort == c)].sort_values("m")
         ax.plot(t.m, t.rel, "o-", color=CC[c], lw=2.2, ms=7, label=c)
     ax.set_xticks([1, 2, 3]); ax.set_xlabel("embedding dimension $m$")
-    ax.set_ylabel("split-half reliability ($\\rho$)")
-    ax.set_title("Reliability vs embedding dimension", fontweight="normal", fontsize=12)
+    ax.set_ylabel("split-half agreement ($\\rho$)")
+    ax.set_title("Agreement vs embedding dimension", fontweight="normal", fontsize=12)
     ax.legend(fontsize=8.5, frameon=False); ax.grid(alpha=.2)
 
     # ---- E-G: AUC heatmaps over (k, m) -------------------------------------

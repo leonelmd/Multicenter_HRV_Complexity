@@ -52,20 +52,12 @@ end
         @test isfinite(se)
         @test 1.0 < se < 3.0                     # white noise, m=2, r=0.2
 
-        # A perfectly regular series does NOT give exactly zero. The two
-        # embedding orders are counted over different numbers of templates
-        # (Richman & Moorman): generate_windows gives N-m+1 windows of length m
-        # but only N-m of length m+1. With every pair matching,
-        #     B = C(N-m+1, 2),  A = C(N-m, 2),  A/B = (N-m-1)/(N-m+1)
-        # so SampEn = log((N-m+1)/(N-m-1)) ~ 2/(N-m) — a finite-size floor, not
-        # a defect. At N=200, m=2 that is log(199/197) = 0.0101011.
-        # Pinned exactly so any change to the windowing convention is caught.
-        let N = 200, m = 2
-            @test sample_entropy(ones(N), m, 0.2) ≈ log((N - m + 1) / (N - m - 1)) atol = 1e-12
-            @test sample_entropy(ones(N), m, 0.2) ≈ 0.0101011 atol = 1e-6
-            # the floor shrinks as ~2/(N-m): a longer constant series scores lower
-            @test sample_entropy(ones(800), m, 0.2) < sample_entropy(ones(N), m, 0.2)
-        end
+        # A constant series matches everywhere at both orders: entropy exactly 0.
+        @test sample_entropy(ones(200), 2, 0.2) == 0.0
+        # Exact match counts on an integer fixture, pinned so any change to the
+        # template convention is caught. Same counts from ../rcmse_fast.py.
+        fx = Float64[mod(7 * i^2, 11) for i in 1:200]
+        @test sample_entropy_matches(fx, 2, 1.0) == (2007, 2655)
         # deterministic periodic signal is far less entropic than noise
         per = repeat([1.0, 2.0, 3.0, 4.0], 150)
         @test sample_entropy(per, 2, 0.2 * std(per)) < se

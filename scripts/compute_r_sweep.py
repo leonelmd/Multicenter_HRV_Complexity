@@ -5,9 +5,9 @@
 #   mode="k"    r = k x SD(subject)   k = 0.05 .. 0.50  (rule universal, value per-patient)
 #   mode="abs"  r = fixed absolute ms r = 4 .. 60 ms    (universal in both senses)
 #
-# Distances are computed ONCE per (subject, scale, shift) and thresholded at every
-# tolerance via searchsorted+bincount, so the sweep costs little more than one rcMSE
-# run. Split-half halves (h1, h2) are emitted at every tolerance for the reliability
+# Match counts at every tolerance come from one KD-tree pass per (subject, scale,
+# shift), with the template convention of scripts/julia/entropy.jl, so at k = 0.2,
+# m = 2 the sweep reproduces the primary values exactly. Split-half halves (h1, h2) are emitted at every tolerance for the reliability
 # panel.
 #
 # Nagoya: full 18:00-22:00 window (the pre-specified analysis window), no beat cap
@@ -22,15 +22,15 @@ from datetime import datetime
 def counts_multi(x, m, rs):
     """A(m+1), B(m) match counts (Chebyshev distance <= r) at every tolerance in sorted rs.
 
-    KD-tree pair counting (scipy cKDTree.count_neighbors with an array of radii);
-    identical counts to the former O(N^2) loop, which made the full Nagoya window
-    intractable and forced a 2000-beat cap.
+    Same template convention as scripts/julia/entropy.jl: templates of length m and
+    m+1 both start at the same N-m points. KD-tree pair counting (scipy
+    cKDTree.count_neighbors with an array of radii).
     """
     from scipy.spatial import cKDTree
     N = len(x); nr = len(rs); A = np.zeros(nr); B = np.zeros(nr)
+    M = N - m
+    if M < 2: return A, B
     for mm, acc in ((m, B), (m + 1, A)):
-        M = N - mm + 1
-        if M < 2: continue
         emb = np.ascontiguousarray(np.lib.stride_tricks.sliding_window_view(x, mm)[:M])
         t = cKDTree(emb)
         c = t.count_neighbors(t, np.asarray(rs, float), p=np.inf)
@@ -46,7 +46,7 @@ def rcmse_multi(x, scales, rs, m=2):
             A = np.zeros(len(rs)); B = np.zeros(len(rs))
             for k in range(s):
                 y = x[k:]; L = (len(y)//s)*s
-                if L < s*(m+2): continue
+                if L//s <= m: continue
                 cg = y[:L].reshape(-1, s).mean(axis=1)
                 a, b = counts_multi(cg, m, rs); A += a; B += b
         ok = (A > 0) & (B > 0)

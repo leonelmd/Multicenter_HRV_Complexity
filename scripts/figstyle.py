@@ -26,9 +26,10 @@ import matplotlib.pyplot as plt
 # Muted, colour-blind-safe. Group colours are deliberately low-saturation so that
 # overlaid confidence bands remain legible in print.
 GROUP = {"Control": "#4C72B0", "PD": "#C44E52", "Other": "#8C8C8C"}
-# Cohorts are told apart by neutral shades and line styles, never by hue, so that no cohort
-# colour can be read as a group (Control blue / PD red) or model colour (2026-11-19).
-COHORT = {"CETRAM": "#1F1F1F", "Cruces": "#5E5E5E", "Nagoya": "#9A9A9A"}
+# Cohort colours (amber, olive, cyan) stay clear of the group colours (Control blue,
+# PD red), also under simulated deutan/protan/tritan vision; line styles back them up.
+# Same colours as the Fig. 1 map pins.
+COHORT = {"CETRAM": "#E69F00", "Cruces": "#7F7F00", "Nagoya": "#17BECF"}
 COHORT_LS = {"CETRAM": "-", "Cruces": "--", "Nagoya": ":"}
 SEQ = ["#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B3",
        "#937860", "#DA8BC3", "#8C8C8C", "#CCB974", "#64B5CD"]

@@ -3,8 +3,8 @@
 #
 # Canonical entropy toolbox for the multicenter cardiac-complexity study.
 # This is the authoritative implementation of rcMSE used for every published
-# complexity value. The Python mirror in ../complexity_index.py and the
-# per-cohort inlined variants must agree with this file.
+# complexity value. The Python mirror (../rcmse_fast.py) reproduces it to
+# machine precision.
 #
 # ---------------------------------------------------------------------------
 # THE TOLERANCE r IS FIXED
@@ -46,55 +46,50 @@
 #   Chen et al. (2007) Med Eng Phys 31:61                    - fuzzy entropy
 
 using Statistics
-using Combinatorics
 using Trapz
 using CurveFit
 
-function chebyshev_distance(x, y)
-	return maximum(abs.(x - y))
-end
-
-function generate_windows(signal, m)
-	N = length(signal)
-	return [signal[i:i + m - 1] for i in 1:N - m + 1]
-end
-
+# Match counting. Templates of length m and m+1 are both taken at the same
+# N-m starting points, so a constant series has entropy exactly 0. These are the
+# counts that produced every published complexity value.
 function sample_entropy_matches(signal, m, r)
-	# generate windows from signal
-	m_vector = generate_windows(signal, m)
-	m1_vector = generate_windows(signal, m + 1)
-
-	# compute the number of matches
-	A = sum([(chebyshev_distance(i, j) <= r) ? 1 : 0 for (i, j) in combinations(m1_vector, 2)])
-	B = sum([(chebyshev_distance(i, j) <= r) ? 1 : 0 for (i, j) in combinations(m_vector, 2)])
-
+	N = length(signal)
+	N <= m && return 0, 0
+	A, B = 0, 0
+	@inbounds for i in 1:(N - m), j in (i + 1):(N - m)
+		match_m = true
+		for k in 0:(m - 1)
+			if abs(signal[i + k] - signal[j + k]) > r
+				match_m = false
+				break
+			end
+		end
+		if match_m
+			B += 1
+			abs(signal[i + m] - signal[j + m]) <= r && (A += 1)
+		end
+	end
 	return A, B
 end
 
-# NOTE ON THE FINITE-SIZE FLOOR
-# The two embedding orders are counted over different numbers of templates:
-# generate_windows yields N-m+1 windows of length m but only N-m of length m+1.
-# A perfectly regular series therefore scores log((N-m+1)/(N-m-1)) ~ 2/(N-m),
-# not zero. This is the standard Richman & Moorman formulation, not a defect,
-# but the floor grows as the series shortens — 0.002 at N=1088, 0.009 at N=217
-# (CETRAM coarse-grained to tau=5), 0.021 at N=99 (Cruces at tau=5). It is under
-# 2% of the observed entropies at the scales used here, but it does differ
-# between cohorts of different length: one more reason to compare effect sizes
-# rather than raw entropy across cohorts. Pinned in test_entropy.jl.
 function sample_entropy(signal, m, r)
 	A, B = sample_entropy_matches(signal, m, r)
 	return (A == 0 || B == 0) ? Inf : -log(A / B)
 end
 
 function fuzzy_entropy_matches(signal, m, r)
-	# generate windows from signal
-	m_vector = generate_windows(signal, m)
-	m1_vector = generate_windows(signal, m + 1)
-
-	# compute the number of matches
-	A = sum([exp( -log(2)*( (chebyshev_distance(i, j)/r)^2 ) ) for (i, j) in combinations(m1_vector, 2)])
-	B = sum([exp( -log(2)*( (chebyshev_distance(i, j)/r)^2 ) ) for (i, j) in combinations(m_vector, 2)])
-
+	N = length(signal)
+	N <= m && return 0.0, 0.0
+	A, B = 0.0, 0.0
+	@inbounds for i in 1:(N - m), j in (i + 1):(N - m)
+		dm = 0.0
+		for k in 0:(m - 1)
+			dm = max(dm, abs(signal[i + k] - signal[j + k]))
+		end
+		B += exp(-log(2) * (dm / r)^2)
+		dm1 = max(dm, abs(signal[i + m] - signal[j + m]))
+		A += exp(-log(2) * (dm1 / r)^2)
+	end
 	return A, B
 end
 
