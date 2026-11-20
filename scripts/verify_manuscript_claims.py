@@ -247,6 +247,22 @@ for coh, f in (("CETRAM", "chile_mse.csv"), ("Cruces", "spain_mse.csv"), ("Nagoy
         float((g - pm.reindex(g.index)).abs().max()), tol=1e-9, fmt="{:.1e}")
 
 print("\n" + "=" * 96)
+print("CRUCES CURVE SHAPE  (data/cruces_surrogates.csv)")
+print("=" * 96)
+from scipy.stats import spearmanr as _sp
+cs = pd.read_csv(os.path.join(D, "cruces_surrogates.csv"))
+_cr, _ce = cs[cs.Cohort == "Cruces"], cs[cs.Cohort == "CETRAM"]
+chk("% Cruces curves falling, real", 62, 100 * _cr.falling.mean(), tol=0.6, fmt="{:.0f}")
+chk("% Cruces curves falling, IAAFT surrogate", 40, 100 * _cr.falling_surr.mean(), tol=0.6, fmt="{:.0f}")
+chk("% CETRAM@500 curves falling, real", 17, 100 * _ce.falling.mean(), tol=0.6, fmt="{:.0f}")
+chk("% CETRAM@500 curves falling, IAAFT surrogate", 14, 100 * _ce.falling_surr.mean(), tol=0.6, fmt="{:.0f}")
+chk("respiratory-band share, Cruces", 0.41, _cr.resp_share.median(), tol=0.005, fmt="{:.2f}")
+chk("respiratory-band share, CETRAM@500", 0.31, _ce.resp_share.median(), tol=0.005, fmt="{:.2f}")
+chk("Cruces resp share, falling curves", 0.49, _cr[_cr.falling].resp_share.median(), tol=0.005, fmt="{:.2f}")
+chk("Cruces resp share, rising curves", 0.35, _cr[~_cr.falling].resp_share.median(), tol=0.005, fmt="{:.2f}")
+chk("Cruces rho(resp peak sharpness, surrogate gap)", 0.14, _sp(_cr.resp_peak, _cr.surr_gap_t5)[0], tol=0.005, fmt="{:+.2f}")
+
+print("\n" + "=" * 96)
 print(f"SUMMARY: {CHECKS - len(FAILS)}/{CHECKS} checks passed")
 if FAILS:
     print(f"\n{len(FAILS)} MISMATCH(ES):")

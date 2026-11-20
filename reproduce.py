@@ -73,6 +73,7 @@ DERIVED = [
     ("compute_nagoya_windows.py", "Nagoya 15-min windows  -> japan_15min_windows.csv, japan_scale_profile.csv"),
     ("compute_sdnn_min.py", "minimum SDNN  -> sdnn_min_all_centers.csv"),
     ("compute_length_ladder.py", "length ladder  -> length_ladder.csv"),
+    ("compute_cruces_surrogates.py", "Cruces curve shape: IAAFT surrogates, respiratory share -> cruces_surrogates.csv"),
     ("compute_overlap_grid.py", "Nagoya overlapping windows  -> japan_overlap_grid.csv"),
     ("build_overlap_summary.py", "  -> fig7_overlap.csv"),
     ("compute_fig7_inputs.py", "Fig. 7 inputs  -> fig7_*.csv"),
