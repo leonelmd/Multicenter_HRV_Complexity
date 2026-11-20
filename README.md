@@ -37,6 +37,7 @@ Names follow the manuscript. Each script reads only `data/` unless stated.
 
 | Manuscript | Script | Output folder |
 |---|---|---|
+| Tables 1–4 | `tables.py` | `Tables/` |
 | Fig. 1 | `fig1_map.py`, `fig1_icons.py`, `fig1_ecg_traces.py`, `fig1_elements.py`*, `fig1_layout.py` | `Fig1_overview/` (final figure assembled in Affinity Designer: `Fig1_overview.af`) |
 | Fig. 2 | `fig2_archetypes.py` (trace panels*) | `Fig2_archetypes/` |
 | Fig. 3 | `fig3_curves_index.py` | `Fig3_curves_index/` |

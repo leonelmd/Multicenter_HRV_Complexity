@@ -1,0 +1,5 @@
+analysis,n_OH,n_noOH,median_OH,median_noOH,AUC,p,rho
+"Mann-Whitney, all with OH recorded",9,13.0,0.802110941715798,1.2101772618517612,0.7777777777777778,0.0326063047830172,
+"Mann-Whitney, without the retained SDNN>100 ms recording",9,12.0,0.802110941715798,1.212642349467313,0.8333333333333334,0.011639972121794035,
+ranked index ~ OH + age + HR (HC3),9,10.0,,,,0.04804011543140017,
+Spearman with the autonomic clinical index,14,,,,,0.6922808286151888,-0.11625035668349172

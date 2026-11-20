@@ -725,5 +725,46 @@ def generate_figure8():
     print(f"  Correlations saved → figures/Fig9_clinical/Fig9_clinical_correlations.csv")
 
 
+def orthostatic_hypotension():
+    """Complexity by history of orthostatic hypotension (Results, Exploratory clinical
+    associations): Mann-Whitney in all PD with the field recorded, without the retained PD
+    recording with SDNN > 100 ms, and a regression of the ranked index on OH, age (on the
+    day of the ECG) and heart rate with HC3 errors. Also the autonomic clinical index.
+    Writes figures/Fig9_clinical/Fig9_clinical_oh.csv."""
+    import statsmodels.api as sm
+    from scipy.stats import mannwhitneyu, spearmanr
+    from paths import CLINICAL_XLSX
+    clin = pd.read_excel(CLINICAL_XLSX).rename(columns={'Anonymous_ID': 'Subject'})
+    mse = pd.read_csv(os.path.join(DATA_DIR, 'chile_mse.csv'))
+    mse = mse[(mse.Group == 'PD') & (mse.Scales <= 5)].sort_values('Scales')
+    cx = mse.groupby('Subject').MSE.apply(lambda v: np.trapezoid(v.values, np.arange(1, 6)) / 5)
+    met = pd.read_csv(os.path.join(DATA_DIR, 'chile_metrics.csv')).set_index('Subject')
+    age = pd.read_csv(os.path.join(DATA_DIR, 'chile_demographics.csv')).set_index('Anon_ID').Age
+    d = clin[clin.Subject.isin(cx.index)].copy()
+    d['cx'] = d.Subject.map(cx); d['HR'] = d.Subject.map(60000.0 / met.HRV_MeanNN)
+    d['SDNN'] = d.Subject.map(met.HRV_SDNN); d['Age_ECG'] = d.Subject.map(age)
+    oh = d[d['Orthostatic hypotension'].notna()].copy()
+    oh['OH'] = oh['Orthostatic hypotension'].astype(int)
+    rows = []
+
+    def mw(x, label):
+        c, p = x[x.OH == 0].cx, x[x.OH == 1].cx
+        u = mannwhitneyu(c, p)
+        rows.append(dict(analysis=label, n_OH=len(p), n_noOH=len(c), median_OH=p.median(),
+                         median_noOH=c.median(), AUC=u.statistic / len(c) / len(p), p=u.pvalue))
+    mw(oh, 'Mann-Whitney, all with OH recorded')
+    mw(oh[oh.SDNN <= 100], 'Mann-Whitney, without the retained SDNN>100 ms recording')
+    z = oh.dropna(subset=['Age_ECG', 'HR'])
+    m = sm.OLS(z.cx.rank(), sm.add_constant(z[['OH', 'Age_ECG', 'HR']])).fit(cov_type='HC3')
+    rows.append(dict(analysis='ranked index ~ OH + age + HR (HC3)', n_OH=int(z.OH.sum()),
+                     n_noOH=int((1 - z.OH).sum()), p=m.pvalues['OH']))
+    ai = d.dropna(subset=['Autonomic disorder clinical index'])
+    r, p = spearmanr(ai.cx, ai['Autonomic disorder clinical index'])
+    rows.append(dict(analysis='Spearman with the autonomic clinical index', n_OH=len(ai), rho=r, p=p))
+    pd.DataFrame(rows).to_csv(os.path.join(OUT_DIR, 'Fig9_clinical_oh.csv'), index=False)
+    print(pd.DataFrame(rows).round(3).to_string(index=False))
+
+
 if __name__ == '__main__':
     generate_figure8()
+    orthostatic_hypotension()

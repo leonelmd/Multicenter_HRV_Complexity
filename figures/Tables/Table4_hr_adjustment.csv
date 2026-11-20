@@ -1,0 +1,4 @@
+Cohort,AUC,p,AUC_HR_adjusted,p_HR_adjusted,beta_PD_standardized,p_beta
+CETRAM,0.6552,0.0309,0.6455,0.0312,-0.5365,0.0312
+Cruces,0.6575,0.0571,0.6052,0.0615,-0.4643,0.0615
+Nagoya,0.815,0.0002,0.8114,0.0001,-1.0334,0.0001

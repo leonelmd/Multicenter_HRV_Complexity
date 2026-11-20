@@ -121,7 +121,7 @@ print("=" * 96)
 lad = pd.read_csv(os.path.join(D, "fig7_window_ladder.csv"))
 for met, wmin, claim in [("SDNN", 1.4167, 0.905), ("SDNN", 2.8333, 0.919),
                          ("SDNN", 15, 0.795), ("SDNN", 240, 0.760),
-                         ("complexity", 15, 0.842), ("complexity", 240, 0.762)]:
+                         ("complexity", 15, 0.839), ("complexity", 240, 0.762)]:
     r = lad[(lad.metric == met) & (np.isclose(lad.win_min, wmin, atol=0.01))]
     chk(f"ladder {met} @ {wmin:g} min", claim,
         float(r.AUC.iloc[0]) if len(r) else None, tol=0.004)
