@@ -12,4 +12,4 @@ sandbox paths and do not run unmodified from this repository.
 | `cruces_diagnosis/` | Cruces scale-structure diagnostics (Results, "The photoplethysmographic cohort"): falling-curve fractions, surrogates, respiratory-band share, sampling and fiducial checks. |
 | `ppg_fiducials/` | Label-blind choice of the PPG fiducial point and ectopic correction for Cruces. |
 | `adjudication_2026-11-17/` | CETRAM trace-review exclusions: `cetram_manuscript_numbers.py` recomputes every CETRAM number in the text (run from `public_release/`). |
-| `pt_entropy.py` | Pan-Tompkins versus Brammer comparison (Results, "Sensitivity to the beat-detection stage"). |
+| `pt_entropy.py` | Pan-Tompkins versus Brammer comparison (Results, "Sensitivity to the beat-detection stage", Fig. 6E). Its output is `data/cetram_detector_curves.csv`; the inputs are re-runs of the CETRAM beat detection with each detector. |

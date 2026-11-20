@@ -1,83 +1,47 @@
 # Data availability
 
-This repository contains **derived data only**. Every file in `data/` is a
-pre-computed feature table — entropy curves, HRV metrics, de-identified
-demographics — from which all figures and statistics can be regenerated.
+## In this repository
 
-Raw physiological recordings and individual-level clinical records are **not
-shared here**. They remain subject to the ethics approvals and data-sharing
-agreements of the contributing centres.
+`data/` holds derived, de-identified tables: rcMSE curves, HRV indices, age, sex and
+group per participant, and the intermediate tables behind each figure. Participants
+appear only under study codes (C001, P001, B01, SUB-001, …). Every file is described in
+[data/README.md](data/README.md). Every figure and every number in the manuscript can be
+regenerated from these tables (`python reproduce.py`), except the four items below.
 
----
+## Not in this repository
 
-## What is included
+| Input | Needed for | Held by | Request from |
+|---|---|---|---|
+| CETRAM raw ECG and beat series | Figs. 6 and S9; the data-driven panels of Fig. 1; rebuilding `data/` | CETRAM, Santiago | the corresponding author (leonel.medina@usach.cl) |
+| Cruces pulse-interval series | rebuilding `data/` | Hospital Universitario Cruces, Bilbao | the authors of Iniguez et al. 2022 |
+| Nagoya 24-h RR series | rebuilding `data/` | Nagoya University Graduate School of Medicine | M. Suzuki or M. Katsuno, Nagoya University |
+| CETRAM clinical table (de-identified) | Fig. 9 | CETRAM, Santiago | the corresponding author |
 
-| Path | Contents |
-|---|---|
-| `data/*_mse.csv` | rcMSE curves, scales 1–20, per subject |
-| `data/*_metrics.csv` | HRV feature tables (time, frequency, nonlinear) |
-| `data/*_demographics.csv`, `japan_metadata.csv` | age, sex, group |
-| `data/japan_15min_windows.csv` | per-window complexity across 24 h (Nagoya) |
-| `data/japan_scale_profile.csv` | scale-resolved entropy, τ = 1–60 (Nagoya) |
-| `data/sdnn_min_all_centers.csv` | minimum-value HRV indices, all cohorts |
-| `data/benchmarks/` | machine-learning cross-validation results |
-| `data/sample_signals/` | five anonymised CETRAM RR traces, for demonstration |
-| `figures/**/*.csv` | every number plotted in every figure |
+The trace panels of Fig. 2 are drawn only when the beat series are available.
 
-## What is **not** included, and why
+The clinical table is withheld because the combination of age, sex, disease duration and
+clinical scores in 25 participants gives cell sizes small enough to permit
+re-identification. The correlations it yields are released
+(`figures/Fig9_clinical/Fig9_clinical_correlations.csv`).
 
-### Clinical data — CETRAM (affects Figure 8)
+Access is subject to a data-sharing agreement and to the approvals of the centre that
+holds the data.
 
-The CETRAM clinical workbook (`deidentified_clinical_consolidated.xlsx`, not in this
-repository) holds one row per PD participant (25 of the 27 analysed have a clinical
-record) with Hoehn & Yahr stage, CISI-PD subscales, Schwab & England score,
-disease duration, levodopa-equivalent dose, genetic findings, comorbidities and
-non-motor symptom flags.
+## Using the original data
 
-Although direct identifiers have been removed, the combination of age, sex,
-disease duration and clinical scores across 25 individuals yields very small cell
-sizes, and a formal k-anonymity assessment has not been carried out. Publishing
-it could permit re-identification. **It is therefore withheld.**
+Place the data as described in [scripts/paths.py](scripts/paths.py) and set
+`HRV_DATA_ROOT` to that folder; put the clinical table in `data/private/`, which git
+ignores. Then
 
-**Consequence: Figure 8 (clinical correlations) cannot be regenerated from this
-repository.** The figure and its underlying correlation table
-(`figures/Figure8/figure8_correlations.csv`) are released so the results are fully
-inspectable; the subject-level clinical data behind them are not.
+```bash
+python reproduce.py derived    # rebuild data/ from the series
+python reproduce.py            # all figures, including those otherwise skipped
+```
 
-Researchers who need the clinical data should **contact the corresponding author**.
-Access requires a data-sharing agreement and approval from the CETRAM ethics
-committee.
+## Source publications
 
-### Raw ECG / PPG / Holter recordings
-
-| Cohort | Signal | Held by |
-|---|---|---|
-| CETRAM | raw ECG, 1000 Hz, ~15 min | CETRAM, Santiago de Chile |
-| Cruces | finger PPG, 500 Hz, 7.40 min | Hospital Universitario Cruces, Bilbao |
-| Nagoya | 24-h wearable RR series | Nagoya University Hospital |
-
-**Consequences:** the raw-trace panels of Figure 2 render empty (five anonymised
-CETRAM traces are provided in `data/sample_signals/` for demonstration); rcMSE
-cannot be recomputed from signal, though the resulting curves are shipped; and the
-deep-learning benchmark (`scripts/benchmark_dl_loco.py`) cannot be run.
-
-The Cruces and Nagoya cohorts were first described in their source publications,
-which should be consulted for cohort-level detail and cited alongside this work:
-
-- Iniguez M, et al. *Heart-brain synchronization breakdown in Parkinson's disease.* npj Parkinsons Dis. 2022;8:64. doi:10.1038/s41531-022-00323-w
-- Suzuki M, et al. *Wearable sensor device-based detection of decreased heart rate variability in Parkinson's disease.* J Neural Transm. 2022;129:1299–1306. doi:10.1007/s00702-022-02528-y
-
----
-
-## Requesting access
-
-Contact the corresponding author (see `CITATION.cff`) stating the intended
-analysis. Requests are considered subject to:
-
-1. a data-sharing agreement with the centre holding the data;
-2. ethics approval covering the proposed use;
-3. for clinical data, approval from the CETRAM ethics committee.
-
-## Licence
-
-Derived data in this repository: **CC BY 4.0**. Code: **MIT**. See `LICENSE`.
+- Iniguez M, et al. Heart-brain synchronization breakdown in Parkinson's disease.
+  *npj Parkinson's Disease* 2022;8:64. doi:10.1038/s41531-022-00323-w
+- Suzuki M, et al. Wearable sensor device-based detection of decreased heart rate
+  variability in Parkinson's disease. *J Neural Transm* 2022;129:1299–1306.
+  doi:10.1007/s00702-022-02528-y

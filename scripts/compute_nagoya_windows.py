@@ -31,13 +31,7 @@ import time
 import numpy as np
 import pandas as pd
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = os.path.join(BASE, "data")
-NAGOYA = os.environ.get(
-    "NAGOYA_ROOT",
-    os.path.abspath(os.path.join(BASE, "..", "..", "Nagoya", "public_release")))
-RRI_DIR = os.path.join(NAGOYA, "data", "processed_rri")
-META = os.path.join(NAGOYA, "data", "metadata", "metadata.csv")
+from paths import DATA, NAGOYA_RRI as RRI_DIR, NAGOYA_META as META
 
 WIN_S = 900.0          # 15 min
 STEP_S = 900.0         # non-overlapping; see memo re. overlap and p10 vs min

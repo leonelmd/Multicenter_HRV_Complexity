@@ -21,7 +21,7 @@ Retained after review: P003, C018 (sinus, partial movement/tremor artefact), C03
   `cleaning_summary.csv` marked. Pre-exclusion copies: `results/_pre_adjudication_2026-11-17/`.
 - Multicenter `data/`: chile_* re-synced; per-subject derived files (fr_CETRAM, length_ladder,
   r_sweep, sdnn_min_all_centers, spectral_analysis) filtered; fig3_* recomputed with
-  `compute_fig3_inputs.py`. Pre-exclusion copies: `_pre_adjudication_2026-11-17_data/`.
+  `compute_fig7_inputs.py`. Pre-exclusion copies: `_pre_adjudication_2026-11-17_data/`.
 
 ## Clinical workbook
 `data/deidentified_clinical_consolidated.xlsx`: LED total added for P001, P003, P005, P009, P011,

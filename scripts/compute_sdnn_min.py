@@ -27,14 +27,8 @@ import glob
 import numpy as np
 import pandas as pd
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = os.path.join(BASE, "data")
-ROOT = os.path.abspath(os.path.join(BASE, "..", ".."))
+from paths import DATA, CETRAM_PEAKS as CETRAM_DET, CRUCES_RRI, NAGOYA_RRI, NAGOYA_META
 
-CETRAM_DET = os.path.join(ROOT, "CETRAM", "public_release", "results", "cleaned_detections")
-CRUCES_RRI = os.path.join(ROOT, "Cruces", "public_release", "data", "processed", "RRi")
-NAGOYA_RRI = os.path.join(ROOT, "Nagoya", "public_release", "data", "processed_rri")
-NAGOYA_META = os.path.join(ROOT, "Nagoya", "public_release", "data", "metadata", "metadata.csv")
 
 RRI_MIN, RRI_MAX = 300.0, 2000.0
 WINDOWS = (100, 200, 300)

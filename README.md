@@ -1,201 +1,120 @@
-# Multicenter Parkinson's Disease — Cardiac Autonomic Complexity
+# Cardiac autonomic complexity in Parkinson's disease — three cohorts
 
-Code and derived data for a multicenter study of cardiac autonomic complexity in
-Parkinson's disease (PD), measured by refined composite multiscale entropy (rcMSE)
-across three independent cohorts and three recording modalities.
+Code and derived data for *Reduced multiscale complexity of RR intervals in Parkinson's
+disease: effects of acquisition modality and recording length* (L. E. Medina et al.,
+NeuroEng@Usach, Universidad de Santiago de Chile).
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+Complexity is refined composite multiscale entropy (rcMSE) of the RR-interval series,
+with a tolerance fixed from the original series (r = 0.2 SD), summarised as the
+normalised area under the curve, nAUC = trapz(curve, τ = 1…n) / n.
 
----
-
-## Cohorts
-
-| Centre | Signal | Recording | Analysed n | Controls | Source publication |
-|---|---|---|---|---|---|
-| **CETRAM**, Santiago, Chile | ECG, 1000 Hz | ~15 min rest | **69** (42 C / 27 PD; 4 excluded after trace review) | healthy | — |
-| **Cruces**, Bilbao, Spain | finger PPG, stored at 500 Hz (effective 100 Hz) | **7.40 min**, during resting-state fMRI | **52** (21 C / 31 PD) | healthy | Iniguez et al. 2022 |
-| **Nagoya**, Japan | ECG, wearable chest strap (POLAR) | ~24 h in hospital; 18:00–22:00 window pre-specified | **47** (21 C / 26 PD) | **disease controls** | Suzuki et al. 2022 |
-
-Notes that matter for interpretation:
-
-- **Nagoya controls are disease controls**, not healthy volunteers — 12 essential tremor and 11 investigated for numbness/dizziness/light-headedness with no abnormality found. Nagoya effect sizes are therefore against a harder comparator than the other two cohorts.
-- **Cruces carries six records labelled `Other`** (`A01_1, A03_2, A05_2, A09, D01, D05`) with no diagnosis. They are **excluded from all primary analyses**; the published cohort of Iniguez et al. is exactly 31 PD + 21 healthy controls, which matches our Control/PD counts. A sensitivity analysis including them is reported in the manuscript.
-- Nagoya n varies by analysis: 50 subjects have a full record (mixed model over all 15-min windows), 47 cover the pre-specified 18:00–22:00 window (primary analysis), 45 the 16:00–20:00 alternative, 39 the 07:00–11:00 window, and 42 reach the 4000-beat length ladder.
-
----
-
-## The complexity index
-
-**rcMSE with a fixed tolerance.** For each subject:
-
-1. Compute refined composite multiscale entropy (Wu et al. 2014) on the RR-interval series, scales τ = 1…20.
-2. The tolerance is `r = 0.2 × SD(RRi)`, computed **once from the original series and held constant across every scale**.
-3. Summarise with `nAUC = trapz(1..n, curve) / n` over the reliable scale range (unnormalized; HR enters models as a covariate).
-
-### Why fixed r is not a detail
-
-Coarse-graining reduces variance with scale. Holding `r` fixed lets that reduction
-express itself in the entropy — which is what MSE exists to measure. Recomputing
-`r` from each coarse-grained series cancels exactly that term: on synthetic
-signals the per-scale variant inverts the canonical Costa contrast, with
-white-noise entropy no longer decaying and 1/f noise rising.
-
-An earlier version of this pipeline recomputed `r` per scale. It has been
-corrected throughout and a regression test (`scripts/julia/test_entropy.jl`)
-now fails loudly if the defect is reintroduced. The Nagoya 4-h window curves
-(`Nagoya/public_release/calculations/japan_4h_mse_curves.csv`, source of
-`japan_window_mse.csv`, `japan_morning_mse.csv`, `japan_afternoon_mse.csv` and
-`japan_evolution.csv`) had not been regenerated after that fix; they were recomputed
-with fixed `r` on 2026-11-18 by `Nagoya/public_release/scripts/compute_4h_windows_nauc.py`
-(Python port of the corrected Julia script).
-
-### Scale ranges
-
-Reliability limit `N/τ ≥ 200`, validated independently by split-half reliability:
-
-| Cohort | beats | reliable τ | index used |
+| Cohort | Signal | Recording | Analysed |
 |---|---|---|---|
-| CETRAM | ~1115 | ≤ 5 | nAUC(1–5) |
-| Cruces | ~498 | ≤ 2 | nAUC(1–5) — see caveat |
-| Nagoya | ~16 000 (18:00–22:00 window) | ≤ 20 (up to 70 permitted) | nAUC(1–20) (primary); nAUC(1–5) reported alongside |
+| CETRAM, Santiago | ECG, 1 kHz | ~15 min at rest | 42 control / 27 PD |
+| Cruces, Bilbao | finger PPG | 7.4 min, during resting fMRI | 21 control / 31 PD |
+| Nagoya | chest-strap ECG | ~24 h in hospital; 18:00–22:00 analysed | 21 disease control / 26 PD |
 
-All indices are reported **unnormalized**. Dividing by mean heart rate was tested
-and rejected: the index scales as HR^b with b = −0.68 / −0.43 / −0.65 across
-cohorts, so a ratio moves it further from HR-independence, and the AUC it appears
-to gain is heart rate's own group signal. Where adjustment is wanted, HR is entered
-as a covariate. See Supplementary Fig. S1 (`generate_appendix5.py`).
-
-A fixed τ = 1–5 is applied to CETRAM and Cruces so the cohorts remain directly
-comparable. **Caveat:** at 498 beats Cruces exceeds its own reliability limit at
-τ > 2. Split-half reliability of the index (first vs second half of each series, each
-half with its own tolerance; `compute_split_half.py`) is 0.37 in CETRAM (1000 beats),
-0.37 in Cruces and 0.42 in Nagoya: the index separates groups but says little about a
-single individual. Cruces should be read as supporting the *direction* of effect, not as
-independent confirmation of magnitude.
-
-`nAUC` divides the trapezoidal area by the number of points `n`, not by the span
-`n−1`, so it carries an n-dependent factor (0.80 at n=5, 0.95 at n=20). Within a
-cohort this is a constant rescaling and changes nothing; **across cohorts with
-different scale ranges the raw values are not comparable** — use effect sizes.
-
----
-
-## Repository layout
-
-```
-public_release/
-├── scripts/
-│   ├── julia/                     rcMSE — the core computation
-│   │   ├── entropy.jl               canonical toolbox (fixed r, Wu shifts)
-│   │   ├── run_rcmse.jl             generic driver, any cohort
-│   │   ├── test_entropy.jl          regression tests
-│   │   └── Project.toml             pinned Julia environment
-│   ├── run_pipeline.py            runs everything below, in order
-│   ├── sync_center_data.py        pulls per-centre outputs into data/
-│   ├── generate_figure2..8.py     manuscript figures (Figure 1 is not scripted —
-│   │                                see figures/Figure1/ below)
-│   ├── generate_appendix*.py      supplementary figures
-│   ├── generate_validation_figure.py   methods-validation figure (S1)
-│   ├── complexity_index.py        single canonical definition of the index
-│   ├── traditional_hrv_metrics.py ┐
-│   ├── multiscale_decomposition.py│ Figure 7 statistical pre-steps,
-│   ├── complexity_correlation_analysis.py │ run in this order
-│   ├── incremental_value_analysis.py      │
-│   └── cross_dataset_consistency.py       ┘
-├── data/                          derived features (see PROVENANCE.md)
-├── figures/                       SVG output + every plotted number as CSV
-├── requirements.txt               Python dependencies
-├── requirements-lock.txt          exact versions used for the released figures
-├── LICENSE                        MIT (code) / CC BY 4.0 (derived data)
-└── CITATION.cff
-```
-
----
-
-## Reproducing
-
-### 1. Environments
+## Quick start
 
 ```bash
-pip install -r requirements-lock.txt          # exact released versions
-cd scripts/julia && julia --project=. -e 'using Pkg; Pkg.instantiate()'
+pip install -r requirements-lock.txt      # Python 3.10-3.12; exact versions used
+python reproduce.py                       # every figure, then the check of every number in the text
 ```
 
-### 2. Verify the entropy implementation
+This takes about two minutes. It needs nothing beyond this repository. Figures are
+written to `figures/<figure>/<figure>.svg` (and `.png`). The last step,
+`scripts/verify_manuscript_claims.py`, recomputes each number quoted in the manuscript
+from `data/` and stops with an error if any one differs.
+
+Four outputs need inputs that are not distributed and are skipped with a message:
+Fig. 6 and Suppl. Fig. S9 (raw ECG), Fig. 9 (clinical table), and the data-driven
+panels of Fig. 1. The trace panels of Fig. 2 are drawn only when the original series
+are available. See [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md).
+
+## Figures
+
+Names follow the manuscript. Each script reads only `data/` unless stated.
+
+| Manuscript | Script | Output folder |
+|---|---|---|
+| Fig. 1 | `fig1_map.py`, `fig1_icons.py`, `fig1_ecg_traces.py`, `fig1_elements.py`*, `fig1_layout.py` | `Fig1_overview/` (final figure assembled in Affinity Designer: `Fig1_overview.af`) |
+| Fig. 2 | `fig2_archetypes.py` (trace panels*) | `Fig2_archetypes/` |
+| Fig. 3 | `fig3_curves_index.py` | `Fig3_curves_index/` |
+| Fig. 4 | `fig4_age.py` | `Fig4_age/` |
+| Fig. 5 | `fig5_parameters.py` | `Fig5_parameters/` |
+| Fig. 6 | `fig6_detector.py`† | `Fig6_detector/` |
+| Fig. 7 | `fig7_recording_length.py` | `Fig7_recording_length/` |
+| Fig. 8 | `fig8_step1…5_*.py`, then `fig8_hrv_relationships.py` | `Fig8_hrv_relationships/` |
+| Fig. 9 | `fig9_clinical.py`‡ | `Fig9_clinical/` |
+| Suppl. S1–S5 | `figS1_hr_normalization.py`, `figS2_spectral.py`, `figS3_cruces_context.py`, `figS4_length.py`, `figS5_ppg_scales.py` | `FigS1_…` to `FigS5_…` |
+| Suppl. S6, S7 | `figS6_S7_cross_cohort.py` | `FigS6_S7_cross_cohort/` |
+| Suppl. S8 | `figS8_validation.py` | `FigS8_validation/` |
+| Suppl. S9 | `figS9_traces.py`† | `FigS9_traces/` |
+
+\* needs the original beat series; † needs the raw ECG; ‡ needs the clinical table.
+Next to each figure are the tables it plots (`*_stats.csv` and the like). The legends
+are in [FIGURE_LEGENDS.md](FIGURE_LEGENDS.md).
+
+## Three levels of reproduction
+
+**1. Figures and numbers, from the shipped tables** — `python reproduce.py`. Everything
+in `data/` is described in [data/README.md](data/README.md).
+
+**2. The tables in `data/`, from the original series** — `python reproduce.py derived`.
+Needs the original beat and RR-interval series (available on reasonable request; see
+[DATA_AVAILABILITY.md](DATA_AVAILABILITY.md)). Point `HRV_DATA_ROOT` to them:
 
 ```bash
-cd scripts/julia
-julia --project=. test_entropy.jl
+export HRV_DATA_ROOT=/path/to/original_data
+python reproduce.py derived     # about 40 min on 2 cores, most of it the parameter sweep
+python reproduce.py             # figures and check from the rebuilt tables
 ```
 
-Checks SampEn against known limits, confirms rcMSE(τ=1) equals plain SampEn,
-verifies amplitude invariance, and asserts the Costa signature that fixed `r`
-must reproduce.
+The expected folder layout is in [scripts/paths.py](scripts/paths.py), the only place
+where locations are defined.
 
-### 3. Recompute rcMSE (optional — curves are shipped)
+**3. Beat series, rcMSE curves and HRV indices, from the raw signals** — done by the
+per-cohort processing code (beat detection, artefact correction, rcMSE, HRV indices),
+whose outputs `python reproduce.py import` copies into `data/` with their checksums
+(`data/PROVENANCE.md`). The rcMSE implementation itself is in `scripts/julia/`:
 
 ```bash
 cd scripts/julia
-julia --project=. run_rcmse.jl \
-      --input <cleaned_peaks_dir> --out ../../data/chile_mse.csv --scales 20
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
+julia --project=. test_entropy.jl                                   # regression tests
+julia --project=. run_rcmse.jl --input <beat files> --out <curves.csv> --scales 20
 ```
 
-See the header of `run_rcmse.jl` for all options. Requires the per-centre cleaned
-peak files, which are not in this repository.
+`scripts/rcmse_fast.py` is a Python port of the same algorithm (KD-tree counting), used
+for the long Nagoya windows and the length, split-half and parameter analyses; it
+reproduces the Julia values to machine precision.
 
-### 4. Figures
+## Layout
 
-```bash
-python scripts/run_pipeline.py
+```
+reproduce.py          entry point
+scripts/
+  paths.py            all file locations; HRV_DATA_ROOT
+  fig*.py             one script per manuscript figure
+  compute_*.py        rebuild data/ from the original series
+  import_cohort_tables.py   copy the per-cohort result tables into data/
+  verify_manuscript_claims.py   every number in the text, recomputed
+  julia/              rcMSE (Julia) with regression tests
+  rcmse_fast.py       rcMSE (Python port)
+  figstyle.py, pooling.py, complexity_index.py   shared helpers
+  provenance/         one-off analyses quoted in the text (see its README)
+  sync_manuscript.py  maintainer tool: figures and legends into the manuscript
+data/                 derived tables (data/README.md)
+figures/              SVG figures and the tables behind them
 ```
 
-Regenerates Figures 2–8 and the appendices from `data/`. Runs in a few minutes.
-Repository figure names follow the analysis order, not the manuscript numbering; the
-mapping is in the manuscript README.
+Reruns are deterministic: random draws are seeded and SVG output is fixed by
+`matplotlibrc` and `SOURCE_DATE_EPOCH`, so `git status` stays clean after
+`python reproduce.py`.
 
----
+## Citation and licence
 
-## What can and cannot be reproduced here
-
-**Can** — everything from the shipped derived data: Figures 1, 3–7, both
-appendices, the validation figure, and all statistics.
-
-**Cannot:**
-
-| Item | Why |
-|---|---|
-| Figure 1 | A graphical abstract authored in Affinity Designer. The source is tracked as `figures/Figure1/Figure1.af`; there is no scripted stage for it. |
-| Figure 2 RRi trace panels | Raw RR series are not shared. Five anonymised CETRAM traces are in `data/sample_signals/` for demonstration; the trace panels render empty without the rest. |
-| **Figure 8** | **Depends on individual-level clinical records that are not shared.** The CETRAM PD clinical workbook is kept out of this repository; the cell sizes make re-identification a real risk and no k-anonymity assessment has been done. The figure and its correlation table are released so the results are inspectable, but the underlying data are not. **Request access from the corresponding author** — see [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md). |
-| rcMSE from raw signal | Requires the per-centre raw RRi. The curves in `data/*_mse.csv` are the shipped starting point. |
-| Deep-learning benchmark | `benchmark_dl_loco.py` needs raw RRi and PyTorch. |
-
-**Raw physiological recordings and individual-level clinical data are not shared
-in this repository.** They are available from the corresponding author on
-reasonable request, subject to a data-sharing agreement and the contributing
-centres' ethics approvals. See **[DATA_AVAILABILITY.md](DATA_AVAILABILITY.md)**
-for exactly what is and is not included, and how to request access.
-
----
-
-## Known limitations
-
-Recorded here rather than buried, because each affects how results should be read.
-
-1. **Complexity does not outperform minimum SDNN on long recordings.** In Nagoya the minimum SDNN over 100-beat windows (Suzuki et al.) reaches AUC 0.905, against 0.839 for the minimum of the 15-min complexity index and 0.815 for the pre-specified 4-h window. The two minima correlate at ρ = 0.78, and in a joint logistic model complexity adds nothing (likelihood-ratio p = 0.65; `compute_suzuki_incremental.py`).
-2. **The index is largely accounted for by the spectrum in the short cohorts.** In CETRAM and Cruces the entropy curves are close to those of 1/f^β noise matched on length, exponent and SD (Supplementary Fig. S2), so the group difference should not be read as evidence of nonlinear dynamics.
-3. **Cruces is underpowered for a multiscale index** — see the scale-range caveat above.
-4. **Nagoya PD are less physically active** (Suzuki et al. report standing time 2.1 vs 4.6 h/day). Any window-selection rule based on signal variability is therefore entangled with the disease; window selection here is never based on group separation.
-5. **Absolute entropy is not comparable across cohorts**, because `r = 0.2 × SD` is set by each recording's low-frequency content. Within-cohort comparisons are unaffected.
-
----
-
-## Data provenance
-
-`data/PROVENANCE.md` records the source of every file and the sync log.
-`sync_center_data.py` reproduces the copy from the per-centre repositories.
-
-## Contact
-
-NeuroEng@Usach — Universidad de Santiago de Chile.
-Open an issue, or contact the corresponding author for data access.
+See [CITATION.cff](CITATION.cff). Code: MIT. Derived data: CC BY 4.0 ([LICENSE](LICENSE)).
+The Cruces and Nagoya cohorts were first described by Iniguez et al., *npj Parkinson's
+Disease* 2022;8:64, and Suzuki et al., *J Neural Transm* 2022;129:1299–1306; please cite
+them alongside this work.

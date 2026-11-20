@@ -24,12 +24,7 @@ Output
                HRV_MeanNN, HRV_SDNN, HRV_RMSSD, HRV_pNN50,
                DFA_alpha1, DFA_alpha2
 
-This file is the single authoritative source of Nagoya HRV features for the
-18–22 h window and should be used by generate_figure5.py and generate_appendix.py
-instead of mixing japan_evolution.csv (partial) and japan_recalc_metrics.csv (24h).
-
-Note: japan_recalc_metrics.csv (full 24h) is still used by traditional_hrv_metrics.py
-for the Figure 7 correlation analysis, where whole-day HRV is appropriate.
+This file is the single source of Nagoya HRV features for the 18–22 h window.
 
 Requires raw RRi data (not included in public_release — available on request):
   NAGOYA_RRI_DIR  : folder with *_RRi.txt files (space-sep: rel_time_s  rri_s)
@@ -49,14 +44,8 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
-BASE            = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Resolved relative to the repo root; override with NAGOYA_ROOT if needed.
-_NAGOYA_ROOT    = os.environ.get(
-    "NAGOYA_ROOT",
-    os.path.abspath(os.path.join(BASE, "..", "..", "Nagoya", "public_release")))
-NAGOYA_RRI_DIR  = os.path.join(_NAGOYA_ROOT, "data", "processed_rri")
-NAGOYA_META_CSV = os.path.join(_NAGOYA_ROOT, "data", "metadata", "metadata.csv")
-OUT_CSV         = os.path.join(BASE, 'data', 'japan_window_features.csv')
+from paths import DATA, NAGOYA_RRI as NAGOYA_RRI_DIR, NAGOYA_META as NAGOYA_META_CSV
+OUT_CSV         = os.path.join(DATA, 'japan_window_features.csv')
 
 # Suzuki et al. (2022) adjacent-difference exclusion for RMSSD / pNN50.
 SUZUKI_DIFF_EXCL_MS = 100.0
@@ -202,7 +191,7 @@ def compute_hrv(rri_ms):
         return None
 
     # Frequency domain (Welch on the 4-Hz interpolated series) and Poincare SD1/SD2,
-    # so that the conventional-HRV comparison (traditional_hrv_metrics.py, Fig. 8)
+    # so that the conventional-HRV comparison (fig8_step1_hrv_table.py, Fig. 8)
     # uses the same 18:00-22:00 window as the entropy, not the 24-h record.
     try:
         fd = nk.hrv_frequency(peaks, sampling_rate=1000, show=False)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build data/fig3_overlap.csv (panel I) from the dense sliding grid.
+"""Build data/fig7_overlap.csv (panel I) from the dense sliding grid.
 
 Reads data/japan_overlap_grid.csv, produced by scripts/compute_overlap_grid.py, which
 holds rcMSE recomputed from the raw RR series on a 0.75-min step. Each overlap level is
@@ -50,7 +50,7 @@ def main():
 
     out = pd.DataFrame(rows, columns=["overlap", "step_min", "windows", "median_min",
                                       "AUC_min", "AUC_p10", "AUC_med"])
-    out.to_csv(os.path.join(D, "fig3_overlap.csv"), index=False)
+    out.to_csv(os.path.join(D, "fig7_overlap.csv"), index=False)
     print("\n" + out.to_string(index=False))
 
 

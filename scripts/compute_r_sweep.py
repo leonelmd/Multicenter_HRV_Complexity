@@ -53,32 +53,30 @@ def rcmse_multi(x, scales, rs, m=2):
         out[ok, si] = -np.log(A[ok]/B[ok])
     return out
 
-# HRV-Complexity root, derived from this file (scripts/ -> public_release/ -> Multicenter/ -> root)
-MC=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE=os.path.dirname(os.path.dirname(MC))
+from paths import REPO as MC, CETRAM_PEAKS, CRUCES_RRI, NAGOYA_RRI, NAGOYA_META
 CAP=None   # no cap: full 18:00-22:00 window (KD-tree counts)
 def load(name):
     recs=[]
     if name=='CETRAM':
         for g in ['Control','PD']:
-            for p in sorted(glob.glob(f'{BASE}/CETRAM/public_release/results/cleaned_detections/{g}/*_cleaned.csv')):
+            for p in sorted(glob.glob(f'{CETRAM_PEAKS}/{g}/*_cleaned.csv')):
                 s=os.path.basename(p).replace('_cleaned.csv','')
                 x=np.diff(pd.read_csv(p)['sample'].values.astype(float)); x=x[np.isfinite(x)]
                 # Same 300-2000 ms guard as compute_length_ladder.py and the Methods.
                 recs.append((s,g,x[(x>300.0)&(x<2000.0)]))
     elif name=='Cruces':
         grp=dict(pd.read_csv(f'{MC}/data/spain_mse.csv')[['Subject','Group']].drop_duplicates().values)
-        for p in sorted(glob.glob(f'{BASE}/Cruces/public_release/data/processed/RRi/*.csv')):
+        for p in sorted(glob.glob(f'{CRUCES_RRI}/*.csv')):
             s=os.path.basename(p).replace('.csv','')
             if grp.get(s) not in ('Control','PD'): continue
             x=np.loadtxt(p).astype(float); x=x[np.isfinite(x)]; recs.append((s,grp[s],x[(x>300.0)&(x<2000.0)]))
     else:
-        meta=pd.read_csv(f'{BASE}/Nagoya/public_release/data/metadata/metadata.csv')
+        meta=pd.read_csv(NAGOYA_META)
         grp=dict(pd.read_csv(f'{MC}/data/japan_window_mse.csv')[['Subject','Group']].drop_duplicates().values)
         for _,inf in meta.iterrows():
             s=str(inf['Subject_ID']).strip()
             if grp.get(s) not in ('Control','PD'): continue
-            f=f'{BASE}/Nagoya/public_release/data/processed_rri/{s}_RRi.txt'
+            f=f'{NAGOYA_RRI}/{s}_RRi.txt'
             if not os.path.exists(f): continue
             a=np.loadtxt(f); t,r=a[:,0],a[:,1]*1000.0
             try:
