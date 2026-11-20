@@ -1,0 +1,7 @@
+Cohort,Group,N,Female,Male,Unknown,Source,Pct_female_known,Fisher_p
+CETRAM,Control,42,24,17,1,per participant,58.53658536585366,0.010275927037506016
+CETRAM,PD,27,6,19,2,per participant,24.0,0.010275927037506016
+Cruces,Control,21,9,12,0,source publication,42.857142857142854,0.772080634609448
+Cruces,PD,31,11,20,0,source publication,35.483870967741936,0.772080634609448
+Nagoya,Control,21,11,10,0,per participant,52.38095238095238,0.7724818212447504
+Nagoya,PD,26,12,14,0,per participant,46.15384615384615,0.7724818212447504
