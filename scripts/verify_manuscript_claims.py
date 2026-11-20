@@ -70,7 +70,7 @@ for name, df, c_claim, p_claim in [("CETRAM", ch, 42, 27), ("Cruces", sp, 21, 31
     chk(f"{name} n PD", p_claim, npd, tol=0, fmt="{:.0f}")
 
 print("\n" + "=" * 96)
-print("2. PRIMARY COMPLEXITY RESULTS  (unnormalised index)")
+print("2. PRIMARY COMPLEXITY RESULTS")
 print("=" * 96)
 cet = index_by_subject(os.path.join(D, "chile_mse.csv"), 1, 5)
 a, p = auc(cet[cet.Group == "Control"].idx, cet[cet.Group == "PD"].idx)

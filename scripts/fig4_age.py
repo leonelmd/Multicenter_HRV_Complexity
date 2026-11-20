@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Fig. 4 — Complexity index against age
-- Analysis of the unnormalized complexity index vs Age across validation centers.
+- Analysis of the complexity index vs Age across validation centers.
 - Standardized range rule applied: Chile/Spain (1-5), Japan (1-20).
 - Includes Morning and Afternoon Japanese cohorts.
 """
@@ -96,7 +96,7 @@ def generate_figure6():
             df = pd.merge(comp, df_j_meta[['Subject','Group','Age']], on='Subject')
             df['Group'] = df['Group'].replace({'CONTROL':'Control', 'PD':'PD'})
 
-        # Unnormalized: see HR_NORMALISATION_ANALYSIS.md / Appendix 5.
+        # Not divided by HR (Fig. S1).
         df['Norm'] = df['MSE']
         df = df.dropna(subset=['Age', 'Norm'])
 
@@ -116,7 +116,7 @@ def generate_figure6():
 
         ax.set_title(f"{name}\n{scale_desc}", fontsize=22, fontweight='normal')
         ax.set_xlabel("Age (years)", fontsize=18)
-        ax.set_ylabel("Complexity index, nAUC (unnormalized)", fontsize=18)
+        ax.set_ylabel("Complexity index, nAUC", fontsize=18)
         ax.grid(True, alpha=0.15)
         ax.legend(loc='lower left', fontsize=12)
         sns.despine(ax=ax)

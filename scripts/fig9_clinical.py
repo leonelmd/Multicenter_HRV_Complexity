@@ -2,7 +2,7 @@
 """
 Fig. 9 — Clinical correlations, CETRAM PD
 =========================================================
-Correlates the rcMSE cardiac complexity index (nAUC 1–5, unnormalized) with
+Correlates the rcMSE cardiac complexity index (nAUC 1–5) with
 clinical characteristics of 29 PD patients from the CETRAM cohort.
 
 Clinical data source: data/private/deidentified_clinical_consolidated.xlsx (not distributed)
@@ -194,7 +194,7 @@ def load_data():
             if 'HR' in demo.columns else pd.DataFrame({'Subject': [], 'HR': []})
 
     mse_wide = mse_wide.merge(hr_df, on='Subject', how='left')
-    # Unnormalized: see HR_NORMALISATION_ANALYSIS.md / Appendix 5.
+    # Not divided by HR (Fig. S1).
     mse_wide['Complexity'] = mse_wide['nAUC_1_5']
 
     # Also add DFA_alpha1 from chile_metrics if available

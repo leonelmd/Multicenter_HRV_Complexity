@@ -17,7 +17,7 @@ the largest HR difference and is the one cohort where normalisation makes
 discrimination worse — the apparent gain elsewhere is the ratio smuggling in
 heart rate, which itself differs between groups, rather than removing a confound.
 
-Conclusion: report the UNNORMALISED index, and handle HR as a covariate where a
+Conclusion: report the index as is (not divided by HR), and handle HR as a covariate where a
 correction is wanted (ANCOVA shows it contributes nothing in CETRAM or Nagoya).
 
 Output: figures/FigS1_hr_normalization/FigS1_hr_normalization.{png,svg} + _stats.csv
@@ -119,8 +119,8 @@ def main():
     x = np.arange(len(COH))
     raw = [spearmanr(D[c].cx, D[c].HR) for c in COH]
     div = [spearmanr(D[c].cxhr, D[c].HR) for c in COH]
-    ax.bar(x - .2, [r[0] for r in raw], .4, color="#7F8C8D", label="unnormalized")
-    ax.bar(x + .2, [r[0] for r in div], .4, color="#8E44AD", label="$\\div$ mean HR")
+    ax.bar(x - .2, [r[0] for r in raw], .4, color="#7F8C8D", label="complexity index")
+    ax.bar(x + .2, [r[0] for r in div], .4, color="#8E44AD", label="index $\\div$ mean HR")
     for i, (r, dd) in enumerate(zip(raw, div)):
         ax.text(i - .2, r[0] - .05, "n.s." if r[1] > .05 else f"p={r[1]:.3f}",
                 ha="center", fontsize=8)
@@ -164,8 +164,8 @@ def main():
         resid = d.cx - mdl.params["HR"] * d.HR
         a_anc = roc_auc_score(d.y, -resid)
         for j, (v, cc, nm) in enumerate([(a_hr,  "#D35400", "HR alone"),
-                                         (a_raw, "#7F8C8D", "unnormalized"),
-                                         (a_div, "#8E44AD", "$\\div$ HR"),
+                                         (a_raw, "#7F8C8D", "complexity index"),
+                                         (a_div, "#8E44AD", "index $\\div$ HR"),
                                          (a_anc, "#16A085", "HR as covariate")]):
             ax.bar(i + (j - 1.5) * w, v, w, color=cc, label=nm if i == 0 else None)
             ax.text(i + (j - 1.5) * w, v + .006, f"{v:.3f}", ha="center", fontsize=7)
@@ -196,7 +196,7 @@ def main():
         xs = np.linspace(d.HR.min(), d.HR.max(), 50)
         axx.plot(xs, np.polyval(z, xs), ls=ls, lw=2.4, color=cc)
     ax.set_xlabel("mean heart rate (bpm)")
-    ax.set_ylabel("unnormalized index  (o, grey fit)", color="#555")
+    ax.set_ylabel("complexity index  (o, grey fit)", color="#555")
     ax2.set_ylabel("index $\\div$ HR  (x, purple fit)", color="#8E44AD")
     ax2.tick_params(axis="y", labelcolor="#8E44AD")
     ax.set_title("Nagoya: index vs heart rate")

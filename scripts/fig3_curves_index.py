@@ -4,7 +4,7 @@ Fig. 3 — rcMSE curves and complexity index per cohort (Standardized by Signal 
 Determines scale range based on available heartbeats (N/Tau >= 200 rule).
 - Chile/Spain (15min, N~1100): Scales 1-5
 - Japan (4hr, N~15000): Scales 1-20
-Complexity indices are reported unnormalized; HR is entered as a covariate.
+Complexity indices are not divided by HR; HR is entered as a covariate.
 """
 
 import os
@@ -113,18 +113,12 @@ def generate_figure4():
         ax1.axvspan(min(index_range), max(index_range), color='gray', alpha=0.1)
         ax1.legend(fontsize=9, loc='upper right')
 
-        # --- BOTTOM ROW: Complexity Index (unnormalized; HR as covariate) ---
+        # --- BOTTOM ROW: complexity index (HR as covariate) ---
         ax2 = fig.add_subplot(gs[1, col_idx])
         add_panel_label(ax2, chr(69 + col_idx))
         
-        # Complexity index via the canonical definition (scripts/complexity_index.py).
-        # method="mean" reproduces the historical inline `MSE.mean()` exactly; see that
-        # module for why the naming was inconsistent with the manuscript and why the
-        # choice of formula does not change any result.
-        # Manuscript definition: trapezoidal area over scales a..b divided by the number
-        # of scales (Methods eq. for nAUC; also verify_manuscript_claims.py). The
-        # historical "mean" ranks subjects slightly differently, so its p values did not
-        # match the text.
+        # Complexity index (Methods): trapezoidal area over scales a..b divided by the
+        # number of scales.
         sub_index = subject_index_table(df_mse, index_range, method="trapz")
         sub_index['Complexity'] = sub_index['Complexity'] / len(list(index_range))
         sub_index = sub_index.rename(columns={'Complexity': 'MSE'})
@@ -142,12 +136,7 @@ def generate_figure4():
         elif met_type == 'JAPAN_EVO_AFTERNOON':
             df_final = pd.merge(sub_index, hr_j_a, on='Subject')
             
-        # Unnormalized index. Dividing by HR was dropped: the index scales with HR
-        # as HR^b with b = -0.40 / -0.43 / -1.03 across cohorts (Appendix 5), so a ratio (which
-        # shifts b to b-1) moves the index further from HR-independence rather than
-        # closer, and its apparent AUC gain is heart rate's own group signal.
-        # See HR_NORMALISATION_ANALYSIS.md and Appendix 5. HR is retained below as
-        # a covariate, which is the defensible adjustment.
+        # The index is not divided by HR (Fig. S1); HR enters as a covariate below.
         df_final['Norm'] = df_final['MSE']
         df_plot = df_final[df_final['Group'].isin(['Control', 'PD'])]
 
@@ -158,7 +147,7 @@ def generate_figure4():
         p_vals = df_final[df_final['Group'] == 'PD']['Norm'].dropna()
         _, p = mannwhitneyu(c_vals, p_vals, alternative='two-sided')
         
-        # HR entered as a covariate — the defensible adjustment (see Appendix 5).
+        # HR entered as a covariate (Methods).
         _d = df_plot.dropna(subset=['Norm', 'HR']).copy()
         _d['g'] = (_d['Group'] == 'PD').astype(int)
         _m = sm.OLS(_d['Norm'], sm.add_constant(_d[['g', 'HR']])).fit(cov_type='HC3')  # HC3, as in Methods
@@ -166,8 +155,8 @@ def generate_figure4():
         auc_adj = roc_auc_score(_d['g'], -(_d['Norm'] - _m.params['HR'] * _d['HR']))
 
         range_str = rf"nAUC({min(index_range)}-{max(index_range)})"
-        ax2.set_title(f"Complexity Index (unnormalized)\n{range_str}", fontsize=18, fontweight='normal')
-        ax2.set_ylabel("Complexity Index", fontsize=14)
+        ax2.set_title(f"Complexity index\n{range_str}", fontsize=18, fontweight='normal')
+        ax2.set_ylabel("Complexity index", fontsize=14)
         ax2.set_xlabel(f"({length_desc})", fontsize=12, style='italic')
         ax2.grid(True, axis='y', alpha=0.15)
 

@@ -249,7 +249,7 @@ L 748.905614 101.679673
      </g>
     </g>
     <g id="text_15">
-     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="52.283651" y="281.30675" transform="rotate(-90 52.283651 281.30675)">Complexity index, nAUC (unnormalized)</text>
+     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="52.283651" y="281.30675" transform="rotate(-90 52.283651 281.30675)">Complexity index, nAUC</text>
     </g>
    </g>
    <g id="PathCollection_1">
@@ -1183,7 +1183,7 @@ L 1618.164745 134.763906
      </g>
     </g>
     <g id="text_33">
-     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="921.542781" y="281.30675" transform="rotate(-90 921.542781 281.30675)">Complexity index, nAUC (unnormalized)</text>
+     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="921.542781" y="281.30675" transform="rotate(-90 921.542781 281.30675)">Complexity index, nAUC</text>
     </g>
    </g>
    <g id="PathCollection_5">
@@ -2082,7 +2082,7 @@ L 748.905614 665.742905
      </g>
     </g>
     <g id="text_51">
-     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="52.283651" y="839.06675" transform="rotate(-90 52.283651 839.06675)">Complexity index, nAUC (unnormalized)</text>
+     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="52.283651" y="839.06675" transform="rotate(-90 52.283651 839.06675)">Complexity index, nAUC</text>
     </g>
    </g>
    <g id="PathCollection_9">
@@ -2983,7 +2983,7 @@ L 1618.164745 658.273802
      </g>
     </g>
     <g id="text_70">
-     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="921.542781" y="839.06675" transform="rotate(-90 921.542781 839.06675)">Complexity index, nAUC (unnormalized)</text>
+     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="921.542781" y="839.06675" transform="rotate(-90 921.542781 839.06675)">Complexity index, nAUC</text>
     </g>
    </g>
    <g id="PathCollection_13">

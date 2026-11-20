@@ -703,7 +703,7 @@ L 400.262081 568.998714
      </g>
     </g>
     <g id="text_32">
-     <text style="font-size: 14px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="17.837812" y="734.13875" transform="rotate(-90 17.837812 734.13875)">Complexity Index</text>
+     <text style="font-size: 14px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="17.837812" y="734.13875" transform="rotate(-90 17.837812 734.13875)">Complexity index</text>
     </g>
    </g>
    <g id="patch_9">
@@ -1031,7 +1031,7 @@ z
     <text style="font-size: 11px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #16a085" x="222.614556" y="602.502179" transform="rotate(-0 222.614556 602.502179)">HR-adjusted: p = 0.0312, AUC = 0.646</text>
    </g>
    <g id="text_36">
-    <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(44.967031 541.354116)">Complexity Index (unnormalized)</text>
+    <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(44.967031 541.354116)">Complexity index</text>
     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(44.967031 561.510179)">nAUC(1-5)</text>
    </g>
   </g>
@@ -1644,7 +1644,7 @@ L 879.910398 570.841571
      </g>
     </g>
     <g id="text_66">
-     <text style="font-size: 14px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="497.486129" y="734.13875" transform="rotate(-90 497.486129 734.13875)">Complexity Index</text>
+     <text style="font-size: 14px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="497.486129" y="734.13875" transform="rotate(-90 497.486129 734.13875)">Complexity index</text>
     </g>
    </g>
    <g id="patch_20">
@@ -1921,7 +1921,7 @@ z
     <text style="font-size: 11px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #16a085" x="702.262873" y="602.502179" transform="rotate(-0 702.262873 602.502179)">HR-adjusted: p = 0.0615, AUC = 0.605</text>
    </g>
    <g id="text_70">
-    <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(524.615348 541.354116)">Complexity Index (unnormalized)</text>
+    <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(524.615348 541.354116)">Complexity index</text>
     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(524.615348 561.510179)">nAUC(1-5)</text>
    </g>
   </g>
@@ -2489,7 +2489,7 @@ L 1359.558714 593.991254
      </g>
     </g>
     <g id="text_97">
-     <text style="font-size: 14px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="977.134446" y="734.13875" transform="rotate(-90 977.134446 734.13875)">Complexity Index</text>
+     <text style="font-size: 14px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="977.134446" y="734.13875" transform="rotate(-90 977.134446 734.13875)">Complexity index</text>
     </g>
    </g>
    <g id="patch_31">
@@ -2727,7 +2727,7 @@ z
     <text style="font-size: 11px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #16a085" x="1181.91119" y="602.502179" transform="rotate(-0 1181.91119 602.502179)">HR-adjusted: p = 0.0124, AUC = 0.772</text>
    </g>
    <g id="text_101">
-    <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(1004.263665 541.354116)">Complexity Index (unnormalized)</text>
+    <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(1004.263665 541.354116)">Complexity index</text>
     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(1004.263665 561.510179)">nAUC(1-20)</text>
    </g>
   </g>
@@ -3325,7 +3325,7 @@ L 1839.207031 595.052964
      </g>
     </g>
     <g id="text_130">
-     <text style="font-size: 14px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="1456.782763" y="734.13875" transform="rotate(-90 1456.782763 734.13875)">Complexity Index</text>
+     <text style="font-size: 14px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #262626" x="1456.782763" y="734.13875" transform="rotate(-90 1456.782763 734.13875)">Complexity index</text>
     </g>
    </g>
    <g id="patch_42">
@@ -3587,7 +3587,7 @@ z
     <text style="font-size: 11px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; text-anchor: middle; fill: #16a085" x="1661.559506" y="602.502179" transform="rotate(-0 1661.559506 602.502179)">HR-adjusted: p = 0.0001, AUC = 0.811</text>
    </g>
    <g id="text_134">
-    <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(1483.911982 541.354116)">Complexity Index (unnormalized)</text>
+    <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(1483.911982 541.354116)">Complexity index</text>
     <text style="font-size: 18px; font-family: 'Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', sans-serif; fill: #262626" transform="translate(1483.911982 561.510179)">nAUC(1-20)</text>
    </g>
   </g>

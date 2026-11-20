@@ -1,35 +1,14 @@
 """
-Canonical definition of the rcMSE complexity index.
+Complexity index of an rcMSE curve.
 
-Why this module exists
-----------------------
-Before 2026-08-16 the complexity index was computed inline in four places
-(the figure scripts and julia/entropy.jl) as `MSE.mean()` over the scale range,
-while the README, both manuscript drafts and MulticohortRCMSE_Paper all described
-it as a *normalized area under the entropy-scale curve* (nAUC). Those are different
-formulas, and no single place in the codebase stated which was actually used.
+The study's index is the trapezoidal area under the entropy-scale curve over scales
+a..b divided by the number of scales (Methods); the figure scripts compute it as
+`subject_index_table(..., method="trapz")` divided by the number of scales.
+The other methods ("mean", "nauc" = area / span, "sum") are kept for sensitivity
+checks only.
 
-Empirically the choice does not matter (CETRAM, scales 1-5, n=73):
-
-    definition                          p        AUC     p (/HR)   AUC (/HR)
-    mean over scales                    0.0045   0.697   0.0004    0.743
-    trapezoidal area                    0.0045   0.697   0.0005    0.740
-    trapezoid / (tau_max - tau_min)     0.0045   0.697   0.0005    0.740
-    simple sum                          0.0045   0.697   0.0004    0.743
-
-`mean` is retained as the default so that published numbers do not shift, but it is
-now named, documented and called from one place. Report it in Methods as
-"mean refined-composite multiscale entropy across scales tau_min..tau_max", or use
-`method="nauc"` if you prefer the literal normalized-area wording — they agree to
-within 0.003 AUC.
-
-Normalization by heart rate
----------------------------
-`divide_by_hr=True` reproduces the primary endpoint used throughout the study.
-Note that on CETRAM the *unnormalized* index is already orthogonal to HR
-(rho = -0.05, p = 0.68) and the division injects a dependency (rho = -0.44), which
-propagates into correlation analyses. Use `divide_by_hr=False` for Figures 6 and 7
-and for any mechanistic claim. See Multicenter/CETRAM_METHODS_AUDIT.md sec. 2b.3.
+The index is not divided by heart rate (Fig. S1). `divide_by_hr=True` gives the
+ratio index / HR, used only in the analyses that test that normalization.
 """
 
 from __future__ import annotations

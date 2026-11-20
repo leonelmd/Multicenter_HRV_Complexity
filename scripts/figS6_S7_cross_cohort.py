@@ -9,7 +9,7 @@ and flipped any held-out AUC below 0.5 to 1 - AUC.
 
 Design (fixed before running; no tuning)
 ----------------------------------------
-* Complexity index: canonical nAUC (trapz over scales / n), unnormalized; scales 1-5
+* Complexity index: canonical nAUC (trapz over scales / n); scales 1-5
   for CETRAM and Cruces, 1-20 for Nagoya 18:00-22:00. Same definition as
   verify_manuscript_claims.py and Table 2 of the manuscript.
 * Heart rate enters as a covariate, as in the primary analysis.

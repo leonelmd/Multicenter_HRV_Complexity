@@ -312,7 +312,7 @@ def main():
             for i in common:
                 seg = subs[i]["rri"] if L is None else subs[i]["rri"][:L]
                 v.append(nauc(rcmse(seg, RFACTOR * seg.std(ddof=1), nscales=5)))
-            v = np.array(v)          # unnormalized index (the HR ratio was rejected)
+            v = np.array(v)          # complexity index, not divided by HR
             ok = np.isfinite(v); yy = y[common][ok]
             rows.append(dict(N=("full" if L is None else L), n_subj=int(ok.sum()),
                              AUC=auc_cp(v, y[common]),
@@ -394,8 +394,8 @@ def main():
     # --- D
     ax = fig.add_subplot(gs[1, :2]); lab(ax, "D")
     order = list(cand); xp = np.arange(len(order))
-    for k, off, cl, lb in [(False, -.19, "#7F8C8D", "unnormalized"),
-                           (True, .19, "#8E44AD", "$\\div$ mean HR")]:
+    for k, off, cl, lb in [(False, -.19, "#7F8C8D", "index"),
+                           (True, .19, "#8E44AD", "index $\\div$ mean HR")]:
         s = D[D.divHR == k].set_index("index").loc[order]
         ax.errorbar(xp + off, s.AUC, yerr=[s.AUC - s.lo, s.hi - s.AUC], fmt="o",
                     ms=7, capsize=4, color=cl, label=lb, lw=2)
@@ -411,7 +411,7 @@ def main():
 
     # --- E
     ax = fig.add_subplot(gs[1, 2]); lab(ax, "E")
-    for k, cl, lb in [(False, "#7F8C8D", "unnormalized"), (True, "#8E44AD", "$\\div$ HR")]:
+    for k, cl, lb in [(False, "#7F8C8D", "index"), (True, "#8E44AD", "index $\\div$ HR")]:
         s = E[E.divHR == k]
         ax.plot(s.kmax, s.AUC, marker="o", ms=3.5, lw=2, color=cl, label=lb)
         ax.fill_between(s.kmax, s.lo, s.hi, color=cl, alpha=.14)
@@ -441,8 +441,8 @@ def main():
         s = y == (g == "PD")
         ax.scatter(HR[s], raw[s], c=COL[g], marker=mk, s=28, alpha=.75, label=g)
     r1 = spearmanr(HR[np.isfinite(raw)], raw[np.isfinite(raw)])
-    ax.set_xlabel("Mean HR (bpm)"); ax.set_ylabel("nAUC(1-5), unnormalized")
-    ax.set_title(f"Unnormalized vs HR\n$\\rho$={r1[0]:+.2f} (p={r1[1]:.2f})",
+    ax.set_xlabel("Mean HR (bpm)"); ax.set_ylabel("nAUC(1-5)")
+    ax.set_title(f"Index vs HR\n$\\rho$={r1[0]:+.2f} (p={r1[1]:.2f})",
                  fontweight="normal", fontsize=11)
     ax.legend(fontsize=8, frameon=False); ax.grid(alpha=.2)
 
