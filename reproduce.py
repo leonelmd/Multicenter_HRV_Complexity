@@ -23,6 +23,7 @@ import paths  # noqa: E402
 # (script, what it makes, inputs that are not distributed)
 FIGURES = [
     ("tables.py", "Tables 1-4 (main text)", []),
+    ("compute_sex_sensitivity.py", "Suppl. Table: sex composition and age/sex sensitivity  -> data/sex_*.csv", []),
     ("fig1_map.py", "Fig. 1  elements: world map", []),
     ("fig1_icons.py", "Fig. 1  elements: modality icons", []),
     ("fig1_ecg_traces.py", "Fig. 1  elements: illustrative ECG strips", []),

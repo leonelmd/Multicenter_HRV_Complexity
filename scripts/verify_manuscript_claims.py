@@ -263,6 +263,42 @@ chk("Cruces resp share, rising curves", 0.35, _cr[~_cr.falling].resp_share.media
 chk("Cruces rho(resp peak sharpness, surrogate gap)", 0.14, _sp(_cr.resp_peak, _cr.surr_gap_t5)[0], tol=0.005, fmt="{:+.2f}")
 
 print("\n" + "=" * 96)
+print("12. ADDED 2026-11-20: sex composition and age/sex sensitivity (reviewer 3.1)")
+print("=" * 96)
+from scipy.stats import fisher_exact as _fe
+import statsmodels.formula.api as _smf
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from compute_sex_sensitivity import load_cohorts as _load_sex
+_sx = _load_sex()
+for coh, fc, mc, fp, mp, pf in (("CETRAM", 24, 17, 6, 19, 0.010), ("Nagoya", 11, 10, 12, 14, 0.772)):
+    x = _sx[coh]
+    C, P = x[x.PD == 0], x[x.PD == 1]
+    chk(f"{coh} female controls", fc, float((C.Sex == "F").sum()), tol=0, fmt="{:.0f}")
+    chk(f"{coh} male controls", mc, float((C.Sex == "M").sum()), tol=0, fmt="{:.0f}")
+    chk(f"{coh} female PD", fp, float((P.Sex == "F").sum()), tol=0, fmt="{:.0f}")
+    chk(f"{coh} male PD", mp, float((P.Sex == "M").sum()), tol=0, fmt="{:.0f}")
+    t = pd.crosstab(x.Group, x.Sex)[["F", "M"]].to_numpy()
+    chk(f"{coh} Fisher p, sex by group", pf, _fe(t)[1], tol=0.0015)
+for coh, form, need, b, p in (
+        ("CETRAM", "Index ~ PD + HR + Sex", ["HR", "Sex"], -0.067, 0.39),
+        ("CETRAM", "Index ~ PD + HR + Age + Sex", ["HR", "Age", "Sex"], -0.046, 0.57),
+        ("CETRAM", "Index ~ PD + HR", ["HR", "Age", "Sex"], -0.111, 0.16),
+        ("Nagoya", "Index ~ PD + HR + Age + Sex", ["HR", "Age", "Sex"], -0.208, 0.0003)):
+    m = _smf.ols(form, _sx[coh].dropna(subset=["Index"] + need)).fit(cov_type="HC3")
+    chk(f"{coh} beta_PD [{form.split('~')[1].strip()}; n={int(m.nobs)}]", b, m.params["PD"], tol=0.0006)
+    chk(f"{coh} p        [{form.split('~')[1].strip()}; n={int(m.nobs)}]", p, m.pvalues["PD"],
+        tol=0.006 if p > 0.01 else 0.00006, fmt="{:.4f}" if p < 0.01 else "{:.2f}")
+from sklearn.metrics import roc_auc_score as _ra
+for coh, sx, a in (("CETRAM", "M", 0.51), ("CETRAM", "F", 0.78), ("Nagoya", "M", 0.87), ("Nagoya", "F", 0.79)):
+    x = _sx[coh][_sx[coh].Sex == sx]
+    chk(f"{coh} within-sex AUC, {sx}", a, _ra(x.PD, -x.Index), tol=0.006, fmt="{:.2f}")
+for coh, p in (("CETRAM", 0.62), ("Nagoya", 0.63)):
+    x = _sx[coh].dropna(subset=["Index", "HR", "Age", "Sex"])
+    m = _smf.ols("Index ~ PD * Sex + HR + Age", x).fit(cov_type="HC3")
+    chk(f"{coh} PD x sex interaction p", p, m.pvalues[[k for k in m.params.index if ":" in k][0]], tol=0.006, fmt="{:.2f}")
+
+print("\n" + "=" * 96)
 print(f"SUMMARY: {CHECKS - len(FAILS)}/{CHECKS} checks passed")
 if FAILS:
     print(f"\n{len(FAILS)} MISMATCH(ES):")

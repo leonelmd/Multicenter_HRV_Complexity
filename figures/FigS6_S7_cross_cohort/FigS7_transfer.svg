@@ -10,7 +10,7 @@
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>Matplotlib v3.10.9, https://matplotlib.org/</dc:title>
+      <dc:title>Matplotlib v3.10.6, https://matplotlib.org/</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -395,7 +395,7 @@ L 3.2 0
     </g>
    </g>
    <image xlink:href="data:image/png;base64,
-iVBORw0KGgoAAAANSUhEUgAAAAwAAAD2CAYAAADifGaYAAABWklEQVR4nO2Y6xHDIAyDeSXzdKXuv0Eo0Bk+7uQzkP5GJ8myDWm8Pt8RwK/ElMl5n4AMAcmhh5QYIJVbLYmWVV8ll8H5A/gLbiLpSBkoIEKAgSQKSNSDXlIubw4uJMnnIbIb69CZzicCipzhLvBCcVilTLt1h+BewKoAvFtxe7PzE9tb7+GCJiyqJF8ze3iAkgzmAT+weA7re4DnQ0lBzkABeg84B6jIJjgI4J8DBsFhBrkHdn6qSg49qLs1DvRPfChhdMoAAZghUA+x/+SS5IC+fg4ue0kN4B5o0mfm0BsDDFxWysAl1apm4B5glSYY5JKaXtIGzedQEg9OvzXUZR1NDqCS+gPfS50Gt0WV9JLkHvSSuoGk9ZuP95KBB/iqxB5adegBAibmATOoc8AMBpJolfTBGfQSv4HUwU0sMnkv0a/dRgEPbT5oYUKSSwaHkg5kYAPq08OJDH8rDUFqBxfAkAAAAABJRU5ErkJggg==" id="imageacc9393373" transform="scale(1 -1) translate(0 -161.018182)" x="420.872727" y="-16.363636" width="7.854545" height="161.018182"/>
+iVBORw0KGgoAAAANSUhEUgAAAAwAAAD2CAYAAADifGaYAAABXklEQVR4nO2Y6xHDIAyDeSXzdKXuv0Eo0Bk+7uQzkP5GJ8myDWm8Pt8RwK/ElMl5n4AMAcmhh5QYIJWbMqjLqq+Sy+D8AfwFN5F0pAwUECHAQBIFJOpBLymXNwcBA5ckn4fIbqxDZzqfCChyhrvAC8VhlTLt1h2CewGrAvBuxe3Nzk9sb72HC5qwqJJ8zezhAZ03mQf8wOI5rO8Bng8lBTkDBeg94BygIpvgIIB/DhgEhxnkHtj5qSo59KDu1jjQP/GhhNEpAwRghkA9xP6jDHoPFNDXz8FlL6kB3ANN+swcemOAgctKGbikWtUM3AOs0gSDXFLTS9qg+RxK4sHpt4a6rKPJAVRSf+B7qdPgtqiSXpLcg15SN5C0fvPxXjLwAF+V2EOrDj1AwMQ8YAZ1DpjBQBKtkj44g17iN5A6uIlFJu8l+rXbKOChzQctTEhyyYABO5h2x8AG1KeHExn+Kw1BagJ5uKkAAAAASUVORK5CYII=" id="imageb32b31e1eb" transform="scale(1 -1) translate(0 -161.018182)" x="420.872727" y="-16.363636" width="7.854545" height="161.018182"/>
    <g id="LineCollection_1"/>
    <g id="patch_9">
     <path d="M 420.895891 177.782418 

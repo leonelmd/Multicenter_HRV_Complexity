@@ -41,6 +41,10 @@ records, which are not distributed.
 | `fig7_overlap.csv` | Fig. 7, overlapping windows | `build_overlap_summary.py` |
 | `spectral_psd_curves.csv` | median spectra per cohort and reference noise (Suppl. Fig. S2) | `compute_spectral_analysis.py` |
 | `cruces_iniguez_replication.csv`, `cruces_iniguez_medians.csv` | source-study HRV metrics in Cruces: AUC, 95% CI, p, medians | `compute_cruces_replication.py` |
+| `sex_composition.csv` | sex (F/M/unknown) by cohort and group in the analysed samples, Fisher p (Table 1; Cruces counts from the source study) | `compute_sex_sensitivity.py` |
+| `sex_sensitivity.csv` | PD coefficient of the index with HR, age and sex as covariates, and the PD × sex interaction | `compute_sex_sensitivity.py` |
+| `sex_stratified_auc.csv` | AUC of the index within each sex; sex difference in controls | `compute_sex_sensitivity.py` |
+| `sex_missing_scenarios.csv` | CETRAM: the sex-adjusted models under every assignment of the three unknown sexes | `compute_sex_sensitivity.py` |
 | `natural_earth/ne_110m_land.geojson` | land outlines for the Fig. 1 map (Natural Earth, public domain) | — |
 
 ## Conventions

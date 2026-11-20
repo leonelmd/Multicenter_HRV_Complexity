@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Main-text tables, from data/: figures/Tables/*.csv
 
-  Table1_demographics.csv    n and age (mean, SD) by cohort and group (Table 1)
+  Table1_demographics.csv    n, age (mean, SD) and sex (F/M) by cohort and group (Table 1)
+                             (Cruces sex: source-reported, see compute_sex_sensitivity.py)
   Table2_conventional.csv    directional AUC and Mann-Whitney p, complexity and HRV (Table 2)
   Table3_primary.csv         median [IQR], p, AUC with stratified-bootstrap 95% CI (Table 3)
   Table4_hr_adjustment.csv   HR-adjusted AUC, p and standardized group coefficient (Table 4)
@@ -61,8 +62,10 @@ def load():
             "Cruces": pd.read_csv(os.path.join(DATA, "spain_demographics.csv")),
             "Nagoya": pd.read_csv(os.path.join(DATA, "japan_metadata.csv")).rename(columns={"Subject_ID": "Subject"})}
     for c in COHORTS:
-        idx[c] = (idx[c].merge(met[c].drop(columns=["Group", "Age"], errors="ignore"), on="Subject", how="left")
-                  .merge(ages[c][["Subject", "Age"]], on="Subject", how="left"))
+        idx[c] = (idx[c].merge(met[c].drop(columns=["Group", "Age", "Gender"], errors="ignore"), on="Subject", how="left")
+                  .merge(ages[c][["Subject", "Age", "Gender"]], on="Subject", how="left"))
+        # Sex as F/M; Nagoya codes 0 = male, 1 = female (as in the Fig. 8 scripts)
+        idx[c]["Sex"] = idx[c]["Gender"].map({"M": "M", "F": "F", 0: "M", 1: "F"})
     return idx
 
 
@@ -76,7 +79,10 @@ def main():
         C, P = x[x.Group == "Control"], x[x.Group == "PD"]
         t1.append(dict(Cohort=c, n_Control=len(C), n_PD=len(P),
                        age_Control_mean=C.Age.mean(), age_Control_sd=C.Age.std(),
-                       age_PD_mean=P.Age.mean(), age_PD_sd=P.Age.std(), n_without_age=int(x.Age.isna().sum())))
+                       age_PD_mean=P.Age.mean(), age_PD_sd=P.Age.std(), n_without_age=int(x.Age.isna().sum()),
+                       female_Control=int((C.Sex == "F").sum()), male_Control=int((C.Sex == "M").sum()),
+                       female_PD=int((P.Sex == "F").sum()), male_PD=int((P.Sex == "M").sum()),
+                       n_without_sex=int(x.Sex.isna().sum())))
         for name, col in (("Complexity", "cx"), ("HR", "HR"), ("SDNN", "HRV_SDNN"), ("RMSSD", "HRV_RMSSD"),
                           ("pNN50", "HRV_pNN50"), ("DFA alpha1", "HRV_DFA_alpha1")):
             if col not in x or x[col].isna().all():
