@@ -60,34 +60,36 @@ are in [FIGURE_LEGENDS.md](FIGURE_LEGENDS.md).
 **1. Figures and numbers, from the shipped tables** — `python reproduce.py`. Everything
 in `data/` is described in [data/README.md](data/README.md).
 
-**2. The tables in `data/`, from the original series** — `python reproduce.py derived`.
-Needs the original beat and RR-interval series (available on reasonable request; see
-[DATA_AVAILABILITY.md](DATA_AVAILABILITY.md)). Point `HRV_DATA_ROOT` to them:
+**2. Everything else, from the original recordings** — needs the raw ECG, PPG and RR
+recordings (available on reasonable request, not distributed; see
+[DATA_AVAILABILITY.md](DATA_AVAILABILITY.md)) and Julia ≥ 1.9. Point `HRV_DATA_ROOT` to
+them; the expected layout is in [scripts/paths.py](scripts/paths.py), the only place where
+locations are defined.
 
 ```bash
 export HRV_DATA_ROOT=/path/to/original_data
-python reproduce.py derived     # about 40 min on 2 cores, most of it the parameter sweep
-python reproduce.py             # figures and check from the rebuilt tables
+cd scripts/julia && julia --project=. -e 'using Pkg; Pkg.instantiate()' && cd ../..
+python reproduce.py cohorts     # raw signal -> RR series, rcMSE curves, HRV indices  (~20 min)
+python reproduce.py derived     # the remaining tables, from the RR series            (~40 min)
+python reproduce.py             # figures and the claim check from the rebuilt tables
 ```
 
-The expected folder layout is in [scripts/paths.py](scripts/paths.py), the only place
-where locations are defined.
+`cohorts` runs one pipeline per cohort (`scripts/cohorts/`):
 
-**3. Beat series, rcMSE curves and HRV indices, from the raw signals** — done by the
-per-cohort processing code (beat detection, artefact correction, rcMSE, HRV indices),
-whose outputs `python reproduce.py import` copies into `data/` with their checksums
-(`data/PROVENANCE.md`). The rcMSE implementation itself is in `scripts/julia/`:
+| Cohort | Raw signal to RR series | Tables |
+|---|---|---|
+| CETRAM | `cetram_beats.py`: R peaks (NeuroKit2), two-detector quality gate (bSQI ≥ 0.80), ectopic/missed-beat correction (Lipponen & Tarvainen), 300–2000 ms guard, trace-review exclusions (`cetram_exclusions.csv`) | `cetram_hrv.py`, rcMSE in Julia |
+| Cruces | `cruces_rri.py`: pulses (Elgendi), beat at the steepest upstroke, same correction and guard | `cruces_hrv.py`, rcMSE in Julia |
+| Nagoya | RR intervals as exported by the chest strap | `nagoya_windows.py`: rcMSE in 4-h windows, HR/SDNN/RMSSD across the day |
 
-```bash
-cd scripts/julia
-julia --project=. -e 'using Pkg; Pkg.instantiate()'
-julia --project=. test_entropy.jl                                   # regression tests
-julia --project=. run_rcmse.jl --input <beat files> --out <curves.csv> --scales 20
-```
+rcMSE is `scripts/julia/` (regression tests: `julia --project=scripts/julia
+scripts/julia/test_entropy.jl`). `scripts/rcmse_fast.py` is a Python port of the same
+algorithm (KD-tree counting) for the long Nagoya windows and the length, split-half and
+parameter analyses; it reproduces the Julia values to machine precision.
 
-`scripts/rcmse_fast.py` is a Python port of the same algorithm (KD-tree counting), used
-for the long Nagoya windows and the length, split-half and parameter analyses; it
-reproduces the Julia values to machine precision.
+Age, sex and recording start times (`chile_demographics.csv`, `spain_demographics.csv`,
+`japan_metadata.csv`) were extracted from the clinical records, which are not distributed,
+and are shipped as given.
 
 ## Layout
 
@@ -96,8 +98,8 @@ reproduce.py          entry point
 scripts/
   paths.py            all file locations; HRV_DATA_ROOT
   fig*.py             one script per manuscript figure
-  compute_*.py        rebuild data/ from the original series
-  import_cohort_tables.py   copy the per-cohort result tables into data/
+  cohorts/            raw signal -> RR series, rcMSE curves, HRV indices, per cohort
+  compute_*.py        the remaining tables in data/, from the RR series
   verify_manuscript_claims.py   every number in the text, recomputed
   julia/              rcMSE (Julia) with regression tests
   rcmse_fast.py       rcMSE (Python port)

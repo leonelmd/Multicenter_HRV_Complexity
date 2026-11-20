@@ -1,0 +1,5 @@
+Subject,Group,Criterion,Detail,Source
+P004,PD,non-sinus rhythm,"frequent ectopy (~18 % of intervals premature; mostly ventricular, some supraventricular); HRV presupposes sinus rhythm (Task Force 1996)","visual trace review, Resultados 2.pdf (P. Chana, 2026-11-09)"
+C050,Control,non-sinus rhythm,"frequent, mostly supraventricular ectopy (~18 % of intervals premature)","visual trace review, Resultados 2.pdf (P. Chana, 2026-11-09)"
+P012,PD,no ECG signal,"no recognizable QRS for ~4.8 min (00:00-04:50); intervals in that stretch were detections on baseline noise","visual trace review, Resultados 2.pdf (P. Chana, 2026-11-09)"
+P023,PD,no ECG signal,"no recognizable QRS for ~2 min (00:00-01:55); intervals in that stretch were detections on baseline noise","visual trace review, Resultados 2.pdf (P. Chana, 2026-11-09)"

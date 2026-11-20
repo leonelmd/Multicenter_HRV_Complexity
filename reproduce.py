@@ -3,14 +3,15 @@
 
     python reproduce.py            # figures from the shipped tables in data/, then the claim check
     python reproduce.py check      # only the claim check (every number quoted in the text)
-    python reproduce.py derived    # rebuild data/ from the original series (needs HRV_DATA_ROOT)
-    python reproduce.py import     # re-import the per-cohort result tables (needs HRV_DATA_ROOT)
-    python reproduce.py all        # import + derived + figures + check
+    python reproduce.py cohorts    # raw signals -> RR series, rcMSE curves, HRV indices (needs HRV_DATA_ROOT, Julia)
+    python reproduce.py derived    # rebuild the other tables in data/ from the RR series (needs HRV_DATA_ROOT)
+    python reproduce.py all        # cohorts + derived + figures + check
 
 Figures go to figures/<manuscript figure>/. A figure whose inputs are not distributed
 (raw ECG, clinical table) is reported as skipped; see DATA_AVAILABILITY.md.
 """
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -49,6 +50,22 @@ FIGURES = [
     ("figS9_traces.py", "Fig. S9 raw-trace review", [paths.CETRAM_RAW_ECG]),
 ]
 
+# Raw signal -> RR series -> rcMSE curves and HRV indices, per cohort (scripts/cohorts/).
+JULIA = ["julia", "--project=" + os.path.join(HERE, "scripts", "julia"), os.path.join(HERE, "scripts", "julia", "run_rcmse.jl")]
+COHORTS = [
+    ("cohorts/cetram_beats.py", "CETRAM  raw ECG -> beat times", None),
+    ("cohorts/cetram_hrv.py", "CETRAM  HRV indices  -> chile_metrics.csv", None),
+    (None, "CETRAM  rcMSE (Julia)  -> chile_mse.csv",
+     JULIA + ["--input", paths.CETRAM_PEAKS, "--out", os.path.join(paths.DATA, "chile_mse.csv")]),
+    ("cohorts/cruces_rri.py", "Cruces  raw PPG -> RR intervals", None),
+    ("cohorts/cruces_hrv.py", "Cruces  HRV indices  -> spain_metrics.csv", None),
+    (None, "Cruces  rcMSE (Julia)  -> spain_mse.csv",
+     JULIA + ["--input", paths.CRUCES_RRI, "--format", "rri", "--group", "prefix",
+              "--out", os.path.join(paths.DATA, "spain_mse.csv")]),
+    ("cohorts/nagoya_windows.py", "Nagoya  rcMSE in 4-h windows, HR/SDNN/RMSSD  -> japan_*_mse.csv, japan_evolution.csv", None),
+]
+COHORT_NEEDS = [paths.CETRAM_RAW_ECG, paths.CRUCES_PPG, paths.NAGOYA_RRI]
+
 # Rebuild data/ from the original beat/RR series, in dependency order.
 DERIVED = [
     ("compute_japan_window_features.py", "Nagoya HRV, 18:00-22:00  -> japan_window_features.csv"),
@@ -64,7 +81,7 @@ DERIVED = [
     ("compute_cruces_replication.py", "Cruces source-study metrics  -> cruces_iniguez_replication.csv"),
     ("compute_r_sweep.py", "entropy-parameter sweep  -> r_sweep.csv  (slow: about 30 min)"),
 ]
-DERIVED_NEEDS = [paths.CETRAM_PEAKS, paths.CRUCES_RRI, paths.NAGOYA_RRI, paths.NAGOYA_META]
+DERIVED_NEEDS = [paths.CETRAM_PEAKS, paths.CRUCES_RRI, paths.NAGOYA_RRI]
 
 
 # Fixed timestamps in SVG/PDF output and a fixed hash seed, so reruns are byte-identical
@@ -72,12 +89,13 @@ DERIVED_NEEDS = [paths.CETRAM_PEAKS, paths.CRUCES_RRI, paths.NAGOYA_RRI, paths.N
 ENV = dict(os.environ, SOURCE_DATE_EPOCH="0", PYTHONHASHSEED="0")
 
 
-def run(script, label):
+def run(script, label, cmd=None):
     t = time.time()
-    print(f"\n>>> {label}   [scripts/{script}]", flush=True)
-    r = subprocess.run([sys.executable, os.path.join(HERE, "scripts", script)], cwd=HERE, env=ENV)
+    cmd = cmd or [sys.executable, os.path.join(HERE, "scripts", script)]
+    print(f"\n>>> {label}   [{script and 'scripts/' + script or ' '.join(cmd[:1] + cmd[2:3])}]", flush=True)
+    r = subprocess.run(cmd, cwd=HERE, env=ENV)
     if r.returncode:
-        sys.exit(f"\n!!! scripts/{script} failed (exit {r.returncode})")
+        sys.exit(f"\n!!! {' '.join(cmd)} failed (exit {r.returncode})")
     print(f"    done in {time.time() - t:.0f} s", flush=True)
 
 
@@ -93,23 +111,35 @@ def figures():
     return skipped
 
 
-def derived():
-    missing = [p for p in DERIVED_NEEDS if not paths.have(p)]
+def need(paths_needed, step):
+    missing = [p for p in paths_needed if not paths.have(p)]
     if missing:
-        sys.exit("\n'derived' needs the original series, not found at:\n  " + "\n  ".join(missing) +
+        sys.exit(f"\n'{step}' needs the original data, not found at:\n  " + "\n  ".join(missing) +
                  "\nSet HRV_DATA_ROOT (see DATA_AVAILABILITY.md).")
+
+
+def cohorts():
+    need(COHORT_NEEDS, "cohorts")
+    if not shutil.which("julia"):
+        sys.exit("\n'cohorts' needs Julia (>= 1.9) on the PATH for the rcMSE step.")
+    for script, label, cmd in COHORTS:
+        run(script, label, cmd)
+
+
+def derived():
+    need(DERIVED_NEEDS, "derived")
     for script, label in DERIVED:
         run(script, label)
 
 
 def main():
     step = sys.argv[1] if len(sys.argv) > 1 else "figures"
-    if step not in ("figures", "check", "derived", "import", "all"):
+    if step not in ("figures", "check", "cohorts", "derived", "all"):
         sys.exit(__doc__)
     print(f"data/           {paths.DATA}\nHRV_DATA_ROOT   {paths.DATA_ROOT}")
     skipped = []
-    if step in ("import", "all"):
-        run("import_cohort_tables.py", "import the per-cohort result tables")
+    if step in ("cohorts", "all"):
+        cohorts()
     if step in ("derived", "all"):
         derived()
     if step in ("figures", "all"):

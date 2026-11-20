@@ -33,16 +33,13 @@
 #              released *_mse.csv files carry the full 1..20 curves. Set
 #              --minratio 200 to have the driver apply the N/tau rule itself.
 #   --fs       sampling rate in Hz for peaks format (default: 1000)
+#   --summary  optional CSV for per-subject r, HR, nAUC and LRS
 #
-# Examples
-#   # CETRAM: cleaned peak files under results/cleaned_detections/{Control,PD}/
-#   julia --project=. run_rcmse.jl \
-#         --input ../../../../CETRAM/public_release/results/cleaned_detections \
-#         --out ../../data/chile_mse.csv --scales 20
-#
-#   # Nagoya scale profile out to tau=60
-#   julia --project=. run_rcmse.jl --input <nagoya_rri_dir> --format rri \
-#         --group metadata:<metadata.csv> --out japan_profile.csv --scales 60
+# Examples (from the repository root; reproduce.py cohorts runs these)
+#   julia --project=scripts/julia scripts/julia/run_rcmse.jl \
+#         --input $HRV_DATA_ROOT/cetram/beats --out data/chile_mse.csv
+#   julia --project=scripts/julia scripts/julia/run_rcmse.jl \
+#         --input $HRV_DATA_ROOT/cruces/rri --format rri --group prefix --out data/spain_mse.csv
 #
 # Reproduce the Julia environment first:
 #   julia --project=. -e 'using Pkg; Pkg.instantiate()'
@@ -181,10 +178,10 @@ end
 
 mkpath(dirname(abspath(OUTCSV)))
 CSV.write(OUTCSV, curves)
-sumpath = replace(OUTCSV, r"\.csv$" => "_summary.csv")
-CSV.write(sumpath, summary)
+sumpath = getarg("--summary")          # optional per-subject summary table
+sumpath === nothing || CSV.write(sumpath, summary)
 
 println("\n  curves  -> ", OUTCSV, "  (", nrow(curves), " rows)")
-println("  summary -> ", sumpath, "  (", nrow(summary), " subjects)")
+sumpath === nothing || println("  summary -> ", sumpath, "  (", nrow(summary), " subjects)")
 println("  groups  : ", join(["$k=$(count(==(k), summary.Group))"
                               for k in unique(summary.Group)], "  "))

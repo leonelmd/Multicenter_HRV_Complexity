@@ -5,24 +5,23 @@ Derived, de-identified tables. Participants appear only under study codes. Group
 analysis). Cohort prefixes in file names follow the country: `chile_` = CETRAM,
 `spain_` = Cruces, `japan_` = Nagoya.
 
-"Made by" names the script that writes the file. Files marked *imported* come from the
-per-cohort processing (raw signal to beat series, rcMSE curves and HRV indices) and are
-copied here by `scripts/import_cohort_tables.py`, which records their sources and
-checksums in `PROVENANCE.md`. Everything else is rebuilt from the original series by
-`python reproduce.py derived`.
+"Made by" names the script that writes the file: scripts in `scripts/cohorts/` run from
+the raw recordings (`python reproduce.py cohorts`), the `compute_*` scripts from the RR
+series (`python reproduce.py derived`). Files marked *given* were extracted from clinical
+records, which are not distributed.
 
 ## Per-participant tables
 
 | File | Contents | Made by |
 |---|---|---|
-| `chile_mse.csv`, `spain_mse.csv` | rcMSE curve, scales 1–20 (`MSE`, `Scales`) | imported |
-| `japan_window_mse.csv` | rcMSE curve in the 18:00–22:00 window (primary), scales 1–20 | imported |
-| `japan_afternoon_mse.csv`, `japan_morning_mse.csv` | the same in 16:00–20:00 and 07:00–11:00 | imported |
-| `chile_metrics.csv`, `spain_metrics.csv` | HRV indices (NeuroKit2 names, `HRV_*`) | imported |
+| `chile_mse.csv`, `spain_mse.csv` | rcMSE curve, scales 1–20 (`MSE`, `Scales`) | `julia/run_rcmse.jl` (via `reproduce.py cohorts`) |
+| `japan_window_mse.csv` | rcMSE curve in the 18:00–22:00 window (primary), scales 1–20 | `cohorts/nagoya_windows.py` |
+| `japan_afternoon_mse.csv`, `japan_morning_mse.csv` | the same in 16:00–20:00 and 07:00–11:00 | `cohorts/nagoya_windows.py` |
+| `chile_metrics.csv`, `spain_metrics.csv` | HRV indices (NeuroKit2 names, `HRV_*`) | `cohorts/cetram_hrv.py`, `cohorts/cruces_hrv.py` |
 | `japan_window_features.csv` | HRV indices, age, sex, HR in the 18:00–22:00 window | `compute_japan_window_features.py` |
-| `chile_demographics.csv`, `spain_demographics.csv` | age and sex (CETRAM: age on the day of the ECG) | imported |
-| `japan_metadata.csv` | age, sex, recording start time and duration | imported |
-| `japan_evolution.csv` | complexity (nAUC 1–20) and median HR, SDNN, RMSSD in 4-h windows sliding by 1 h | imported |
+| `chile_demographics.csv`, `spain_demographics.csv` | age and sex (CETRAM: age on the day of the ECG) | given |
+| `japan_metadata.csv` | age, sex, recording start time, file name | given |
+| `japan_evolution.csv` | complexity (nAUC 1–20) and median HR, SDNN, RMSSD in 4-h windows sliding by 1 h | `cohorts/nagoya_windows.py` |
 | `japan_15min_windows.csv` | complexity and HRV in consecutive 15-min windows over 24 h | `compute_nagoya_windows.py` |
 | `japan_scale_profile.csv` | rcMSE to scale 60 in the 18:00–22:00 window | `compute_nagoya_windows.py` |
 | `japan_overlap_grid.csv` | complexity in overlapping 15-min windows on a 45-s grid | `compute_overlap_grid.py` |

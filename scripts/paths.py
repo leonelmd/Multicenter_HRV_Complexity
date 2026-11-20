@@ -9,15 +9,15 @@ Two kinds of input:
                   scripts that rebuild data/ need them.
 
 Set the environment variable HRV_DATA_ROOT to the folder that holds the original data,
-laid out as below. If it is not set, the folder two levels above this repository is
-used, which is the layout on the analysis machine.
+laid out as below. If it is not set, the folder original_data/ next to this repository is
+used.
 
   $HRV_DATA_ROOT/
-    CETRAM/public_release/results/cleaned_detections/{Control,PD}/<ID>_cleaned.csv
-    CETRAM/public_release/data/raw/{Control,PD}/<ID>_raw.txt        (raw ECG, 1 kHz)
-    Cruces/public_release/data/processed/RRi/<ID>.csv
-    Nagoya/public_release/data/processed_rri/<ID>_RRi.txt
-    Nagoya/public_release/data/metadata/metadata.csv
+    cetram/raw/{Control,PD}/<ID>_raw.txt        raw ECG, 1 kHz (OpenSignals export)
+    cetram/beats/{Control,PD}/<ID>_cleaned.csv  beat times    <- scripts/cohorts/cetram_beats.py
+    cruces/raw/ppg_signals.mat                  raw finger PPG, 500 Hz
+    cruces/rri/<ID>.csv                         RR intervals  <- scripts/cohorts/cruces_rri.py
+    nagoya/rri/<ID>_RRi.txt                     RR intervals as exported by the chest strap
 
 The de-identified clinical table (Fig. 9) is read from data/private/, which is never
 committed.
@@ -31,14 +31,14 @@ FIGURES = os.path.join(REPO, "figures")
 PRIVATE = os.path.join(DATA, "private")
 
 DATA_ROOT = os.path.abspath(os.environ.get("HRV_DATA_ROOT",
-                                           os.path.join(REPO, "..", "..")))
+                                           os.path.join(REPO, "..", "original_data")))
 
-CETRAM_PEAKS = os.path.join(DATA_ROOT, "CETRAM", "public_release", "results", "cleaned_detections")
-CETRAM_RAW_ECG = os.path.join(DATA_ROOT, "CETRAM", "public_release", "data", "raw")
-CRUCES_RRI = os.path.join(DATA_ROOT, "Cruces", "public_release", "data", "processed", "RRi")
-NAGOYA = os.path.join(DATA_ROOT, "Nagoya", "public_release")
-NAGOYA_RRI = os.path.join(NAGOYA, "data", "processed_rri")
-NAGOYA_META = os.path.join(NAGOYA, "data", "metadata", "metadata.csv")
+CETRAM_RAW_ECG = os.path.join(DATA_ROOT, "cetram", "raw")
+CETRAM_PEAKS = os.path.join(DATA_ROOT, "cetram", "beats")
+CRUCES_PPG = os.path.join(DATA_ROOT, "cruces", "raw", "ppg_signals.mat")
+CRUCES_RRI = os.path.join(DATA_ROOT, "cruces", "rri")
+NAGOYA_RRI = os.path.join(DATA_ROOT, "nagoya", "rri")
+NAGOYA_META = os.path.join(DATA, "japan_metadata.csv")   # shipped: start time and file per subject
 CLINICAL_XLSX = os.path.join(PRIVATE, "deidentified_clinical_consolidated.xlsx")
 
 
