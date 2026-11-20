@@ -17,6 +17,7 @@ regression (computed on-the-fly for the interpretation table).
 import warnings
 import numpy as np
 from pooling import within_center_z
+import figstyle as fs
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -39,12 +40,13 @@ FIGURES = ROOT / "figures"
 # Shared helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-DS_COLORS = {
-    "Chile":  "#1565C0",
-    "Spain":  "#2E7D32",
-    "Japan":  "#E65100",
-    "Pooled": "#4A148C",
+DS_COLORS = {                       # cohort colours as in Fig. 1
+    "Chile":  fs.COHORT["CETRAM"],
+    "Spain":  fs.COHORT["Cruces"],
+    "Japan":  fs.COHORT["Nagoya"],
+    "Pooled": "0.25",
 }
+DS_NAME = {"Chile": "CETRAM", "Spain": "Cruces", "Japan": "Nagoya", "Pooled": "Pooled"}
 
 KEY_METRICS = ["RMSSD", "SDNN", "HF_power", "LF_HF", "DFA_alpha1", "pNN50"]
 # SampEn excluded: RC-MSE toolbox Scale=1 output — direct constituent of rcMSE-AUC (circular).
@@ -195,7 +197,7 @@ def make_forest_plot():
         ax.axvline(0, color="#616161", lw=0.9, ls="--", zorder=1)
         ax.set_xlim(-1.05, 1.05)
         ax.set_yticks(list(y_offsets.values()))
-        ax.set_yticklabels(ds_order, fontsize=9)
+        ax.set_yticklabels([DS_NAME[d] for d in ds_order], fontsize=9)
         ax.set_xlabel("Spearman ρ", fontsize=9)
         ax.set_title(KEY_LABELS[metric], fontsize=8.5, fontweight="bold", pad=16)
         ax.tick_params(axis="x", labelsize=8)
@@ -205,7 +207,7 @@ def make_forest_plot():
         ax.axvspan(0, 1.05, alpha=0.03, color="#1565C0")
 
     # Legend
-    handles = [mpatches.Patch(color=DS_COLORS[ds], label=ds) for ds in ds_order]
+    handles = [mpatches.Patch(color=DS_COLORS[ds], label=DS_NAME[ds]) for ds in ds_order]
     handles += [
         plt.Line2D([0], [0], marker="o", color="grey", ms=6, lw=0, label="Per-dataset ρ"),
         plt.Line2D([0], [0], marker="D", color="grey", ms=7, lw=0, label="Pooled ρ"),

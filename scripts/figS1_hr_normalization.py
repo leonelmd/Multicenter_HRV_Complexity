@@ -46,7 +46,7 @@ OUT = os.path.join(ROOT, "figures", "FigS1_hr_normalization")
 os.makedirs(OUT, exist_ok=True)
 
 COH = ["CETRAM", "Cruces", "Nagoya"]
-COL = {"CETRAM": "#1565C0", "Cruces": "#2E7D32", "Nagoya": "#E65100"}
+COL = dict(fs.COHORT)   # cohort colours as in Fig. 1
 GCOL = {g: fs.GROUP[g] for g in ("Control", "PD")}
 HRV = ["HRV_SDNN", "HRV_RMSSD", "HRV_pNN50", "HRV_SD1", "HRV_SD2", "HRV_DFA_alpha1"]
 

@@ -76,12 +76,7 @@ DATASETS = [
     },
 ]
 
-# ── Color scheme ──────────────────────────────────────────────────────────────
-# ECG: blue family; PPG: orange
-MODALITY_COLOR = {
-    'ECG': '#2166AC',   # strong blue
-    'PPG': '#D6604D',   # muted red-orange
-}
+# Lines are coloured by cohort (figstyle.COHORT, as in Fig. 1); the badge names the modality.
 UNRELIABLE_ALPHA   = 0.18   # fill alpha for unreliable zone
 UNRELIABLE_LINEWIDTH = 1.2
 
@@ -144,7 +139,7 @@ for ax, ds in zip(axes, DATASETS):
     reliable_mask   = stats_df['scale'] <= ds['max_scale_reliable']
     unreliable_mask = stats_df['scale'] >  ds['max_scale_reliable']
 
-    color = MODALITY_COLOR[ds['modality']]
+    color = fs.COHORT[ds['label'].split()[0]]   # cohort colours as in Fig. 1
 
     # ── Reliable range ──────────────────────────────────────────────────────
     r = stats_df[reliable_mask]
@@ -200,7 +195,7 @@ for ax, ds in zip(axes, DATASETS):
     ax.spines['right'].set_visible(False)
 
     # ── Modality badge ───────────────────────────────────────────────────────
-    badge_color = MODALITY_COLOR[ds['modality']]
+    badge_color = '0.35'
     badge_text  = ds['modality']
     ax.text(0.97, 0.96, badge_text, transform=ax.transAxes,
             ha='right', va='top', fontsize=11.5, fontweight='normal',
@@ -220,16 +215,16 @@ for ax, ds in zip(axes, DATASETS):
                  fontweight='normal', linespacing=1.5, pad=8)
 
 # ── Figure-level legend ───────────────────────────────────────────────────────
-ecg_patch = mpatches.Patch(color=MODALITY_COLOR['ECG'], label='ECG (CETRAM, Nagoya)')
-ppg_patch = mpatches.Patch(color=MODALITY_COLOR['PPG'], label='PPG (Cruces)')
+coh_patches = [mpatches.Patch(color=fs.COHORT[c], label=f'{c} ({m})')
+               for c, m in (('CETRAM', 'ECG'), ('Cruces', 'PPG'), ('Nagoya', 'ECG'))]
 chance_line = Line2D([0], [0], color='#666666', linewidth=1.0,
                      linestyle='--', label='AUC = 0.50 (chance)')
 unreliable_patch = mpatches.Patch(color='#CCCCCC', alpha=0.55,
                                    label='Unreliable scales (N/τ < 200)')
 sig_line = Line2D([0], [0], color='none', label='*p<0.05  **p<0.01  ***p<0.001')
 
-fig.legend(handles=[ecg_patch, ppg_patch, chance_line, unreliable_patch, sig_line],
-           loc='lower center', ncol=5,
+fig.legend(handles=[*coh_patches, chance_line, unreliable_patch, sig_line],
+           loc='lower center', ncol=6,
            fontsize=9.5, frameon=True, framealpha=0.9,
            bbox_to_anchor=(0.5, 0.01))
 

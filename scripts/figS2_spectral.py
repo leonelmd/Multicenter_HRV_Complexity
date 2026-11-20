@@ -55,7 +55,7 @@ OUT = os.path.join(ROOT, "figures", "FigS2_spectral")
 os.makedirs(OUT, exist_ok=True)
 
 COH = ["CETRAM", "Cruces", "Nagoya"]
-COL = {"CETRAM": "#1565C0", "Cruces": "#2E7D32", "Nagoya": "#E65100"}
+COL = dict(fs.COHORT)   # cohort colours as in Fig. 1
 GCOL = {g: fs.GROUP[g] for g in ("Control", "PD")}
 NOISE = {"white_b0": ("white noise  $\\beta$=0", "#9E9E9E"),
          "pink_b1": ("1/f  $\\beta$=1", "#7E57C2"),
