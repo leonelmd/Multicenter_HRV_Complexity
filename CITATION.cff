@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or data, please cite it as below."
-title: "Reduced multiscale complexity of RR intervals in Parkinson's disease across acquisition modalities and recording lengths: code and derived data"
+title: "Reduced multiscale complexity of interbeat intervals in Parkinson's disease across acquisition modalities and recording lengths: code and derived data"
 abstract: >-
   Code and derived data for a multicohort study of RR-interval multiscale complexity
   in Parkinson's disease, combining short resting ECG (CETRAM, Santiago),
@@ -31,7 +31,7 @@ authors:
 preferred-citation:
   type: article
   status: submitted
-  title: "Reduced multiscale complexity of RR intervals in Parkinson's disease across acquisition modalities and recording lengths"
+  title: "Reduced multiscale complexity of interbeat intervals in Parkinson's disease across acquisition modalities and recording lengths"
   authors:
     - family-names: Berríos Farias
       given-names: Eduardo

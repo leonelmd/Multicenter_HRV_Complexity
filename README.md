@@ -1,6 +1,6 @@
 # RR-interval complexity in Parkinson's disease — three cohorts
 
-Code and derived data for the article *Reduced multiscale complexity of RR intervals in Parkinson's disease across acquisition modalities and recording lengths*
+Code and derived data for the article *Reduced multiscale complexity of interbeat intervals in Parkinson's disease across acquisition modalities and recording lengths*
 (E. Berríos Farias, M. Otero, M. Suzuki, M. Katsuno, M. Chacón, P. Chaná-Cuevas and
 L. E. Medina; submitted). The code was written by L. E. Medina and E. Berríos Farias
 (NeuroEng@Usach, Universidad de Santiago de Chile).
