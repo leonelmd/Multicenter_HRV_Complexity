@@ -1,8 +1,9 @@
-# Cardiac autonomic complexity in Parkinson's disease — three cohorts
+# RR-interval complexity in Parkinson's disease — three cohorts
 
-Code and derived data for *Reduced multiscale complexity of RR intervals in Parkinson's
-disease: effects of acquisition modality and recording length* (L. E. Medina et al.,
-NeuroEng@Usach, Universidad de Santiago de Chile).
+Code and derived data for the article *Reduced multiscale complexity of RR intervals in Parkinson's disease across acquisition modalities and recording lengths*
+(E. Berríos Farias, M. Otero, M. Suzuki, M. Katsuno, M. Chacón, P. Chaná-Cuevas and
+L. E. Medina; submitted). The code was written by L. E. Medina and E. Berríos Farias
+(NeuroEng@Usach, Universidad de Santiago de Chile).
 
 Complexity is refined composite multiscale entropy (rcMSE) of the RR-interval series,
 with a tolerance fixed from the original series (r = 0.2 SD), summarised as the
@@ -112,12 +113,17 @@ figures/              SVG figures and the tables behind them
 ```
 
 Reruns are deterministic: random draws are seeded and SVG output is fixed by
-`matplotlibrc` and `SOURCE_DATE_EPOCH`, so `git status` stays clean after
-`python reproduce.py`.
+`matplotlibrc` and `SOURCE_DATE_EPOCH`. With `requirements-lock.txt` (Python 3.12, Linux
+x86-64), `git status` stays clean after `python reproduce.py`; other platforms or library
+versions can change the last digits of some tables and the SVG text layout, without
+changing any number quoted in the manuscript (the claim check tolerates these). Without
+the original series, Fig. 2 is written as `Fig2_archetypes_without_series.svg` and the
+released figure is kept.
 
 ## Citation and licence
 
-See [CITATION.cff](CITATION.cff). Code: MIT. Derived data: CC BY 4.0 ([LICENSE](LICENSE)).
+Please cite the article (`preferred-citation` in [CITATION.cff](CITATION.cff)); the
+software entry there credits the code authors only. Code: MIT. Derived data: CC BY 4.0 ([LICENSE](LICENSE)).
 The Cruces and Nagoya cohorts were first described by Iniguez et al., *npj Parkinson's
 Disease* 2022;8:64, and Suzuki et al., *J Neural Transm* 2022;129:1299–1306; please cite
 them alongside this work.

@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this software or data, please cite it as below."
-title: "Reduced multiscale complexity of RR intervals in Parkinson's disease: code and derived data"
+title: "Reduced multiscale complexity of RR intervals in Parkinson's disease across acquisition modalities and recording lengths: code and derived data"
 abstract: >-
-  Code and derived data for a multicenter study of cardiac autonomic complexity
+  Code and derived data for a multicohort study of RR-interval multiscale complexity
   in Parkinson's disease, combining short resting ECG (CETRAM, Santiago),
   photoplethysmography during resting-state fMRI (Hospital Universitario Cruces,
   Bilbao) and 24-hour ambulatory wearable chest-strap ECG (Nagoya University Hospital).
@@ -12,8 +12,8 @@ abstract: >-
 type: software
 license: MIT
 repository-code: "https://github.com/leonelmd/Multicenter_HRV_Complexity"
-version: "1.1.0"
-date-released: "2026-11-20"
+version: "1.2.0"
+date-released: "2026-11-24"
 keywords:
   - Parkinson's disease
   - heart rate variability
@@ -24,13 +24,30 @@ keywords:
 authors:
   - family-names: Medina
     given-names: Leonel E.
-    affiliation: "Department of Biomedical Engineering, Universidad de Santiago de Chile"
-  - family-names: Berrios Farias
+    affiliation: "Facultad de Ingeniería, Universidad de Santiago de Chile"
+  - family-names: Berríos Farias
     given-names: Eduardo
-    affiliation: "Department of Biomedical Engineering, Universidad de Santiago de Chile"
-  - family-names: Chana-Cuevas
-    given-names: Pedro
-    affiliation: "Centro de Trastornos del Movimiento (CETRAM), Santiago, Chile"
+    affiliation: "Facultad de Ingeniería, Universidad de Santiago de Chile"
+preferred-citation:
+  type: article
+  status: submitted
+  title: "Reduced multiscale complexity of RR intervals in Parkinson's disease across acquisition modalities and recording lengths"
+  authors:
+    - family-names: Berríos Farias
+      given-names: Eduardo
+    - family-names: Otero
+      given-names: Mónica
+    - family-names: Suzuki
+      given-names: Masashi
+    - family-names: Katsuno
+      given-names: Masahisa
+    - family-names: Chacón
+      given-names: Max
+    - family-names: Chaná-Cuevas
+      given-names: Pedro
+    - family-names: Medina
+      given-names: Leonel E.
+  year: 2026
 
 references:
   - type: article

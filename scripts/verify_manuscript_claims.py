@@ -298,6 +298,22 @@ for coh, p in (("CETRAM", 0.62), ("Nagoya", 0.63)):
     m = _smf.ols("Index ~ PD * Sex + HR + Age", x).fit(cov_type="HC3")
     chk(f"{coh} PD x sex interaction p", p, m.pvalues[[k for k in m.params.index if ":" in k][0]], tol=0.006, fmt="{:.2f}")
 
+# --- Scale range (Methods, Reliable scale range; Suppl. Table scale_range) -------------
+_sr = pd.read_csv(os.path.join(D, "scale_range_sensitivity.csv")).set_index(["Cohort", "Index"])
+for coh, ix, a, p in (("CETRAM", "nAUC 1-2", 0.675, 0.015), ("Cruces", "nAUC 1-2", 0.661, 0.052),
+                      ("Nagoya", "nAUC 1-2", 0.839, 0.0001), ("CETRAM", "SampEn tau=1", 0.692, 0.007),
+                      ("Cruces", "SampEn tau=1", 0.654, 0.062), ("Nagoya", "SampEn tau=1", 0.828, 0.0001)):
+    chk(f"{coh} {ix} AUC", a, float(_sr.loc[(coh, ix), "AUC"]), tol=0.0006)
+    chk(f"{coh} {ix} p", p, float(_sr.loc[(coh, ix), "p"]), tol=0.0006 if p > 0.001 else 0.0005, fmt="{:.4f}")
+chk("Cruces HR-adjusted p, nAUC 1-5", 0.061, float(_sr.loc[("Cruces", "nAUC 1-5"), "p_HR"]), tol=0.0006)
+_sc = pd.read_csv(os.path.join(D, "scale_range_counts.csv")).set_index(["Cohort", "tau"])
+for coh, t, n in (("CETRAM", 4, 65), ("CETRAM", 5, 50), ("Cruces", 2, 47), ("Cruces", 3, 8),
+                  ("Cruces", 4, 0), ("Cruces", 5, 0), ("Nagoya", 20, 47)):
+    chk(f"{coh} meeting N/tau>=200 at tau={t}", n, int(_sc.loc[(coh, t), "meet_total"]), tol=0, fmt="{:.0f}")
+chk("Cruces median N", 498, float(_sc.loc[("Cruces", 1), "N_median"]), tol=0, fmt="{:.0f}")
+chk("CETRAM median N", 1115, float(_sc.loc[("CETRAM", 1), "N_median"]), tol=0, fmt="{:.0f}")
+chk("Nagoya median N", 16754, float(_sc.loc[("Nagoya", 1), "N_median"]), tol=0, fmt="{:.0f}")
+
 print("\n" + "=" * 96)
 print(f"SUMMARY: {CHECKS - len(FAILS)}/{CHECKS} checks passed")
 if FAILS:

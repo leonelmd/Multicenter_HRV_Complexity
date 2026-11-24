@@ -35,8 +35,8 @@ RRI_MIN_MS, RRI_MAX_MS = 300, 2000
 #   - any NeuroKit2 ecg_peaks method name, e.g. "neurokit", "pantompkins1985", "kalidas2017"
 #   - "ecgdetectors:<name>" for py-ecg-detectors (Porr et al.), e.g. "ecgdetectors:two_average"
 # NOTE: NeuroKit2 "pantompkins1985" returns the peak of the moving-window integral, not the
-# R apex; on CETRAM ~37 % of its marks fall on the S trough (~35 ms late). See
-# data/detector_robustness/README.md. "neurokit" returns the R apex of ecg_clean.
+# R apex; on CETRAM ~37 % of its marks fall on the S trough (~35 ms late) (manuscript
+# Fig. 6). "neurokit" returns the R apex of ecg_clean.
 PEAK_METHOD = "neurokit"
 
 # bSQI parameters (Ho et al. 2025) — two-detector consensus criterion.

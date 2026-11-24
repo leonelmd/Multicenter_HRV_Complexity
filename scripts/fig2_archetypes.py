@@ -357,7 +357,14 @@ def generate_figure2():
     
     out_dir = os.path.join(FIGURES_DIR, "Fig2_archetypes")
     os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, "Fig2_archetypes.png")
+    # The trace and Poincare panels need the original RR series (not distributed). Without
+    # them, write a separate file so that the released figure is not overwritten.
+    have_series = all(os.path.isdir(d) for d in (CETRAM_RRI_DIR, CRUCES_RRI_DIR, NAGOYA_RRI_DIR))
+    name = "Fig2_archetypes.png" if have_series else "Fig2_archetypes_without_series.png"
+    if not have_series:
+        print("  Original RR series not found (HRV_DATA_ROOT): trace and Poincare panels left "
+              "empty; written as", name, "and the released Fig2_archetypes.svg kept.")
+    out_path = os.path.join(out_dir, name)
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     plt.savefig(out_path.replace('.png', '.svg'), format='svg', bbox_inches='tight')
     print(f"Figure 2 saved to {out_path}")

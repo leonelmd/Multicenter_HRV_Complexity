@@ -30,3 +30,6 @@ data/_overlap_parts/
 scratch/
 results/
 _*/
+
+# Fig. 2 drawn without the original series (released figure needs them)
+figures/Fig2_archetypes/Fig2_archetypes_without_series.*

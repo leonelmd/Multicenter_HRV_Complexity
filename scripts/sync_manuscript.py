@@ -65,7 +65,12 @@ def main():
     figs = (captions("".join(sec(f) for f in ("01_introduction.tex", "02_methods.tex",
                                               "03_results.tex", "04_discussion.tex")), "Fig. ")
             + captions(sec("06_supplementary.tex"), "Supplementary Fig. S"))
-    labels = {lab: num.split()[-1] for _, num, _, lab in figs}
+    labels = {}
+    for aux in ("main.aux", "supplementary.aux"):   # section and table numbers, if compiled
+        if os.path.exists(os.path.join(MS, aux)):
+            for m in re.finditer(r"\\newlabel\{([^}]+)\}\{\{([^}]*)\}", open(os.path.join(MS, aux)).read()):
+                labels.setdefault(m.group(1), m.group(2))
+    labels.update({lab: num.split()[-1] for _, num, _, lab in figs})
     lines = ["# Figure legends", "",
              "Copied from the manuscript captions by `scripts/sync_manuscript.py`; edit the captions",
              "in the manuscript, not here. Each figure is `figures/<name>/<name>.svg`; Suppl. Figs. S6",

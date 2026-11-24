@@ -51,7 +51,7 @@ DATASETS = [
         'modality': 'PPG',
         'ctrl_groups': ['Control'],
         'pd_group':    'PD',
-        'max_scale_reliable': 5,
+        'max_scale_reliable': 2,   # N/tau >= 200: 47/52 at tau=2, 8/52 at tau=3 (median N 498)
         'max_scale_show':     20,
     },
     {

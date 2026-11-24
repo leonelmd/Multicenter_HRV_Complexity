@@ -24,7 +24,7 @@ Retained after review: P003, C018 (sinus, partial movement/tremor artefact), C03
   `compute_fig7_inputs.py`. Pre-exclusion copies: `_pre_adjudication_2026-11-17_data/`.
 
 ## Clinical workbook
-`data/deidentified_clinical_consolidated.xlsx`: LED total added for P001, P003, P005, P009, P011,
+`data/private/deidentified_clinical_consolidated.xlsx` (not distributed): LED total added for P001, P003, P005, P009, P011,
 P015, P017, P020, P021, P025, P026 (Resultados 1.pdf, Table 1; regimen at the ECG date);
 `Cardiac problems` = 0 for P019 and P023 (chart: no cardiopathy). Detail incl. cardioactive drugs:
 `CETRAM/data/clinical/clinical_update_2026-11-16_deid.csv`. Note: P009 is on carvedilol.
